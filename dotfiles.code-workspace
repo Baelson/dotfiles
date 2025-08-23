@@ -1,0 +1,94 @@
+{
+	"folders": [
+		{
+			"name": "dotfiles",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.DS_Store": true,
+			"**/.git": false,
+			"**/node_modules": true
+		},
+		"search.exclude": {
+			"**/.DS_Store": true,
+			"**/node_modules": true
+		},
+		"editor.rulers": [80, 120],
+		"editor.tabSize": 4,
+		"editor.insertSpaces": true,
+		"files.trimTrailingWhitespace": true,
+		"files.insertFinalNewline": true,
+		"git.enableSmartCommit": true,
+		"git.confirmSync": false,
+		"terminal.integrated.defaultProfile.osx": "zsh",
+		"markdown.preview.breaks": true,
+		"markdown.extension.toc.levels": "2..6"
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.vscode-json",
+			"yzhang.markdown-all-in-one",
+			"davidanson.vscode-markdownlint",
+			"streetsidesoftware.code-spell-checker",
+			"github.vscode-pull-request-github",
+			"ms-vscode.PowerShell",
+			"timonwong.shellcheck",
+			"foxundermoon.shell-format"
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "chezmoi-diff",
+				"type": "shell",
+				"command": "chezmoi diff",
+				"group": "test",
+				"presentation": {
+					"reveal": "always",
+					"panel": "new"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "chezmoi-apply",
+				"type": "shell",
+				"command": "chezmoi apply",
+				"group": "build",
+				"presentation": {
+					"reveal": "always",
+					"panel": "new"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "bootstrap-test",
+				"type": "shell",
+				"command": "./bootstrap/verify.setup.sh",
+				"group": "test",
+				"presentation": {
+					"reveal": "always",
+					"panel": "new"
+				},
+				"problemMatcher": []
+			},
+			{
+				"label": "bootstrap-run",
+				"type": "shell",
+				"command": "./bootstrap/setup.core.sh",
+				"group": "build",
+				"presentation": {
+					"reveal": "always",
+					"panel": "new"
+				},
+				"problemMatcher": []
+			}
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": []
+	}
+}

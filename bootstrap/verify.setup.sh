@@ -1,0 +1,159 @@
+#!/bin/zsh
+#
+# Validation Script for macOS Setup
+# 
+# This script validates that all Phase 1 components are properly installed
+# and configured before proceeding to subsequent phases
+#
+# Usage: ./bootstrap/verify.setup.sh
+#
+
+set -euo pipefail
+
+# Configuration and Common Library
+readonly SCRIPT_DIR="${0:A:h}"
+
+# Source common functions
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+    source "$SCRIPT_DIR/lib/common.sh"
+    init_logging "verify.setup"
+    setup_error_trap "verify.setup"
+    check_macos
+else
+    # Fallback logging if common library is not available
+    readonly REPO_DIR="${REPO_DIR:-"$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Git/dotfiles")"}"
+    readonly LOG_FILE="$REPO_DIR/bootstrap/validation_$(date +'%Y-%m-%d_%H-%M-%S').log"
+    
+    # Basic colors and logging functions (fallback - consistent with setup.core.sh)
+    readonly RED='\033[0;31m'
+    readonly GREEN='\033[0;32m'
+    readonly YELLOW='\033[1;33m'
+    readonly BLUE='\033[0;34m'
+    readonly NC='\033[0m'
+    
+    log() {
+        local msg="${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+        echo -e "$msg"
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    }
+    
+    log_success() {
+        local msg="${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1${NC}"
+        echo -e "$msg"
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1" >> "$LOG_FILE"
+    }
+    
+    log_warning() {
+        local msg="${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1${NC}"
+        echo -e "$msg"
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1" >> "$LOG_FILE"
+    }
+    
+    log_error() {
+        local msg="${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1${NC}"
+        echo -e "$msg" >&2
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1" >> "$LOG_FILE"
+    }
+fi
+
+# Validation counters
+validation_passed=0
+validation_failed=0
+
+validate_item() {
+    local description="$1"
+    local command="$2"
+    
+    if eval "$command" &> /dev/null; then
+        log_success "$description"
+        ((++validation_passed))
+        return 0
+    else
+        log_error "$description"
+        ((++validation_failed))
+        return 1
+    fi
+}
+
+main() {
+    log "🔍 Running Phase 1 validation checks..."
+    echo ""
+    
+    # System Requirements
+    log "📋 System Requirements:"
+    validate_item "macOS operating system" '[[ "$OSTYPE" == "darwin"* ]]'
+    validate_item "zsh shell available" 'command -v zsh'
+    validate_item "curl available" 'command -v curl'
+    validate_item "git available" 'command -v git'
+    echo ""
+    
+    # Development Tools
+    log "🛠  Development Tools:"
+    validate_item "Xcode CLI Tools installed" 'xcode-select --print-path'
+    validate_item "Homebrew installed" 'command -v brew'
+    echo ""
+    
+    # Repository Structure
+    log "📁 Repository Structure:"
+    validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
+    validate_item "Brewfile exists" '[ -f "$REPO_DIR/Brewfile" ]'
+    validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
+    validate_item "PRD.md exists" '[ -f "$REPO_DIR/PRD.md" ]'
+    validate_item "Mackup directory exists" '[ -d "$REPO_DIR/Mackup" ]'
+    validate_item "Bootstrap scripts directory exists" '[ -d "$REPO_DIR/bootstrap" ]'
+    echo ""
+    
+    # Python Environment (for testing)
+    log "🐍 Python Environment:"
+    validate_item "Python 3 available" 'command -v python3'
+    if command -v uv &> /dev/null; then
+        log_success "uv package manager available"
+        ((++validation_passed))
+        
+        # Check if we can run tests
+        if [ -f "$REPO_DIR/pyproject.toml" ]; then
+            validate_item "Python tests can run" 'cd "$REPO_DIR" && uv run python -m pytest --collect-only'
+        fi
+    else
+        log_warning "uv package manager not installed (will be installed via Brewfile)"
+    fi
+    echo ""
+    
+    # Optional: Check Homebrew packages if Brewfile was processed
+    if command -v brew &> /dev/null && [ -f "$REPO_DIR/Brewfile" ]; then
+        log "📦 Homebrew Package Status:"
+        
+        # Check a few key packages that should be installed
+        local key_packages=("git" "mas" "antigen")
+        for package in "${key_packages[@]}"; do
+            if brew list "$package" &> /dev/null; then
+                log_success "$package installed"
+                ((++validation_passed))
+            else
+                log_warning "$package not yet installed (run setup.macos.sh)"
+            fi
+        done
+        echo ""
+    fi
+    
+    # Summary
+    log "📊 Validation Summary:"
+    log "   ✅ Passed: $validation_passed checks"
+    log "   ❌ Failed: $validation_failed checks"
+    echo ""
+    
+    if [ $validation_failed -eq 0 ]; then
+        log_success "🎉 All validations passed! Phase 1 setup is complete."
+        log "Ready to proceed to Phase 2: Chezmoi Migration"
+        return 0
+    else
+        log_error "❌ Some validations failed. Please address the issues before proceeding."
+        return 1
+    fi
+}
+
+# Handle script interruption
+trap 'log_error "Validation script interrupted"; exit 1' INT TERM
+
+# Run main function
+main "$@"
