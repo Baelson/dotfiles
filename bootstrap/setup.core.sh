@@ -120,7 +120,7 @@ main() {
     echo ""
     log "📍 Next Steps:"
     log "  1. Phase 2: Run 'cd $REPO_DIR && ./bootstrap/setup.macos.sh' to continue setup"
-    log "  2. Review the PRD.md and CLAUDE.md for full project details"
+    log "  2. Review the docs/PRD.md and CLAUDE.md for full project details"
     log "  3. Logs available at: $LOG_FILE"
 }
 

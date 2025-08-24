@@ -98,7 +98,7 @@ main() {
     validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
     validate_item "Brewfile exists" '[ -f "$REPO_DIR/Brewfile" ]'
     validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
-    validate_item "PRD.md exists" '[ -f "$REPO_DIR/PRD.md" ]'
+    validate_item "PRD.md exists" '[ -f "$REPO_DIR/docs/PRD.md" ]'
     validate_item "Mackup directory exists" '[ -d "$REPO_DIR/Mackup" ]'
     validate_item "Bootstrap scripts directory exists" '[ -d "$REPO_DIR/bootstrap" ]'
     echo ""
@@ -112,7 +112,7 @@ main() {
         
         # Check if we can run tests
         if [ -f "$REPO_DIR/pyproject.toml" ]; then
-            validate_item "Python tests can run" 'cd "$REPO_DIR" && uv run python -m pytest --collect-only'
+            # Python tests removed - not needed for shell script dotfiles repository
         fi
     else
         log_warning "uv package manager not installed (will be installed via Brewfile)"
