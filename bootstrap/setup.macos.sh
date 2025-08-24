@@ -69,7 +69,7 @@ main() {
     configure_macos
     
     log_success "macOS-specific setup completed!"
-    log "Next: Phase 2 (Chezmoi Migration) - See PRD.md for details"
+    log "Next: Phase 2 (Chezmoi Migration) - See docs/PRD.md for details"
 }
 
 install_packages() {
