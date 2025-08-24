@@ -99,7 +99,7 @@ main() {
     validate_item "Brewfile exists" '[ -f "$REPO_DIR/Brewfile" ]'
     validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
     validate_item "PRD.md exists" '[ -f "$REPO_DIR/docs/PRD.md" ]'
-    validate_item "Mackup directory exists" '[ -d "$REPO_DIR/Mackup" ]'
+    # Mackup directory check removed - migrated to chezmoi dotfile management
     validate_item "Bootstrap scripts directory exists" '[ -d "$REPO_DIR/bootstrap" ]'
     echo ""
     
