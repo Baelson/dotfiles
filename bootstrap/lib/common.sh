@@ -25,9 +25,16 @@ set -euo pipefail
 #======================================
 
 # Project Configuration
-readonly REPO_URL="${REPO_URL:-https://github.com/Baelson/dotfiles.git}"
-readonly REPO_DIR="${REPO_DIR:-"$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Git/dotfiles")"}"
-readonly LOG_DIR="${LOG_DIR:-$HOME/Git}"
+# Only set as readonly if not already set (avoids conflicts with main script)
+if [[ -z "${REPO_URL:-}" ]]; then
+    readonly REPO_URL="https://github.com/Baelson/dotfiles.git"
+fi
+if [[ -z "${REPO_DIR:-}" ]]; then
+    readonly REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Git/dotfiles")"
+fi
+if [[ -z "${LOG_DIR:-}" ]]; then
+    readonly LOG_DIR="$HOME/Git"
+fi
 
 # Color Constants for Output
 readonly RED='\033[0;31m'

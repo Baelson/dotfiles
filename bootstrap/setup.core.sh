@@ -25,45 +25,55 @@ set -euo pipefail  # Exit on any error, undefined variable, or pipe failure
 
 # Global script flags
 DRY_RUN=false
-DEBUG_TRACE=false
+DEBUG_TRACE=true
 DEBUG_VERBOSE=false
 SCRIPT_RELOCATED=false
 
-# Repository configuration
-readonly REPO_URL="https://github.com/Baelson/dotfiles.git"
-readonly REPO_DIR="$HOME/Git/dotfiles"
-
 # Configuration and Common Library
 readonly SCRIPT_DIR="$(cd "${0:A:h}" && pwd)"
+
+# Set repository configuration before sourcing common library
+# This prevents readonly variable conflicts
+export REPO_URL="${REPO_URL:-https://github.com/Baelson/dotfiles.git}"
+export REPO_DIR="${REPO_DIR:-$HOME/Git/dotfiles}"
 
 #======================================
 # Debug and Logging Functions
 #======================================
 
 debug_trace() {
-    [[ "$DEBUG_TRACE" == "true" || "$DEBUG_VERBOSE" == "true" ]] && echo "[TRACE] $1" >&2
+    if [[ "$DEBUG_TRACE" == "true" || "$DEBUG_VERBOSE" == "true" ]]; then
+        echo "[TRACE] $1" >&2
+    fi
+    return 0
 }
 
 debug_verbose() {
-    [[ "$DEBUG_VERBOSE" == "true" ]] && echo "[DEBUG] $1" >&2
+    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
+        echo "[DEBUG] $1" >&2
+    fi
+    return 0
 }
 
 log_dry_run() {
-    [[ "$DRY_RUN" == "true" ]] && echo "[DRY-RUN] $1"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo "[DRY-RUN] $1"
+    fi
+    return 0
 }
 
 run_command() {
     local cmd="$1"
     local description="$2"
-    
+
     debug_trace "→ Entering: $description"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Would run: $cmd"
         debug_trace "← Exiting: $description (dry-run)"
         return 0
     fi
-    
+
     debug_verbose "Executing: $cmd"
     eval "$cmd"
     local exit_code=$?
@@ -76,9 +86,9 @@ run_with_native_dry_run() {
     local dry_run_flag="$2"
     local actual_cmd="$3"
     local description="$4"
-    
+
     debug_trace "→ Entering: $description"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Running $tool dry-run preview:"
         local dry_run_cmd="$tool $dry_run_flag"
@@ -87,7 +97,7 @@ run_with_native_dry_run() {
         debug_trace "← Exiting: $description (dry-run)"
         return 0
     fi
-    
+
     debug_verbose "Executing: $actual_cmd"
     eval "$actual_cmd"
     local exit_code=$?
@@ -101,30 +111,30 @@ run_with_native_dry_run() {
 
 cleanup() {
     debug_trace "→ Entering: cleanup"
-    
+
     # Add any cleanup tasks here
     # For now, just log the cleanup
     debug_verbose "Performing cleanup tasks"
-    
+
     debug_trace "← Exiting: cleanup"
 }
 
 handle_error() {
     local exit_code=$?
     local line_number=$1
-    
+
     debug_trace "→ Entering: handle_error (exit_code: $exit_code, line: $line_number)"
-    
+
     log_error "Script failed at line $line_number with exit code $exit_code"
     log_error "Check the log file for details: ${LOG_FILE:-'(log file not set)'}"
-    
+
     # Provide recovery suggestions
     log_error "Recovery suggestions:"
     log_error "  1. Check network connectivity"
     log_error "  2. Ensure you have sufficient disk space"
     log_error "  3. Try running with --debug-verbose for more details"
     log_error "  4. Check the repository is accessible: https://github.com/Baelson/dotfiles"
-    
+
     cleanup
     debug_trace "← Exiting: handle_error"
     exit $exit_code
@@ -133,15 +143,15 @@ handle_error() {
 # Enhanced error trap
 setup_error_handling() {
     debug_trace "→ Entering: setup_error_handling"
-    
+
     # Set up error handling
     set -eE  # Exit on error and inherit ERR trap
-    
+
     # Trap errors with line numbers
     trap 'handle_error ${LINENO}' ERR
     trap 'log_error "Script interrupted by user"; cleanup; exit 130' INT
     trap 'log_error "Script terminated"; cleanup; exit 143' TERM
-    
+
     debug_trace "← Exiting: setup_error_handling"
 }
 
@@ -227,7 +237,8 @@ EOF
 
 parse_arguments() {
     debug_trace "→ Entering: parse_arguments"
-    
+    debug_trace "Current arguments: $@"
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             --dry-run)
@@ -262,7 +273,7 @@ parse_arguments() {
                 ;;
         esac
     done
-    
+
     debug_trace "← Exiting: parse_arguments"
 }
 
@@ -272,20 +283,20 @@ parse_arguments() {
 
 verify_repository_files() {
     debug_trace "→ Entering: verify_repository_files"
-    
+
     local required_files=(
         "bootstrap/setup.core.sh"
         "bootstrap/lib/common.sh"
         "Brewfile"
         "CLAUDE.md"
     )
-    
+
     log "🔍 Verifying required repository files..."
-    
+
     for file in "${required_files[@]}"; do
         local file_path="$REPO_DIR/$file"
         debug_verbose "Checking file: $file_path"
-        
+
         if [[ ! -f "$file_path" ]]; then
             log_error "Required file missing: $file"
             log_error "Repository clone may be incomplete or corrupted"
@@ -295,51 +306,51 @@ verify_repository_files() {
             debug_verbose "✓ File found: $file"
         fi
     done
-    
+
     log_success "All required files verified"
     debug_trace "← Exiting: verify_repository_files"
 }
 
 relocate_script_if_needed() {
     debug_trace "→ Entering: relocate_script_if_needed"
-    
+
     # If already relocated, skip
     if [[ "$SCRIPT_RELOCATED" == "true" ]]; then
         debug_trace "Script already relocated, continuing"
         debug_trace "← Exiting: relocate_script_if_needed (already relocated)"
         return 0
     fi
-    
+
     # If we're not running from the expected location, we need to relocate
     local current_dir="$(pwd)"
     debug_verbose "Current directory: $current_dir"
     debug_verbose "Expected repo directory: $REPO_DIR"
-    
+
     if [[ "$current_dir" != "$REPO_DIR" ]] && [[ ! -f "$REPO_DIR/bootstrap/setup.core.sh" ]]; then
         log "📁 Setting up repository directory structure..."
-        
+
         # Create the Git directory if it doesn't exist
         if [[ ! -d "$HOME/Git" ]]; then
             run_command "mkdir -p '$HOME/Git'" "Create Git directory"
         fi
-        
+
         # Clone the repository
         clone_repository
-        
+
         # Verify required files exist
         verify_repository_files
-        
+
         # Relaunch the script from the proper location
         log "🔄 Relaunching script from repository location..."
-        
+
         local script_args=""
         [[ "$DRY_RUN" == "true" ]] && script_args="$script_args --dry-run"
         [[ "$DEBUG_TRACE" == "true" ]] && script_args="$script_args --debug-trace"
         [[ "$DEBUG_VERBOSE" == "true" ]] && script_args="$script_args --debug-verbose"
         script_args="$script_args --script-relocated"
-        
+
         debug_verbose "Relaunching with args: $script_args"
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_dry_run "Would execute: cd '$REPO_DIR' && ./bootstrap/setup.core.sh $script_args"
             debug_trace "← Exiting: relocate_script_if_needed (dry-run relaunch)"
@@ -349,14 +360,14 @@ relocate_script_if_needed() {
             exec ./bootstrap/setup.core.sh $script_args
         fi
     fi
-    
+
     debug_trace "← Exiting: relocate_script_if_needed (no relocation needed)"
 }
 
 # Main installation function
 main() {
     debug_trace "→ Entering: main"
-    
+
     log "🚀 Starting macOS System and Environment Setup (macSES)"
     log "📋 Phase 1: Bootstrap Foundation"
     [[ "$DRY_RUN" == "true" ]] && log "[DRY-RUN MODE] Preview only - no changes will be made"
@@ -372,7 +383,7 @@ main() {
 
     # Create log file
     touch "$LOG_FILE"
-    
+
     # Handle script relocation first
     relocate_script_if_needed
 
@@ -417,13 +428,13 @@ main() {
     log "  1. Phase 2: Run 'cd $REPO_DIR && ./bootstrap/setup.macos.sh' to continue setup"
     log "  2. Review the docs/PRD.md and CLAUDE.md for full project details"
     log "  3. Logs available at: $LOG_FILE"
-    
+
     debug_trace "← Exiting: main"
 }
 
 install_xcode_cli_tools() {
     debug_trace "→ Entering: install_xcode_cli_tools"
-    
+
     if xcode-select --print-path &> /dev/null; then
         log_success "Xcode CLI Tools already installed"
         debug_trace "← Exiting: install_xcode_cli_tools (already installed)"
@@ -431,7 +442,7 @@ install_xcode_cli_tools() {
     fi
 
     log "Installing Xcode Command Line Tools..."
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Would run: xcode-select --install"
         log_dry_run "Would wait for installation to complete with user interaction"
@@ -447,8 +458,18 @@ install_xcode_cli_tools() {
     log "Waiting for Xcode CLI Tools installation to complete..."
     log "⏳ This may take several minutes and require user interaction..."
 
+    local timeout=600  # 10 minutes timeout
+    local elapsed=0
+
     until xcode-select --print-path &> /dev/null; do
         sleep 5
+        ((elapsed += 5))
+
+        if [[ $elapsed -ge $timeout ]]; then
+            log_error "Xcode CLI Tools installation timed out after ${timeout} seconds"
+            log_error "Please check the installation manually and try again"
+            exit 1
+        fi
     done
 
     log_success "Xcode CLI Tools installed successfully"
@@ -457,7 +478,7 @@ install_xcode_cli_tools() {
 
 install_homebrew() {
     debug_trace "→ Entering: install_homebrew"
-    
+
     if command -v brew &> /dev/null; then
         log_success "Homebrew already installed"
         debug_trace "← Exiting: install_homebrew (already installed)"
@@ -465,7 +486,7 @@ install_homebrew() {
     fi
 
     log "Installing Homebrew..."
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Would install Homebrew using official installer"
         log_dry_run "Would add Homebrew to PATH based on architecture"
@@ -489,7 +510,7 @@ install_homebrew() {
     # Add Homebrew to PATH based on architecture
     local brew_path
     local shellenv_line
-    
+
     if [[ $(uname -m) == "arm64" ]]; then
         brew_path="/opt/homebrew/bin/brew"
         debug_verbose "Apple Silicon detected, using $brew_path"
@@ -497,19 +518,27 @@ install_homebrew() {
         brew_path="/usr/local/bin/brew"
         debug_verbose "Intel Mac detected, using $brew_path"
     fi
-    
+
     shellenv_line="eval \"\$($brew_path shellenv)\""
-    
+
     # Add to .zprofile if not already present
+    if [[ ! -f "$HOME/.zprofile" ]]; then
+        touch "$HOME/.zprofile"
+        debug_verbose "Created .zprofile file"
+    fi
+
     if ! grep -q "$shellenv_line" "$HOME/.zprofile" 2>/dev/null; then
-        echo "$shellenv_line" >> "$HOME/.zprofile"
+        echo "$shellenv_line" >> "$HOME/.zprofile" || {
+            log_error "Failed to write to .zprofile"
+            exit 1
+        }
         debug_verbose "Added Homebrew shellenv to .zprofile"
     fi
-    
+
     # Source shellenv for current session
     eval "$($brew_path shellenv)"
     debug_verbose "Sourced Homebrew shellenv for current session"
-    
+
     # Verify brew is now accessible
     if ! command -v brew &> /dev/null; then
         log_error "Homebrew installation failed - brew command not accessible"
@@ -522,9 +551,9 @@ install_homebrew() {
 
 setup_directories() {
     debug_trace "→ Entering: setup_directories"
-    
+
     log "Setting up directory structure..."
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Would create: $HOME/Git"
         debug_trace "← Exiting: setup_directories (dry-run)"
@@ -541,18 +570,18 @@ setup_directories() {
 
 clone_repository() {
     debug_trace "→ Entering: clone_repository"
-    
+
     if [ -d "$REPO_DIR" ]; then
         log_warning "Repository already exists at $REPO_DIR"
         log "Updating existing repository..."
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_dry_run "Would check for uncommitted changes"
             log_dry_run "Would run: git pull origin main"
             debug_trace "← Exiting: clone_repository (dry-run update)"
             return 0
         fi
-        
+
         cd "$REPO_DIR"
 
         # Check for uncommitted changes and fail if found
@@ -570,23 +599,23 @@ clone_repository() {
         }
     else
         log "Cloning repository to $REPO_DIR..."
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_dry_run "Would run: git clone $REPO_URL $REPO_DIR"
             debug_trace "← Exiting: clone_repository (dry-run clone)"
             return 0
         fi
-        
+
         # Try SSH first, fallback to HTTPS if it fails
         local ssh_url="git@github.com:Baelson/dotfiles.git"
         debug_verbose "Attempting SSH clone: $ssh_url"
-        
+
         if git clone "$ssh_url" "$REPO_DIR" 2>/dev/null; then
             log_success "Repository cloned via SSH"
         else
             log_warning "SSH clone failed, trying HTTPS..."
             debug_verbose "SSH clone failed, attempting HTTPS: $REPO_URL"
-            
+
             git clone "$REPO_URL" "$REPO_DIR" || {
                 log_error "Failed to clone repository via HTTPS"
                 log_error "Repository may be private or network issue"
@@ -603,9 +632,9 @@ clone_repository() {
 
 run_validation() {
     debug_trace "→ Entering: run_validation"
-    
+
     log "Running Phase 1 validation..."
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Would run validation script: $REPO_DIR/bootstrap/verify.setup.sh"
         log_dry_run "Would validate: Xcode CLI Tools, Homebrew, Repository"
