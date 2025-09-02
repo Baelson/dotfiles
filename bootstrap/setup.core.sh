@@ -25,7 +25,7 @@ set -euo pipefail  # Exit on any error, undefined variable, or pipe failure
 
 # Global script flags
 DRY_RUN=false
-DEBUG_TRACE=true
+DEBUG_TRACE=false
 DEBUG_VERBOSE=false
 SCRIPT_RELOCATED=false
 
