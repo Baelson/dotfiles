@@ -73,7 +73,32 @@ parse_arguments() {
 }
 
 #======================================
-# Main Setup Functions
+# Main Function - Script Overview
+#======================================
+
+main() {
+    debug_trace "→ Entering: main"
+    log "🔧 Starting macOS-specific setup..."
+
+    # Ensure we're in the correct directory
+    cd "$REPO_DIR"
+
+    # Install packages from Brewfile
+    install_packages
+
+    # Apply dotfiles configuration
+    apply_dotfiles_configuration
+
+    # Run basic macOS configuration
+    configure_macos
+
+    log_success "macOS-specific setup completed!"
+    log "✅ Phase 2 (Chezmoi Migration) completed - dotfiles applied successfully"
+    debug_trace "← Exiting: main"
+}
+
+#======================================
+# Setup Functions
 #======================================
 
 apply_dotfiles_configuration() {
@@ -120,27 +145,6 @@ apply_dotfiles_configuration() {
     log "  ✅ Mackup symlinks replaced with direct file management"
     log "  ✅ All application configurations updated"
     debug_trace "← Exiting: apply_dotfiles_configuration"
-}
-
-main() {
-    debug_trace "→ Entering: main"
-    log "🔧 Starting macOS-specific setup..."
-
-    # Ensure we're in the correct directory
-    cd "$REPO_DIR"
-
-    # Install packages from Brewfile
-    install_packages
-
-    # Apply dotfiles configuration
-    apply_dotfiles_configuration
-
-    # Run basic macOS configuration
-    configure_macos
-
-    log_success "macOS-specific setup completed!"
-    log "✅ Phase 2 (Chezmoi Migration) completed - dotfiles applied successfully"
-    debug_trace "← Exiting: main"
 }
 
 install_packages() {
