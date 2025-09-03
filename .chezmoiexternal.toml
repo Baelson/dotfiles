@@ -1,0 +1,29 @@
+# External repositories managed by chezmoi
+# Using archive method for better control and security
+
+# Antigen - Zsh plugin manager
+# Referenced in dot_zshrc at line 42: source "${HOME}/.local/share/antigen/antigen.zsh"
+[".local/share/antigen"]
+    type = "archive"
+    url = "https://github.com/zsh-users/antigen/archive/refs/heads/develop.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "168h"  # Weekly updates
+
+# Oh My Zsh - Zsh framework
+# Referenced in dot_zshrc at line 29: export ZSH="$HOME/.local/share/oh-my-zsh"
+[".local/share/oh-my-zsh"]
+    type = "archive"
+    url = "https://github.com/ohmyzsh/ohmyzsh/archive/refs/heads/master.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "336h"  # Bi-weekly updates (matches default omz update frequency)
+
+# Dircolors - Enhanced directory colors for ls
+# Referenced in dot_zshrc at line 23: eval $(dircolors ~/.local/share/dircolors/dircolors.256dark)
+[".local/share/dircolors"]
+    type = "archive"
+    url = "https://github.com/gibbling666/dircolors/archive/refs/heads/master.tar.gz"
+    stripComponents = 1
+    refreshPeriod = "720h"  # Monthly updates (stable color themes)
+
+# Note: DuqueClan-Configs is managed separately and not included here
+# as it's a private repository with different management requirements

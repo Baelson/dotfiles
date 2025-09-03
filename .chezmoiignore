@@ -1,0 +1,9 @@
+# Ignore cache directories that are created during normal use
+# to prevent chezmoi from reporting changes on apply
+
+# Oh My Zsh cache files
+.local/share/oh-my-zsh/cache/**
+
+# macOS system files
+.DS_Store
+**/.DS_Store

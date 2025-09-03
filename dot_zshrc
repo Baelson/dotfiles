@@ -20,14 +20,15 @@ zstyle ':omz:lib:theme-and-appearance' gnu-ls yes
 source "${HOME}/.iterm2_shell_integration.zsh"
 
 alias dircolors="gdircolors"
-eval $(dircolors ~/.dircolors/dircolors.256dark)
+eval $(dircolors ~/.local/share/dircolors/dircolors.256dark)
 
 ############################################
 ###             oh-my-zsh                ###
 ############################################
 # Path to your oh-my-zsh installation.
-export ZSH="/Users/Baelson/.oh-my-zsh"
-export UPDATE_ZSH_DAYS=1
+export ZSH="${HOME}/.local/share/oh-my-zsh"
+# Disable oh-my-zsh auto-updates (managed by chezmoi external archives)
+export DISABLE_AUTO_UPDATE="true"
 ENABLE_CORRECTION="true"
 COMPLETION_WAITING_DOTS="true"
 HIST_STAMPS="%Y.%m.%d_%I:%M:%S %r"
@@ -39,7 +40,7 @@ source $ZSH/oh-my-zsh.sh
 ############################################
 ###             antigen                  ###
 ############################################
-source /Users/Baelson/Git/Shell/antigen/antigen.zsh
+source "${HOME}/.local/share/antigen/antigen.zsh"
 # Load the oh-my-zsh's library.
 antigen use oh-my-zsh
 antigen bundles <<EOBUNDLES
