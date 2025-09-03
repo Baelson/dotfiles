@@ -1,0 +1,22 @@
+[user]
+	email = Baelson@users.noreply.github.com
+	name = Baelson
+[diff]
+	tool = bc
+[difftool "bc"]
+	cmd = /Applications/Beyond\\ Compare.app/Contents/MacOS/bcomp \"$LOCAL\" \"$REMOTE\"
+[merge]
+	tool = bc
+[mergetool "bc"]
+	cmd = /Applications/Beyond\\ Compare.app/Contents/MacOS/bcomp \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\"
+[difftool]
+	prompt = false
+[pager]
+	log = false
+[alias]
+	logpretty = log --pretty=format:'%C(yellow)%h%C(reset) %C(cyan)%cr%C(reset) (%C(cyan)%cd%C(reset)) %<(60,trunc)%s %C(auto)%d%C(reset)' --abbrev-commit --decorate=short --date=format:'%Y-%m-%d @ %H:%m' -n 5
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

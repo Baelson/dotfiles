@@ -1,0 +1,53 @@
+{
+  "folders": [
+    {
+      "name": "📚 Global Documentation",
+      "path": "~/Documents/Developer-Docs"
+    },
+    {
+      "name": "💻 All Projects",
+      "path": "~/Git"
+    }
+  ],
+  "settings": {
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/.git/**": true,
+      "**/__pycache__/**": true,
+      "**/target/**": true,
+      "**/build/**": true,
+      "**/dist/**": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/bower_components": true,
+      "**/*.code-search": true,
+      "**/__pycache__": true,
+      "**/target": true,
+      "**/build": true,
+      "**/dist": true
+    },
+    "files.exclude": {
+      "**/.git": true,
+      "**/.svn": true,
+      "**/.hg": true,
+      "**/CVS": true,
+      "**/.DS_Store": true,
+      "**/Thumbs.db": true,
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "**/*.pyo": true,
+      "**/*.pyd": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-json",
+      "redhat.vscode-yaml",
+      "ms-python.python",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode"
+    ]
+  }
+}

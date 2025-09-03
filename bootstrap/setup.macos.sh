@@ -72,6 +72,10 @@ parse_arguments() {
     fi
 }
 
+#======================================
+# Main Function - Script Overview
+#======================================
+
 main() {
     debug_trace "→ Entering: main"
     log "🔧 Starting macOS-specific setup..."
@@ -82,12 +86,65 @@ main() {
     # Install packages from Brewfile
     install_packages
 
+    # Apply dotfiles configuration
+    apply_dotfiles_configuration
+
     # Run basic macOS configuration
     configure_macos
 
     log_success "macOS-specific setup completed!"
-    log "Next: Phase 2 (Chezmoi Migration) - See docs/PRD.md for details"
+    log "✅ Phase 2 (Chezmoi Migration) completed - dotfiles applied successfully"
     debug_trace "← Exiting: main"
+}
+
+#======================================
+# Setup Functions
+#======================================
+
+apply_dotfiles_configuration() {
+    debug_trace "→ Entering: apply_dotfiles_configuration"
+    log "🏠 Applying dotfiles configuration with chezmoi..."
+
+    # Verify chezmoi is available (should be installed from Brewfile)
+    if ! command -v chezmoi &> /dev/null; then
+        log_error "chezmoi not found in PATH"
+        log_error "Please ensure chezmoi was installed from the Brewfile"
+        exit 1
+    fi
+
+    # Verify we're in the dotfiles repository
+    if [[ ! -f "$REPO_DIR/.chezmoiexternal.toml" ]]; then
+        log_error "Not in a valid chezmoi source directory"
+        log_error "Expected to find .chezmoiexternal.toml in $REPO_DIR"
+        exit 1
+    fi
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_dry_run "Would apply dotfiles using: chezmoi apply"
+        log_dry_run "Would download external archives (antigen, oh-my-zsh, dircolors)"  
+        log_dry_run "Would replace Mackup symlinks with actual file content"
+        debug_trace "← Exiting: apply_dotfiles_configuration (dry-run)"
+        return 0
+    fi
+
+    # Apply dotfiles configuration
+    # single-line CLI: chezmoi apply
+    debug_verbose "Applying dotfiles configuration from source directory"
+    log "  → Downloading external archives (antigen, oh-my-zsh, dircolors)..."
+    log "  → Replacing Mackup symlinks with actual file content..."
+    log "  → Updating application configurations..."
+    
+    if ! chezmoi apply; then
+        log_error "Failed to apply dotfiles configuration"
+        log_error "You can manually run: cd $REPO_DIR && chezmoi apply"
+        exit 1
+    fi
+
+    log_success "Dotfiles configuration applied successfully"
+    log "  ✅ External archives downloaded and configured"
+    log "  ✅ Mackup symlinks replaced with direct file management"
+    log "  ✅ All application configurations updated"
+    debug_trace "← Exiting: apply_dotfiles_configuration"
 }
 
 install_packages() {
