@@ -1,0 +1,175 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+setopt autocd
+setopt NO_CASE_GLOB
+
+autoload -Uz compinit
+compinit
+
+zstyle ':completion:*' list-dirs-first true
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' verbose yes
+zstyle ':completion:*' menu select
+zstyle ':omz:lib:theme-and-appearance' gnu-ls yes
+
+source "${HOME}/.iterm2_shell_integration.zsh"
+
+alias dircolors="gdircolors"
+eval $(dircolors ~/.dircolors/dircolors.256dark)
+
+############################################
+###             oh-my-zsh                ###
+############################################
+# Path to your oh-my-zsh installation.
+export ZSH="/Users/Baelson/.oh-my-zsh"
+export UPDATE_ZSH_DAYS=1
+ENABLE_CORRECTION="true"
+COMPLETION_WAITING_DOTS="true"
+HIST_STAMPS="%Y.%m.%d_%I:%M:%S %r"
+
+# using antigen for oh-my-zsh plug-in management
+plugins=()
+source $ZSH/oh-my-zsh.sh
+
+############################################
+###             antigen                  ###
+############################################
+source /Users/Baelson/Git/Shell/antigen/antigen.zsh
+# Load the oh-my-zsh's library.
+antigen use oh-my-zsh
+antigen bundles <<EOBUNDLES
+    # Bundles from the default repo (robbyrussell's oh-my-zsh)
+    git
+    gitfast
+    git-extras
+    git-flow
+    git-escape-magic
+    github
+    git-hubflow
+    brew
+    brew-cask
+    lein
+    rsync
+    command-not-found
+    tmux
+    colored-man-pages
+    history
+    # thefuck
+    aws
+    cp
+    # bazel
+    copybuffer
+    copypath
+    copyfile
+    dircycle
+    emoji
+    emoji-clock
+    common-aliases
+    jsontools
+    jira
+    nmap
+    macOS
+    sublime
+    sudo
+    vscode
+    xcode
+    zsh-interactive-cd
+    zsh_reload
+    
+    # Syntax highlighting bundle
+    zsh-users/zsh-syntax-highlighting
+    zsh-users/zsh-completions
+    zsh-users/zsh-autosuggestions
+
+    olivierverdier/zsh-git-prompt
+EOBUNDLES
+
+# Load the theme
+antigen theme romkatv/powerlevel10k
+antigen apply
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# Pretty-print of some PATH variables:
+alias path="echo -e '${PATH//:/\\n}'" # Note ${...} wrapped with single quotes; suppress expansion as alias
+alias libpath="echo -e ${LD_LIBRARY_PATH//:/\\n}"
+alias reload="source ~/.zshenv; source ~/.zshrc; source ~/.zprofile"
+
+alias ls="gls -FHhv --group-directories-first --color=always"
+alias lsa="gls -FHhav --group-directories-first --color=always"
+alias l="gls -FHhlGvo --group-directories-first --color=always --time-style=long-iso"
+alias ll="gls -FHhGvoa --group-directories-first --color=always --time-style=long-iso"
+
+alias rm="rm -i"
+alias cp="cp -i"
+alias mv="mv -i"
+alias mkdir="mkdir -p"
+alias dirs="dirs -v"
+alias h="history"
+alias j="jobs -l"
+alias which="type -a"
+alias -- -="cd -"
+alias grep="grep --color=auto"
+alias -g sendclip="| pbcopy"
+alias -g getclip="pbpaste |"
+alias du="du -kh"    # Makes a more readable output.
+alias df="df -kTh"
+alias tree="tree -Csuh"    #  Nice alternative to "recursive ls" ...
+
+# pushd shortcuts
+alias icloud="pushd ~/Library/Mobile\ Documents/com~apple~CloudDocs/"   # pushd to iCloud Drive
+alias box="pushd ~/Library/CloudStorage/Box-Box/"                       # pushd to Box Drive
+alias onedrive="pushd ~/Library/CloudStorage/OneDrive-Personal/"        # pushd to OneDrive
+alias dcconfigs="pushd ~/Git/DuqueClan-Configs"                         # pushd to DuqueClan Configs Repo
+
+# git alias'
+alias gdd="git difftool --dir-diff --no-symlinks"
+alias grsa="git restore --staged ."
+
+bindkey "^[b" backward-word
+bindkey "^[f" forward-word
+bindkey "^[a" beginning-of-line
+bindkey "^[e" end-of-line
+
+export PATH="/opt/homebrew/bin:$PATH"
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+
+### PROMPT Stuff ###
+## Below only works in internal builds
+# PS1="$HC$FCYN\r\n\u@\h-$(/usr/local/bin/ypc2 -k RPlt | xxd -r -p) [\D{%a-%m/%d}] : \w\r\n$RS\A \$>"
+
+### Apple Stuff ###
+# alias InstallTigrisFullSDK="~uitools/bin/install-xcode --ios CurrentTigris --SDK-UI-internals --HomeDiags --xcode-internals --user bduque --delete-before-install --no-prompt"
+# alias InstallTigrisPR3="~uitools/bin/install-xcode --ios CurrentTigris --HomeDiags-only --user bduque --delete-previous-installs --no-prompt"
+# alias MountShares="~rc/bin/xbsmount --mode ios -od"
+# alias Clean="~rcdev/bin/cleanPreviousInstall"
+# alias BounceCR="launchctl unload /System/Library/LaunchAgents/com.apple.MDCrashReportd.plist; launchctl load /System/Library/LaunchAgents/com.apple.MDCrashReportd.plist"
+# alias CacheiPhone="~mwright/Public/cacheEmbedded.rb -d d22ap,n56ap, --destination ~/Builds/ -b"
+# alias CacheiPad="~mwright/Public/cacheEmbedded.rb -d j207ap,j72ap,j99aap,j97ap --destination ~/Builds/ -b"
+# alias CachewatchOS="~mwright/Public/cacheEmbedded.rb -d n28aap --destination ~/Builds/ -b"
+# alias CachetvOS="~mwright/Public/cacheEmbedded.rb -d j105aap,j42dap --destination ~/Builds/ -b"
+
+# Titan Builds and Bazel
+# source /Users/Baelson/.bazel/bin/bazel-complete.bash
+# alias gfa="cd ~/Git/Titan/apollo && git fetch gerrit"
+# Auto attach or create a new tmux session if inside SSH
+if [[ -n $SSH_CONNECTION ]] && command -v tmux &>/dev/null; then
+  [[ -z $TMUX ]] && (tmux attach-session -t default || tmux new-session -s default)
+fi
+
+alias claude="/Users/baelson/.claude/local/claude"
