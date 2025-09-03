@@ -1,0 +1,299 @@
+# -*- mode:gitignore -*- vim:ft=gitignore
+#
+# ~/.local/share/chezmoi/.chezmoiignore
+# =============================================================================
+# Patterns for files that chezmoi should ignore when applying configuration.
+# Patterns use doublestar.Match syntax and match against TARGET paths.
+#
+# See: https://www.chezmoi.io/reference/special-files/chezmoiignore/
+# Template docs: https://www.chezmoi.io/user-guide/templating/
+
+#======================================
+# System Files (macOS)
+#======================================
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+.fseventsd
+.fseventsd/**
+.Spotlight-V100
+.Spotlight-V100/**
+.TemporaryItems
+.TemporaryItems/**
+.Trashes
+.Trashes/**
+
+# AppleDouble files (created on non-APFS volumes)
+._*
+**/._*
+
+# Volume-specific files
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+#======================================
+# Cache Directories
+#======================================
+
+# User cache directories
+.cache
+.cache/**
+
+# Application caches (broad patterns)
+**/cache/**
+**/Cache/**
+**/caches/**
+**/Caches/**
+
+# Specific macOS cache locations
+Library/Caches
+Library/Caches/**
+Library/Assistant/LLMCache/**
+Library/Spotlight/ExtensionsCache/**
+
+# Application Support cache subdirectories
+Library/Application Support/**/cache/**
+Library/Application Support/**/Cache/**
+Library/Application Support/**/caches/**
+Library/Application Support/**/Caches/**
+
+#======================================
+# External Archive Caches
+#======================================
+
+# Oh My Zsh cache files (managed externally)
+.local/share/oh-my-zsh/cache/**
+.local/share/oh-my-zsh/.git/**
+.local/share/oh-my-zsh/.github/**
+
+# Antigen cache and git metadata
+.local/share/antigen/.git/**
+.local/share/antigen/.github/**
+.local/share/antigen/.travis.yml
+.local/share/antigen/tests/**
+
+# Dircolors git metadata
+.local/share/dircolors/.git/**
+
+#======================================
+# Temporary and Generated Files
+#======================================
+
+# Backup files
+*~
+**/*~
+*.bak
+*.backup
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+*.temporary
+**/*.tmp
+**/*.temp
+
+# Editor temporary files
+.swp
+*.swp
+.swo
+*.swo
+**/.swp
+**/*.swp
+
+# Log files
+*.log
+**/*.log
+install_*.log
+*_install.log
+bootstrap/*.log
+validation_*.log
+macos-setup_*.log
+
+#======================================
+# Development and Editor Files
+#======================================
+
+# VS Code
+.vscode/
+**/.vscode/
+*.code-workspace
+
+# Other editors
+.idea/
+**/.idea/
+*.sublime-*
+**/*.sublime-*
+
+# Vim
+.vim/swap/**
+.vim/backup/**
+.vim/undo/**
+
+# Emacs
+*#
+.#*
+**/*#
+**/.#*
+
+#======================================
+# Browser Data and History
+#======================================
+
+# Safari
+Library/Safari/History.db*
+Library/Safari/Downloads.plist
+Library/Safari/LastSession.plist
+Library/Safari/TopSites.plist
+
+# Chrome
+Library/Application Support/Google/Chrome/Default/History*
+Library/Application Support/Google/Chrome/Default/Cookies*
+Library/Application Support/Google/Chrome/Default/Current Session*
+Library/Application Support/Google/Chrome/Default/Current Tabs*
+
+# Firefox  
+Library/Application Support/Firefox/Profiles/*/places.sqlite*
+Library/Application Support/Firefox/Profiles/*/cookies.sqlite*
+Library/Application Support/Firefox/Profiles/*/sessionstore.js*
+
+# Generic browser patterns
+**/browser_history*
+**/cookies.db*
+**/session*storage*
+
+#======================================
+# Shell and Command History
+#======================================
+
+# Shell history files (rapidly changing)
+.bash_history
+.zsh_history
+.fish_history
+**/.bash_history
+**/.zsh_history
+**/.fish_history
+
+# Command-line tool history
+.lesshst
+.mysql_history
+.psql_history
+.python_history
+.sqlite_history
+.node_repl_history
+
+#======================================
+# Application-Specific
+#======================================
+
+# Git (if managing git config, ignore runtime files)
+.git/index
+.git/FETCH_HEAD
+.git/logs/**
+
+# SSH (ignore known_hosts changes - managed by chezmoi encryption)
+# Note: We handle these with encrypted files instead
+
+# Claude and AI tools
+.cache/claude/**
+Library/Application Support/Claude/**/cache/**
+
+# GitHub CLI
+.cache/gh/**
+.config/gh/hosts.yml
+
+# UV (Python package manager)
+.cache/uv/**
+
+# Powerlevel10k cache
+.cache/p10k-*
+.cache/p10k-*/**
+
+#======================================
+# Development Artifacts  
+#======================================
+
+# Node.js
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.tox/
+.pytest_cache/
+
+# Ruby
+.bundle/
+**/vendor/bundle/
+
+#======================================
+# Compilation and Build Outputs
+#======================================
+
+# Compiled files
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Archives (unless specifically needed)
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+
+#======================================
+# OS-Specific Conditionals
+#======================================
+
+{{ if ne .chezmoi.os "darwin" -}}
+# Ignore macOS-specific files on non-macOS systems
+Library/**
+Brewfile
+dot_Brewfile
+{{- end }}
+
+{{ if ne .chezmoi.os "linux" -}}
+# Ignore Linux-specific files on non-Linux systems  
+.config/systemd/**
+.local/share/applications/**
+{{- end }}
+
+{{ if ne .chezmoi.os "windows" -}}
+# Ignore Windows-specific files on non-Windows systems
+AppData/**
+{{- end }}
+
+#======================================
+# Documentation and Meta Files
+#======================================
+
+# Documentation files (already in git)
+README*
+LICENSE*
+CHANGELOG*
+*.md
+*.txt
+
+# Git metadata
+.git/**
+.github/**
+.gitignore
+.gitattributes
+.gitmodules

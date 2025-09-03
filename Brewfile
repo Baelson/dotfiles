@@ -3,6 +3,7 @@
 # TODO: pull github repo URLs to put in here.
 
 brew 'antigen'			# zsh/oh-my-zsh plug-in manager
+brew 'chezmoi'			# dotfiles manager
 brew 'coreutils'		# updates macOS CLI tools
 brew 'ddrescue'			# GNU disk recovery tool
 brew 'direnv'			# shell hooks when cd'ing

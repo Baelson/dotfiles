@@ -1,0 +1,253 @@
+{
+  "lastUpgradeScriptRun": "v11.3.0",
+  "appId": "28e7564aeb1e91a1cc9c9cd7ae674e5d7b6e8c03",
+  "appLocale": "en-US",
+  "appDateFormat": null,
+  "appDateTimeFormat": null,
+  "appDateWordFormat": null,
+  "appDateVerboseFormat": null,
+  "userMilestones": {
+    "installId": "53d245ea-fb38-4cfb-bbad-29c8317f7688",
+    "installDate": 1755994639081,
+    "firstAppOpen": true,
+    "firstLoginRegister": true,
+    "startATrial": true,
+    "connectIntegration": true,
+    "firstProfileCreated": true,
+    "completedNewUserOnboarding": true,
+    "firstRepoOpened": true,
+    "firstTimeCommitSelected": true,
+    "leftPanelToggled": true,
+    "pushSomeCode": true
+  },
+  "sslWhitelist": [],
+  "webConfig": {
+    "lastUpdatedAt": "2025-09-03T04:47:17.556Z",
+    "config": {
+      "callouts": [],
+      "promos": [
+        {
+          "key": "BYTE256_2025",
+          "code": "BYTE256",
+          "startsOn": "2025-09-08T23:59:00.000Z",
+          "expiresOn": "2025-09-20T09:59:00.000Z",
+          "content": {
+            "promoBadgeMarkdown": "**Happy International Programmer's Day!**\n\nSave 60-85% on GitKraken Pro.",
+            "proPromoLabelSmall": "SAVE 60-85% for a limited time!",
+            "toolbarLinkLabelOverride": "Save 60-85% on Pro"
+          }
+        },
+        {
+          "key": "2XTOKENS25",
+          "code": "2XTOKENS",
+          "startsOn": "2025-07-21T23:59:00.000Z",
+          "expiresOn": "2025-07-31T09:59:00.000Z",
+          "content": {
+            "advancedPromoLabelSmall": "66% Off Single Seat",
+            "toolbarLinkLabelOverride": "66% off Advanced"
+          }
+        },
+        {
+          "key": "50OFFADV",
+          "code": "50OFFADV",
+          "content": {
+            "advancedPromoLabelSmall": "SAVE 50% for a limited time!"
+          }
+        }
+      ]
+    },
+    "dismissedCallouts": {}
+  },
+  "lastReleaseNotesDisplayed": "11.3.0",
+  "ui": {
+    "shouldShowStartupPromoModal": false
+  },
+  "aliases": {
+    "repo": {},
+    "tabs": {}
+  },
+  "registration": {
+    "email": "Baelson@DuqueClan.com",
+    "name": "Baelson",
+    "status": "activated",
+    "loginType": "github",
+    "date": "2025-08-24T00:18:55.741Z",
+    "EULA": {
+      "status": "agree_verified",
+      "version": "8.3.1"
+    }
+  },
+  "userId": "227ca39f-0411-4f26-98b2-0e6409b6f440",
+  "licensedFeatures": [
+    "advanced",
+    "gitgui:advanced",
+    "gitlens:advanced",
+    "bundle:advanced",
+    "gitkraken_v1:advanced",
+    "suite:advanced",
+    "pro",
+    "gitgui:pro",
+    "gitlens:pro",
+    "bundle:pro",
+    "gitkraken_v1:pro",
+    "suite:pro",
+    "trial",
+    "gitgui:trial",
+    "gitlens:trial",
+    "bundle:trial",
+    "gitkraken_v1:trial",
+    "suite:trial"
+  ],
+  "orgSettingsByOrgId": {
+    "68a8ff209db749b990621694": {
+      "aiSettings": {
+        "enabled": true,
+        "createdAt": "2025-08-22T23:38:05.996417Z",
+        "updatedAt": "2025-08-22T23:38:05.996417Z"
+      },
+      "draftsSettings": {
+        "enabled": true,
+        "createdAt": "2025-08-22T23:38:06.00735Z",
+        "updatedAt": "2025-08-22T23:38:06.00735Z"
+      },
+      "ssoSettings": {
+        "enabled": false,
+        "enforced": true,
+        "provision": false,
+        "createdAt": "2025-08-22T23:38:05.996417Z",
+        "updatedAt": "2025-08-22T23:38:05.996417Z"
+      },
+      "memberInvitesRequireApproval": false,
+      "conflictDetectionEnabled": true,
+      "aiEnabled": true,
+      "enforceAiProviders": false,
+      "aiProviders": {},
+      "ssoEnabled": false,
+      "ssoEnforced": true,
+      "ssoProvision": false,
+      "createdAt": "2025-08-22T23:38:05.996417Z",
+      "updatedAt": "2025-08-22T23:38:05.996417Z"
+    }
+  },
+  "userFeatures": [
+    {
+      "name": "activityStatus"
+    },
+    {
+      "name": "changePriceEnabled"
+    },
+    {
+      "name": "cli"
+    },
+    {
+      "name": "experimentalAiCommmitMsg"
+    },
+    {
+      "name": "experimentalGitBinary"
+    },
+    {
+      "name": "experimentalGitBinaryDefaultOn960"
+    },
+    {
+      "name": "experimentalGitBinaryDefaultOn971"
+    },
+    {
+      "name": "experimentalGitBinarySpawnServer961"
+    },
+    {
+      "name": "gitBash"
+    },
+    {
+      "name": "gitkraken"
+    },
+    {
+      "name": "gkApi"
+    },
+    {
+      "name": "gkdAIFeedback_11_2_0"
+    },
+    {
+      "name": "gkdAIMergeConflictResolutionNudge_11_3_0"
+    },
+    {
+      "name": "gkdCommitComposeWipButtonBottom_11_3_0"
+    },
+    {
+      "name": "gkdConflictPreventionFeedback_11_1_0"
+    },
+    {
+      "name": "gkdevAllowInviteMessages"
+    },
+    {
+      "name": "gkDevReferralSystem"
+    },
+    {
+      "name": "gkdOnboardingTutorial_10_5_0"
+    },
+    {
+      "name": "gkdReferralProgram_11_0_0"
+    },
+    {
+      "name": "gkdTrialStartModalPromoMessage_11_1_0"
+    },
+    {
+      "name": "goldenTicketSpecial"
+    },
+    {
+      "name": "onboardingGuide"
+    },
+    {
+      "name": "privateRepoModalTest_10_5_0"
+    },
+    {
+      "name": "registeredForGST"
+    },
+    {
+      "name": "terminalInsideRepoTab"
+    },
+    {
+      "name": "unregisteredTrials"
+    },
+    {
+      "name": "useNewTrialStartModalTest_10_8_0"
+    },
+    {
+      "name": "velocityInClient_9_0_0"
+    },
+    {
+      "name": "workspacesPRComplexity"
+    }
+  ],
+  "fuzzyFinderMetadata": {
+    "itemMetadata": {
+      "OPEN_REPO": {
+        "openRepo-/Users/baelson/Git/DuqueClan-Configs": {
+          "id": "openRepo-/Users/baelson/Git/DuqueClan-Configs",
+          "timestamps": [
+            1755994786948
+          ],
+          "total": 1
+        },
+        "openRepo-/Users/baelson/Git/dotfiles": {
+          "id": "openRepo-/Users/baelson/Git/dotfiles",
+          "timestamps": [
+            1756010485339
+          ],
+          "total": 1
+        }
+      }
+    }
+  },
+  "windowSettings": {
+    "x": 690,
+    "y": 205,
+    "width": 1870,
+    "height": 1055,
+    "fullScreen": false,
+    "maximized": true
+  },
+  "hasSeenTrialStartedModal": true,
+  "commits": {
+    "maxCommitsInGraph": 2000
+  }
+}
