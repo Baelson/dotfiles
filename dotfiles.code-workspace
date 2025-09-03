@@ -35,7 +35,9 @@
 			"github.vscode-pull-request-github",
 			"ms-vscode.PowerShell",
 			"timonwong.shellcheck",
-			"foxundermoon.shell-format"
+            "foxundermoon.shell-format",
+            "anthropic.claude-code",
+            "openai.chatgpt"
 		]
 	},
 	"tasks": {

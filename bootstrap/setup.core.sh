@@ -1,255 +1,241 @@
 #!/bin/zsh
 #
-# macOS System and Environment Setup (macSES) Bootstrap Script
-# 
-# This script provides a one-command installation for a complete macOS development environment.
-# Similar to Claude Code's native binary installation approach.
+# macOS System and Environment Setup (macSES) - Core Setup Script
 #
-# Usage: curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/setup.core.sh | zsh
+# This script handles the core installation after the repository has been cloned.
+# It focuses on installing Xcode CLI Tools and Homebrew.
 #
-# Phase 1: Bootstrap Foundation
+# Usage: ./bootstrap/setup.core.sh [OPTIONS]
+#
+# Options:
+#   --dry-run           Preview operations without executing (uses tools' native dry-run when available)
+#   --debug-trace       Show control flow and decision points
+#   --debug-verbose     Show detailed execution including variable assignments
+#   --help             Display this help message
+#
+# Phase 1: Core Foundation
 # - Install Xcode CLI Tools
 # - Install Homebrew
-# - Clone dotfiles repository with chezmoi integration
-# - Set up basic environment
+# - Run validation checks
 #
 
-set -euo pipefail  # Exit on any error, undefined variable, or pipe failure
+set -euo pipefail
+
+# Global script flags
+DRY_RUN=false
+DEBUG_TRACE=false
+DEBUG_VERBOSE=false
 
 # Configuration and Common Library
 readonly SCRIPT_DIR="$(cd "${0:A:h}" && pwd)"
 
-# Try to source common library after repository is available
-# For bootstrap script, we'll need to handle the case where common.sh might not exist yet
-if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
-    source "$SCRIPT_DIR/lib/common.sh"
-    init_logging "setup.core"
-    setup_error_trap "setup.core"
-else
-    # Fallback logging for initial bootstrap (before repo is cloned)
-    readonly LOG_FILE="$HOME/Git/install_$(date +'%Y-%m-%d_%H-%M-%S').log"
-    
-    # Basic colors and logging functions (fallback)
-    readonly RED='\033[0;31m'
-    readonly GREEN='\033[0;32m'
-    readonly YELLOW='\033[1;33m'
-    readonly BLUE='\033[0;34m'
-    readonly NC='\033[0m'
-    
-    log() {
-        local msg="${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
-        echo -e "$msg"
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
-    }
-    
-    log_success() {
-        local msg="${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1${NC}"
-        echo -e "$msg"
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1" >> "$LOG_FILE"
-    }
-    
-    log_warning() {
-        local msg="${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1${NC}"
-        echo -e "$msg"
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1" >> "$LOG_FILE"
-    }
-    
-    log_error() {
-        local msg="${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1${NC}"
-        echo -e "$msg" >&2
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1" >> "$LOG_FILE"
-    }
-    
-    show_progress() {
-        local current=$1
-        local total=$2
-        local description=$3
-        local percentage=$((current * 100 / total))
-        printf "\n\n${BLUE}Progress: [%3d%%] %s${NC}\n" "$percentage" "$description"
-        if [ "$current" -eq "$total" ]; then
-            echo ""
+# Source common functions - should always be available
+source "$SCRIPT_DIR/lib/common.sh"
+init_logging "setup.core"
+setup_error_trap "setup.core"
+check_macos
+
+#======================================
+# Argument Parsing
+#======================================
+
+show_help() {
+    show_standard_help "macOS Core Setup Script" \
+        "This script handles core macOS development environment setup.
+Installs Xcode CLI Tools and Homebrew after repository is available." \
+        "./bootstrap/setup.core.sh [OPTIONS]"
+}
+
+parse_arguments() {
+    # Handle --help first
+    for arg in "$@"; do
+        if [[ "$arg" == "--help" ]]; then
+            show_help
+            exit 0
         fi
-    }
-fi
+    done
 
-# Main installation function
-main() {
-    log "🚀 Starting macOS System and Environment Setup (macSES)"
-    log "📋 Phase 1: Bootstrap Foundation"
-    echo ""
-    
-    # Check if we're on macOS
-    if [[ "$OSTYPE" != "darwin"* ]]; then
-        log_error "This script is designed for macOS only"
-        exit 1
+    # Parse other arguments
+    parse_standard_arguments "$@"
+    local result=$?
+
+    if [[ $result -eq 2 ]]; then
+        # Unknown argument encountered
+        for arg in "$@"; do
+            case $arg in
+                --dry-run|--debug-trace|--debug-verbose)
+                    ;;
+                *)
+                    log_error "Unknown option: $arg"
+                    show_help
+                    exit 1
+                    ;;
+            esac
+        done
     fi
-    
-    # Create log file
-    touch "$LOG_FILE"
-    
-    # Phase 1 Steps
-    local -r total_steps=5
-    local current_step=0
+}
 
-    # Step 1: Check and install Xcode CLI Tools
+#======================================
+# Main Setup Functions
+#======================================
+
+main() {
+    debug_trace "→ Entering: main"
+
+    local current_step=0
+    local total_steps=3
+
+    log "🔧 Starting Core macOS Development Environment Setup..."
+    log "📍 Repository: $REPO_DIR"
+    echo ""
+
+    # Step 1: Install Xcode CLI Tools
     ((++current_step))
     show_progress $current_step $total_steps "Installing Xcode CLI Tools..."
     install_xcode_cli_tools
-    
-    # Step 2: Check and install Homebrew
+
+    # Step 2: Install Homebrew
     ((++current_step))
     show_progress $current_step $total_steps "Installing Homebrew..."
     install_homebrew
-    
-    # Step 3: Create Git directory structure
-    ((++current_step))
-    show_progress $current_step $total_steps "Setting up directory structure..."
-    setup_directories
-    
-    # Step 4: Clone repository
-    ((++current_step))
-    show_progress $current_step $total_steps "Cloning repository..."
-    clone_repository
-    
-    # Step 5: Run validation
+
+    # Step 3: Run validation
     ((++current_step))
     show_progress $current_step $total_steps "Running validation..."
     run_validation
-    
-    log_success "🎉 Phase 1: Bootstrap Foundation completed successfully!"
+
+    log_success "🎉 Phase 1: Core Foundation completed successfully!"
     echo ""
     log "📍 Next Steps:"
-    log "  1. Phase 2: Run 'cd $REPO_DIR && ./bootstrap/setup.macos.sh' to continue setup"
+    log "  1. Run 'cd $REPO_DIR && ./bootstrap/setup.macos.sh' to continue with macOS-specific setup"
     log "  2. Review the docs/PRD.md and CLAUDE.md for full project details"
     log "  3. Logs available at: $LOG_FILE"
+
+    debug_trace "← Exiting: main"
 }
 
 install_xcode_cli_tools() {
+    debug_trace "→ Entering: install_xcode_cli_tools"
+
     if xcode-select --print-path &> /dev/null; then
         log_success "Xcode CLI Tools already installed"
+        debug_trace "← Exiting: install_xcode_cli_tools (already installed)"
         return 0
     fi
-    
+
     log "Installing Xcode Command Line Tools..."
-    
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_dry_run "Would run: xcode-select --install"
+        log_dry_run "Would wait for installation to complete with user interaction"
+        debug_trace "← Exiting: install_xcode_cli_tools (dry-run)"
+        return 0
+    fi
+
     # Trigger the installation
+    debug_verbose "Triggering Xcode CLI Tools installation"
     xcode-select --install &> /dev/null || true
-    
+
     # Wait for installation to complete
     log "Waiting for Xcode CLI Tools installation to complete..."
     log "⏳ This may take several minutes and require user interaction..."
-    
+
+    local timeout=600  # 10 minutes timeout
+    local elapsed=0
+
     until xcode-select --print-path &> /dev/null; do
         sleep 5
+        ((elapsed += 5))
+
+        if [[ $elapsed -ge $timeout ]]; then
+            log_error "Xcode CLI Tools installation timed out after ${timeout} seconds"
+            log_error "Please check the installation manually and try again"
+            exit 1
+        fi
     done
-    
+
     log_success "Xcode CLI Tools installed successfully"
+    debug_trace "← Exiting: install_xcode_cli_tools"
 }
 
 install_homebrew() {
+    debug_trace "→ Entering: install_homebrew"
+
     if command -v brew &> /dev/null; then
         log_success "Homebrew already installed"
+        debug_trace "← Exiting: install_homebrew (already installed)"
         return 0
     fi
-    
+
     log "Installing Homebrew..."
-    
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_dry_run "Would install Homebrew using official installer"
+        log_dry_run "Would add Homebrew to PATH based on architecture"
+        debug_trace "← Exiting: install_homebrew (dry-run)"
+        return 0
+    fi
+
     # Install Homebrew using the official installer
-    /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
+    # single-line CLI: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    debug_verbose "Installing Homebrew with explicit bash shebang handling"
+    local homebrew_install_script="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+
+    /bin/bash -c "$(curl \
+        --fail \
+        --silent \
+        --show-error \
+        --location \
+        "$homebrew_install_script")" || {
         log_error "Failed to install Homebrew"
+        log_error "Please check the official installation guide at https://brew.sh"
         exit 1
     }
-    
-    # Add Homebrew to PATH for Apple Silicon Macs
-    if [[ $(uname -m) == "arm64" ]]; then
-        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zprofile"
+
+    # Add Homebrew to PATH based on architecture
+    debug_verbose "Configuring Homebrew PATH for current architecture"
+    if [[ -f "/opt/homebrew/bin/brew" ]]; then
+        # Apple Silicon
+        debug_verbose "Detected Apple Silicon, using /opt/homebrew"
         eval "$(/opt/homebrew/bin/brew shellenv)"
-    else
-        echo 'eval "$(/usr/local/bin/brew shellenv)"' >> "$HOME/.zprofile"
+    elif [[ -f "/usr/local/bin/brew" ]]; then
+        # Intel
+        debug_verbose "Detected Intel Mac, using /usr/local"
         eval "$(/usr/local/bin/brew shellenv)"
-    fi
-    
-    log_success "Homebrew installed successfully"
-}
-
-setup_directories() {
-    log "Setting up directory structure..."
-    
-    # Create Git directory if it doesn't exist
-    mkdir -p "$HOME/Git"
-    
-    log_success "Directory structure created"
-}
-
-clone_repository() {
-    if [ -d "$REPO_DIR" ]; then
-        log_warning "Repository already exists at $REPO_DIR"
-        log "Updating existing repository..."
-        cd "$REPO_DIR"
-        
-        # Check for uncommitted changes and fail if found
-        if ! git diff --quiet || ! git diff --cached --quiet; then
-            log_error "Repository has uncommitted changes"
-            log_error "Please commit or stash your changes before running this script"
-            log_error "You can stash changes with: git stash push -m 'your message'"
-            log "\n$(git status)"
-            exit 1
-        fi
-        
-        git pull origin main || {
-            log_error "Failed to update repository"
-            exit 1
-        }
     else
-        log "Cloning repository to $REPO_DIR..."
-        git clone "$REPO_URL" "$REPO_DIR" || {
-            log_error "Failed to clone repository"
-            exit 1
-        }
+        log_error "Could not find Homebrew installation"
+        exit 1
     fi
-    
-    log_success "Repository ready at $REPO_DIR"
+
+    log_success "Homebrew installed and configured successfully"
+    debug_trace "← Exiting: install_homebrew"
 }
 
 run_validation() {
-    log "Running Phase 1 validation..."
-    
-    # Check if validation script exists and run it
-    if [ -f "$REPO_DIR/bootstrap/verify.setup.sh" ]; then
-        zsh "$REPO_DIR/bootstrap/verify.setup.sh" || {
-            log_error "Validation failed"
-            exit 1
-        }
+    debug_trace "→ Entering: run_validation"
+    log "🔍 Running core setup validation..."
+
+    # Run the verification script
+    if [[ -f "$SCRIPT_DIR/verify.setup.sh" ]]; then
+        if [[ "$DEBUG_TRACE" == "true" || "$DEBUG_VERBOSE" == "true" ]]; then
+            local debug_flags=""
+            [[ "$DEBUG_TRACE" == "true" ]] && debug_flags="--debug-trace"
+            [[ "$DEBUG_VERBOSE" == "true" ]] && debug_flags="--debug-verbose"
+
+            "$SCRIPT_DIR/verify.setup.sh" $debug_flags
+        else
+            "$SCRIPT_DIR/verify.setup.sh"
+        fi
     else
-        # Basic validation if script doesn't exist yet
-        log "Running basic validation checks..."
-        
-        # Check Xcode CLI Tools
-        if ! xcode-select --print-path &> /dev/null; then
-            log_error "Xcode CLI Tools validation failed"
-            exit 1
-        fi
-        
-        # Check Homebrew
-        if ! command -v brew &> /dev/null; then
-            log_error "Homebrew validation failed"
-            exit 1
-        fi
-        
-        # Check repository
-        if [ ! -d "$REPO_DIR/.git" ]; then
-            log_error "Repository validation failed"
-            exit 1
-        fi
-        
-        log_success "Basic validation passed"
+        log_warning "Verification script not found, skipping validation"
     fi
-    
-    log_success "Phase 1 validation completed"
+
+    debug_trace "← Exiting: run_validation"
 }
 
 # Handle script interruption
-trap 'log_error "Script interrupted"; exit 1' INT TERM
+trap 'log_error "Core setup script interrupted"; exit 1' INT TERM
 
-# Run main function
-main "$@"
+# Parse arguments and run main function
+parse_arguments "$@"
+main

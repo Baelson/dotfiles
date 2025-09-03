@@ -1,80 +1,60 @@
 #!/bin/zsh
 #
-# Validation Script for macOS Core Setup
+# Validation Script for macOS Setup
 # 
 # This script validates that all Phase 1 components are properly installed
 # and configured before proceeding to subsequent phases
 #
-# Usage: ./bootstrap/verify.setup.sh [OPTIONS]
-#
-# Options:
-#   --debug-trace       Show control flow and decision points
-#   --debug-verbose     Show detailed execution including variable assignments
-#   --help             Display this help message
+# Usage: ./bootstrap/verify.setup.sh
 #
 
 set -euo pipefail
 
-# Global script flags
-DEBUG_TRACE=false
-DEBUG_VERBOSE=false
-
 # Configuration and Common Library
 readonly SCRIPT_DIR="${0:A:h}"
 
-# Source common functions - should always be available
-source "$SCRIPT_DIR/lib/common.sh"
-init_logging "verify.setup"
-setup_error_trap "verify.setup"
-check_macos
-
-#======================================
-# Argument Parsing
-#======================================
-
-show_help() {
-    show_standard_help "macOS Core Setup Verification Script" \
-        "This script validates that all Phase 1 components are properly installed
-and configured before proceeding to subsequent phases." \
-        "./bootstrap/verify.setup.sh [OPTIONS]"
-}
-
-parse_arguments() {
-    # Handle --help first
-    for arg in "$@"; do
-        if [[ "$arg" == "--help" ]]; then
-            show_help
-            exit 0
-        fi
-    done
+# Source common functions
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+    source "$SCRIPT_DIR/lib/common.sh"
+    init_logging "verify.setup"
+    setup_error_trap "verify.setup"
+    check_macos
+else
+    # Fallback logging if common library is not available
+    readonly REPO_DIR="${REPO_DIR:-"$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Git/dotfiles")"}"
+    readonly LOG_FILE="$REPO_DIR/bootstrap/validation_$(date +'%Y-%m-%d_%H-%M-%S').log"
     
-    # Only parse debug arguments for verification scripts (no --dry-run)
-    debug_trace "→ Entering: parse_arguments"
-    debug_trace "Current arguments: $*"
-
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --debug-trace)
-                export DEBUG_TRACE=true
-                debug_verbose "Set DEBUG_TRACE=true"
-                shift
-                ;;
-            --debug-verbose)
-                export DEBUG_VERBOSE=true
-                export DEBUG_TRACE=true  # verbose includes trace
-                debug_verbose "Set DEBUG_VERBOSE=true, DEBUG_TRACE=true"
-                shift
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
-        esac
-    done
-
-    debug_trace "← Exiting: parse_arguments"
-}
+    # Basic colors and logging functions (fallback - consistent with setup.core.sh)
+    readonly RED='\033[0;31m'
+    readonly GREEN='\033[0;32m'
+    readonly YELLOW='\033[1;33m'
+    readonly BLUE='\033[0;34m'
+    readonly NC='\033[0m'
+    
+    log() {
+        local msg="${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+        echo -e "$msg"
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    }
+    
+    log_success() {
+        local msg="${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1${NC}"
+        echo -e "$msg"
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1" >> "$LOG_FILE"
+    }
+    
+    log_warning() {
+        local msg="${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1${NC}"
+        echo -e "$msg"
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1" >> "$LOG_FILE"
+    }
+    
+    log_error() {
+        local msg="${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1${NC}"
+        echo -e "$msg" >&2
+        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1" >> "$LOG_FILE"
+    }
+fi
 
 # Validation counters
 validation_passed=0
@@ -83,25 +63,19 @@ validation_failed=0
 validate_item() {
     local description="$1"
     local command="$2"
-
-    debug_trace "→ Validating: $description"
-    debug_verbose "Validation command: $command"
-
+    
     if eval "$command" &> /dev/null; then
         log_success "$description"
         ((++validation_passed))
-        debug_trace "← Validation passed: $description"
         return 0
     else
         log_error "$description"
         ((++validation_failed))
-        debug_trace "← Validation failed: $description"
         return 1
     fi
 }
 
 main() {
-    debug_trace "→ Entering: main"
     log "🔍 Running Phase 1 validation checks..."
     echo ""
     
@@ -124,8 +98,25 @@ main() {
     validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
     validate_item "Brewfile exists" '[ -f "$REPO_DIR/Brewfile" ]'
     validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
-    validate_item "Bootstrap scripts exist" '[ -f "$REPO_DIR/bootstrap/setup.core.sh" -a -f "$REPO_DIR/bootstrap/setup.macos.sh" ]'
-    validate_item "Common library exists" '[ -f "$REPO_DIR/bootstrap/lib/common.sh" ]'
+    validate_item "PRD.md exists" '[ -f "$REPO_DIR/docs/PRD.md" ]'
+    # Mackup directory check removed - migrated to chezmoi dotfile management
+    validate_item "Bootstrap scripts directory exists" '[ -d "$REPO_DIR/bootstrap" ]'
+    echo ""
+    
+    # Python Environment (for testing)
+    log "🐍 Python Environment:"
+    validate_item "Python 3 available" 'command -v python3'
+    if command -v uv &> /dev/null; then
+        log_success "uv package manager available"
+        ((++validation_passed))
+        
+        # Check if we can run tests
+        if [ -f "$REPO_DIR/pyproject.toml" ]; then
+            # Python tests removed - not needed for shell script dotfiles repository
+        fi
+    else
+        log_warning "uv package manager not installed (will be installed via Brewfile)"
+    fi
     echo ""
     
     # Optional: Check Homebrew packages if Brewfile was processed
