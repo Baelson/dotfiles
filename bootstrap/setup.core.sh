@@ -224,10 +224,10 @@ Options:
   --dry-run           Preview operations without executing (uses tools' native dry-run when available)
   --debug-trace       Show control flow and decision points
   --debug-verbose     Show detailed execution including variable assignments
-  --help             Display this help message
+  --help              Display this help message
 
 Examples:
-  $0                    # Full bootstrap
+  $0                   # Full bootstrap
   $0 --dry-run         # Preview what would happen
   $0 --debug-verbose   # Full bootstrap with detailed logging
 
