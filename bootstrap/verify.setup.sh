@@ -133,7 +133,7 @@ main() {
         log "📦 Homebrew Package Status:"
         
         # Check a few key packages that should be installed
-        local key_packages=("git" "mas" "antigen")
+        local key_packages=("git" "mas" "antigen" "chezmoi")
         for package in "${key_packages[@]}"; do
             if brew list "$package" &> /dev/null; then
                 log_success "$package installed"
@@ -142,6 +142,37 @@ main() {
                 log_warning "$package not yet installed (run setup.macos.sh)"
             fi
         done
+        echo ""
+    fi
+
+    # Chezmoi Configuration
+    if command -v chezmoi &> /dev/null; then
+        log "🏠 Chezmoi Configuration:"
+        validate_item "chezmoi external config exists" '[ -f "$REPO_DIR/.chezmoiexternal.toml" ]'
+        validate_item "chezmoi ignore config exists" '[ -f "$REPO_DIR/.chezmoiignore" ]'
+        validate_item "chezmoi doctor passes" 'chezmoi doctor --quiet'
+        
+        # Check if external archives are available
+        if [ -d "$HOME/.local/share/antigen" ]; then
+            log_success "External archive: antigen downloaded"
+            ((++validation_passed))
+        else
+            log_warning "External archive: antigen not yet downloaded (run chezmoi apply)"
+        fi
+        
+        if [ -d "$HOME/.local/share/oh-my-zsh" ]; then
+            log_success "External archive: oh-my-zsh downloaded" 
+            ((++validation_passed))
+        else
+            log_warning "External archive: oh-my-zsh not yet downloaded (run chezmoi apply)"
+        fi
+        
+        if [ -d "$HOME/.local/share/dircolors" ]; then
+            log_success "External archive: dircolors downloaded"
+            ((++validation_passed))
+        else
+            log_warning "External archive: dircolors not yet downloaded (run chezmoi apply)"
+        fi
         echo ""
     fi
     
