@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Campaign</key>
+	<string>App Store Crossgrade</string>
+	<key>E-Mail</key>
+	<string>baelson@duqueclan.com</string>
+	<key>Name</key>
+	<string>Baelson Duque</string>
+	<key>Signature</key>
+	<data>
+	gKbH3+Kh8cYmeBx9ChLOooR1oSGGJbOT9Xw9uivoPER47fJP4guf+rl0kLUHobSOaTh+
+	lLBuhxVJ0o7QW0fyIibqZ9g0wznwka8K3gVE3LiUd4Wc8op5oDRXWa26w/GaZ4gQfzgZ
+	/UhGie1pIBCFN6dtss7dluyhw2no30kPmEs=
+	</data>
+	<key>Unix Timestamp</key>
+	<string>1487444248</string>
+</dict>
+</plist>

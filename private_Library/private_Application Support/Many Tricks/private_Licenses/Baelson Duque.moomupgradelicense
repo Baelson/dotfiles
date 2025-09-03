@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>E-Mail</key>
+	<string>baelson@duqueclan.com</string>
+	<key>Name</key>
+	<string>Baelson Duque</string>
+	<key>Order</key>
+	<string>MAN241012-6779-39121</string>
+	<key>Product</key>
+	<string>Moom Upgrade</string>
+	<key>Signature</key>
+	<data>
+	vThWQWM6cXrJ+k/6a1IldD6yBFT5VxadLnurURZty2JzNHd8TeXUbi9ircQqE2pRYDa5
+	YukX0izDA09e2IYg+t60OM2ByaC6lYwReYxdjxYQ0MKAYOLqCrRh7PggqboPcxPI8uqU
+	JE9jJExFeowZbdG4g6Oc6wJrTrqE1JXHxEQ=
+	</data>
+	<key>Timestamp</key>
+	<string>Sat, 12 Oct 2024 02:45:59 +0000</string>
+</dict>
+</plist>

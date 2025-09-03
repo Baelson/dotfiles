@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>E-Mail</key>
+	<string>Baelson@Apple.com</string>
+	<key>Name</key>
+	<string>Baelson Duque</string>
+	<key>Product</key>
+	<string>Witch 4</string>
+	<key>Signature</key>
+	<data>
+	KGzKQdP+umSNYtp4OjH1Cdf7W1yfyMvR0G8kn9f3ig9K8VKGopddJXXC75DoIjI881RR
+	r7ePPwutuXto/yGo4KXuh0cPCbgPZpwOlWo/RlkJI0wQlL9xZyPcvaH6OrqeXOeXD9xF
+	Ah4YxvzrU95r87ZZTRnEdend5aT3ALG2rVo=
+	</data>
+	<key>Unix Timestamp</key>
+	<string>1526660270</string>
+</dict>
+</plist>
