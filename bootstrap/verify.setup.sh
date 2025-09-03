@@ -150,7 +150,38 @@ main() {
         log "🏠 Chezmoi Configuration:"
         validate_item "chezmoi external config exists" '[ -f "$REPO_DIR/.chezmoiexternal.toml" ]'
         validate_item "chezmoi ignore config exists" '[ -f "$REPO_DIR/.chezmoiignore" ]'
-        validate_item "chezmoi doctor passes" 'chezmoi doctor --quiet'
+        # Run chezmoi doctor and parse results
+        log "Running chezmoi doctor..."
+        local doctor_output
+        doctor_output=$(chezmoi doctor 2>&1)
+        local doctor_exit_code=$?
+        
+        if [[ $doctor_exit_code -eq 0 ]]; then
+            # Parse results and show warnings/errors
+            local warnings=$(echo "$doctor_output" | grep -c "^warning")
+            local errors=$(echo "$doctor_output" | grep -c "^error")
+            
+            if [[ $warnings -gt 0 ]]; then
+                log_warning "chezmoi doctor found $warnings warning(s)"
+                echo "$doctor_output" | grep "^warning" | while read -r line; do
+                    log_warning "  $line"
+                done
+            fi
+            
+            if [[ $errors -gt 0 ]]; then
+                log_error "chezmoi doctor found $errors error(s)"
+                echo "$doctor_output" | grep "^error" | while read -r line; do
+                    log_error "  $line"
+                done
+                ((++validation_failed))
+            else
+                log_success "chezmoi doctor passed (with $warnings warnings)"
+                ((++validation_passed))
+            fi
+        else
+            log_error "chezmoi doctor failed to run"
+            ((++validation_failed))
+        fi
         
         # Check if external archives are available
         if [ -d "$HOME/.local/share/antigen" ]; then
