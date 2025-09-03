@@ -5,56 +5,104 @@
 # This script validates that all macOS-specific components from setup.macos.sh
 # are properly installed and configured
 #
-# Usage: ./bootstrap/verify.macos.sh
+# Usage: ./bootstrap/verify.macos.sh [OPTIONS]
+#
+# Options:
+#   --debug-trace       Show control flow and decision points
+#   --debug-verbose     Show detailed execution including variable assignments
+#   --help             Display this help message
 #
 
 set -euo pipefail
 
+# Global script flags
+DEBUG_TRACE=false
+DEBUG_VERBOSE=false
+
 # Configuration and Common Library
 readonly SCRIPT_DIR="$(cd "$(dirname "${(%):-%N}")" && pwd)"
 
-# Source common functions
-if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
-    source "$SCRIPT_DIR/lib/common.sh"
-    init_logging "verify.macos"
-    setup_error_trap "verify.macos"
-    check_macos
-else
-    # Fallback logging if common library is not available
-    readonly REPO_DIR="${REPO_DIR:-"$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Git/dotfiles")"}"
-    readonly LOG_FILE="$SCRIPT_DIR/verify.macos_$(date +'%Y-%m-%d_%H-%M-%S').log"
+# Source common functions - should always be available after setup.core.sh
+source "$SCRIPT_DIR/lib/common.sh"
+init_logging "verify.macos"
+setup_error_trap "verify.macos"
+check_macos
 
-    # Basic colors and logging functions (fallback - consistent with setup.core.sh)
-    readonly RED='\033[0;31m'
-    readonly GREEN='\033[0;32m'
-    readonly YELLOW='\033[1;33m'
-    readonly BLUE='\033[0;34m'
-    readonly NC='\033[0m'
+#======================================
+# Debug Functions
+#======================================
 
-    log() {
-        local msg="${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
-        echo -e "$msg"
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
-    }
+debug_trace() {
+    if [[ "$DEBUG_TRACE" == "true" || "$DEBUG_VERBOSE" == "true" ]]; then
+        echo "[TRACE] $1" >&2
+    fi
+    return 0
+}
 
-    log_success() {
-        local msg="${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1${NC}"
-        echo -e "$msg"
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1" >> "$LOG_FILE"
-    }
+debug_verbose() {
+    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
+        echo "[DEBUG] $1" >&2
+    fi
+    return 0
+}
 
-    log_warning() {
-        local msg="${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1${NC}"
-        echo -e "$msg"
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1" >> "$LOG_FILE"
-    }
+#======================================
+# Help and Argument Parsing
+#======================================
 
-    log_error() {
-        local msg="${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1${NC}"
-        echo -e "$msg" >&2
-        [[ -n "${LOG_FILE:-}" ]] && echo "[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1" >> "$LOG_FILE"
-    }
-fi
+show_help() {
+    cat << 'EOF'
+macOS Setup Verification Script
+
+This script validates that all macOS-specific components from setup.macos.sh
+are properly installed and configured.
+
+USAGE:
+    ./bootstrap/verify.macos.sh [OPTIONS]
+
+OPTIONS:
+    --debug-trace       Show control flow and decision points  
+    --debug-verbose     Show detailed execution including variables
+    --help             Display this help message
+
+EXAMPLES:
+    ./bootstrap/verify.macos.sh
+    ./bootstrap/verify.macos.sh --debug-verbose
+
+EOF
+}
+
+parse_arguments() {
+    debug_trace "→ Entering: parse_arguments"
+    debug_trace "Current arguments: $@"
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --debug-trace)
+                DEBUG_TRACE=true
+                debug_verbose "Set DEBUG_TRACE=true"
+                shift
+                ;;
+            --debug-verbose)
+                DEBUG_VERBOSE=true
+                DEBUG_TRACE=true  # verbose includes trace
+                debug_verbose "Set DEBUG_VERBOSE=true, DEBUG_TRACE=true"
+                shift
+                ;;
+            --help)
+                show_help
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+
+    debug_trace "← Exiting: parse_arguments"
+}
 
 # Validation counters
 validation_passed=0
@@ -64,21 +112,24 @@ validate_item() {
     local description="$1"
     local command="$2"
 
+    debug_trace "→ Validating: $description"
+    debug_verbose "Validation command: $command"
+
     if eval "$command" &> /dev/null; then
         log_success "$description"
         ((++validation_passed))
+        debug_trace "← Validation passed: $description"
         return 0
     else
         log_error "$description"
         ((++validation_failed))
+        debug_trace "← Validation failed: $description"
         return 1
     fi
 }
 
 main() {
-    # Initialize log file if not using common library
-    [[ -n "${LOG_FILE:-}" ]] && touch "$LOG_FILE"
-
+    debug_trace "→ Entering: main"
     log "🔍 Verifying macOS-specific setup components..."
     echo ""
 
@@ -155,11 +206,13 @@ main() {
         log_success "🎉 All macOS-specific setup components verified!"
         log "macOS configuration is properly applied"
         [[ -n "${LOG_FILE:-}" ]] && log "Log file: $LOG_FILE"
+        debug_trace "← Exiting: main (success)"
         return 0
     else
         log_error "❌ Some macOS setup components failed verification"
         log "Consider re-running setup.macos.sh to fix issues"
         [[ -n "${LOG_FILE:-}" ]] && log "Log file: $LOG_FILE"
+        debug_trace "← Exiting: main (failure)"
         return 1
     fi
 }
@@ -167,5 +220,6 @@ main() {
 # Handle script interruption
 trap 'log_error "macOS verification script interrupted"; exit 1' INT TERM
 
-# Run main function
-main "$@"
+# Parse arguments and run main function
+parse_arguments "$@"
+main
