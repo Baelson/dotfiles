@@ -28,70 +28,43 @@ init_logging "verify.macos"
 setup_error_trap "verify.macos"
 check_macos
 
-#======================================
-# Debug Functions
-#======================================
-
-debug_trace() {
-    if [[ "$DEBUG_TRACE" == "true" || "$DEBUG_VERBOSE" == "true" ]]; then
-        echo "[TRACE] $1" >&2
-    fi
-    return 0
-}
-
-debug_verbose() {
-    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
-        echo "[DEBUG] $1" >&2
-    fi
-    return 0
-}
+# Debug functions are now provided by lib/common.sh
 
 #======================================
-# Help and Argument Parsing
+# Argument Parsing
 #======================================
 
 show_help() {
-    cat << 'EOF'
-macOS Setup Verification Script
-
-This script validates that all macOS-specific components from setup.macos.sh
-are properly installed and configured.
-
-USAGE:
-    ./bootstrap/verify.macos.sh [OPTIONS]
-
-OPTIONS:
-    --debug-trace       Show control flow and decision points  
-    --debug-verbose     Show detailed execution including variables
-    --help             Display this help message
-
-EXAMPLES:
-    ./bootstrap/verify.macos.sh
-    ./bootstrap/verify.macos.sh --debug-verbose
-
-EOF
+    show_standard_help "macOS Setup Verification Script" \
+        "This script validates that all macOS-specific components from setup.macos.sh\nare properly installed and configured." \
+        "./bootstrap/verify.macos.sh [OPTIONS]"
 }
 
 parse_arguments() {
+    # Handle --help first
+    for arg in "$@"; do
+        if [[ "$arg" == "--help" ]]; then
+            show_help
+            exit 0
+        fi
+    done
+    
+    # Only parse debug arguments for verification scripts (no --dry-run)
     debug_trace "→ Entering: parse_arguments"
-    debug_trace "Current arguments: $@"
+    debug_trace "Current arguments: $*"
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             --debug-trace)
-                DEBUG_TRACE=true
+                export DEBUG_TRACE=true
                 debug_verbose "Set DEBUG_TRACE=true"
                 shift
                 ;;
             --debug-verbose)
-                DEBUG_VERBOSE=true
-                DEBUG_TRACE=true  # verbose includes trace
+                export DEBUG_VERBOSE=true
+                export DEBUG_TRACE=true  # verbose includes trace
                 debug_verbose "Set DEBUG_VERBOSE=true, DEBUG_TRACE=true"
                 shift
-                ;;
-            --help)
-                show_help
-                exit 0
                 ;;
             *)
                 log_error "Unknown option: $1"

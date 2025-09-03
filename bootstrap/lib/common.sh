@@ -145,6 +145,151 @@ check_macos() {
 }
 
 #======================================
+# Debug and Dry-Run Functions
+#======================================
+
+# Debug functions with proper set -e handling
+debug_trace() {
+    if [[ "${DEBUG_TRACE:-false}" == "true" || "${DEBUG_VERBOSE:-false}" == "true" ]]; then
+        echo "[TRACE] $1" >&2
+    fi
+    return 0
+}
+
+debug_verbose() {
+    if [[ "${DEBUG_VERBOSE:-false}" == "true" ]]; then
+        echo "[DEBUG] $1" >&2
+    fi
+    return 0
+}
+
+log_dry_run() {
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        echo "[DRY-RUN] $1"
+    fi
+    return 0
+}
+
+# Execute command with dry-run and debug support
+run_command() {
+    local cmd="$1"
+    local description="$2"
+
+    debug_trace "→ Entering: $description"
+
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_dry_run "Would run: $cmd"
+        debug_trace "← Exiting: $description (dry-run)"
+        return 0
+    fi
+
+    debug_verbose "Executing: $cmd"
+    eval "$cmd"
+    local exit_code=$?
+    debug_trace "← Exiting: $description (exit code: $exit_code)"
+    return $exit_code
+}
+
+# Execute command using tool's native dry-run support
+run_with_native_dry_run() {
+    local tool="$1"
+    local dry_run_flag="$2"
+    local actual_cmd="$3"
+    local description="$4"
+
+    debug_trace "→ Entering: $description"
+
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then
+        log_dry_run "Running $tool dry-run preview:"
+        local dry_run_cmd="$tool $dry_run_flag"
+        debug_verbose "Dry-run command: $dry_run_cmd"
+        eval "$dry_run_cmd"
+        debug_trace "← Exiting: $description (dry-run)"
+        return 0
+    fi
+
+    debug_verbose "Executing: $actual_cmd"
+    eval "$actual_cmd"
+    local exit_code=$?
+    debug_trace "← Exiting: $description (exit code: $exit_code)"
+    return $exit_code
+}
+
+#======================================
+# Common Argument Parsing Utilities
+#======================================
+
+# Standard help text generator
+show_standard_help() {
+    local script_name="$1"
+    local description="$2"
+    local usage_line="$3"
+    
+    cat << EOF
+$script_name
+
+$description
+
+USAGE:
+    $usage_line
+
+OPTIONS:
+    --dry-run           Preview operations without executing
+    --debug-trace       Show control flow and decision points  
+    --debug-verbose     Show detailed execution including variables
+    --help             Display this help message
+
+EXAMPLES:
+    $usage_line
+    $usage_line --dry-run
+    $usage_line --debug-verbose
+
+EOF
+}
+
+# Parse standard debug and dry-run arguments
+# Usage: parse_standard_arguments "$@"
+# This function sets global variables: DRY_RUN, DEBUG_TRACE, DEBUG_VERBOSE
+parse_standard_arguments() {
+    debug_trace "→ Entering: parse_standard_arguments"
+    debug_trace "Current arguments: $*"
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --dry-run)
+                export DRY_RUN=true
+                debug_verbose "Set DRY_RUN=true"
+                shift
+                ;;
+            --debug-trace)
+                export DEBUG_TRACE=true
+                debug_verbose "Set DEBUG_TRACE=true"
+                shift
+                ;;
+            --debug-verbose)
+                export DEBUG_VERBOSE=true
+                export DEBUG_TRACE=true  # verbose includes trace
+                debug_verbose "Set DEBUG_VERBOSE=true, DEBUG_TRACE=true"
+                shift
+                ;;
+            --help)
+                # Let calling script handle --help
+                shift
+                return 1
+                ;;
+            *)
+                # Return unknown argument for calling script to handle
+                debug_trace "← Exiting: parse_standard_arguments (unknown: $1)"
+                return 2
+                ;;
+        esac
+    done
+
+    debug_trace "← Exiting: parse_standard_arguments"
+    return 0
+}
+
+#======================================
 # Utility Functions
 #======================================
 

@@ -8,7 +8,7 @@ Transform a fresh macOS installation into a fully configured development environ
 
 ```bash
 # One-command bootstrap (works on fresh macOS)
-curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/setup.core.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap.sh | zsh
 ```
 
 **What this does:**

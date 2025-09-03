@@ -30,137 +30,46 @@ init_logging "setup.macos"
 setup_error_trap "setup.macos"
 check_macos
 
-#======================================
-# Debug and Dry-Run Functions
-#======================================
-
-debug_trace() {
-    if [[ "$DEBUG_TRACE" == "true" || "$DEBUG_VERBOSE" == "true" ]]; then
-        echo "[TRACE] $1" >&2
-    fi
-    return 0
-}
-
-debug_verbose() {
-    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
-        echo "[DEBUG] $1" >&2
-    fi
-    return 0
-}
-
-log_dry_run() {
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo "[DRY-RUN] $1"
-    fi
-    return 0
-}
-
-run_with_native_dry_run() {
-    local tool="$1"
-    local dry_run_flag="$2"
-    local actual_cmd="$3"
-    local description="$4"
-
-    debug_trace "→ Entering: $description"
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        log_dry_run "Running $tool dry-run preview:"
-        local dry_run_cmd="$tool $dry_run_flag"
-        debug_verbose "Dry-run command: $dry_run_cmd"
-        eval "$dry_run_cmd"
-        debug_trace "← Exiting: $description (dry-run)"
-        return 0
-    fi
-
-    debug_verbose "Executing: $actual_cmd"
-    eval "$actual_cmd"
-    local exit_code=$?
-    debug_trace "← Exiting: $description (exit code: $exit_code)"
-    return $exit_code
-}
-
-run_command() {
-    local cmd="$1"
-    local description="$2"
-
-    debug_trace "→ Entering: $description"
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        log_dry_run "Would run: $cmd"
-        debug_trace "← Exiting: $description (dry-run)"
-        return 0
-    fi
-
-    debug_verbose "Executing: $cmd"
-    eval "$cmd"
-    local exit_code=$?
-    debug_trace "← Exiting: $description (exit code: $exit_code)"
-    return $exit_code
-}
+# Debug and dry-run functions are now provided by lib/common.sh
 
 #======================================
-# Help and Argument Parsing
+# Argument Parsing
 #======================================
 
 show_help() {
-    cat << 'EOF'
-macOS-specific Setup Script
-
-This script handles macOS-specific configuration and package installation.
-Run after the initial bootstrap (setup.core.sh) completes.
-
-USAGE:
-    ./bootstrap/setup.macos.sh [OPTIONS]
-
-OPTIONS:
-    --dry-run           Preview operations without executing
-    --debug-trace       Show control flow and decision points  
-    --debug-verbose     Show detailed execution including variables
-    --help             Display this help message
-
-EXAMPLES:
-    ./bootstrap/setup.macos.sh
-    ./bootstrap/setup.macos.sh --dry-run
-    ./bootstrap/setup.macos.sh --debug-verbose
-
-EOF
+    show_standard_help "macOS-specific Setup Script" \
+        "This script handles macOS-specific configuration and package installation.
+Run after the initial bootstrap (setup.core.sh) completes." \
+        "./bootstrap/setup.macos.sh [OPTIONS]"
 }
 
 parse_arguments() {
-    debug_trace "→ Entering: parse_arguments"
-    debug_trace "Current arguments: $@"
-
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --dry-run)
-                DRY_RUN=true
-                debug_verbose "Set DRY_RUN=true"
-                shift
-                ;;
-            --debug-trace)
-                DEBUG_TRACE=true
-                debug_verbose "Set DEBUG_TRACE=true"
-                shift
-                ;;
-            --debug-verbose)
-                DEBUG_VERBOSE=true
-                DEBUG_TRACE=true  # verbose includes trace
-                debug_verbose "Set DEBUG_VERBOSE=true, DEBUG_TRACE=true"
-                shift
-                ;;
-            --help)
-                show_help
-                exit 0
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
-        esac
+    # Handle --help first
+    for arg in "$@"; do
+        if [[ "$arg" == "--help" ]]; then
+            show_help
+            exit 0
+        fi
     done
-
-    debug_trace "← Exiting: parse_arguments"
+    
+    # Parse other arguments
+    parse_standard_arguments "$@"
+    local result=$?
+    
+    if [[ $result -eq 2 ]]; then
+        # Unknown argument encountered
+        for arg in "$@"; do
+            case $arg in
+                --dry-run|--debug-trace|--debug-verbose)
+                    ;;
+                *)
+                    log_error "Unknown option: $arg"
+                    show_help
+                    exit 1
+                    ;;
+            esac
+        done
+    fi
 }
 
 main() {
