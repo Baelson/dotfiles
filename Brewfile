@@ -1,65 +1,63 @@
+# Tap repositories and their packages.
 
-# tap repositories and their packages.
-# TODO: pull github repo URLs to put in here.
+brew 'antigen'          # Plugin manager for zsh, inspired by oh-my-zsh and vundle              -- https://github.com/zsh-users/antigen
+brew 'chezmoi'          # Manage your dotfiles across multiple diverse machines, securely       -- https://github.com/twpayne/chezmoi
+brew 'coreutils'        # GNU File, Shell, and Text utilities                                   -- https://git.savannah.gnu.org/git/coreutils
+brew 'ddrescue'         # GNU data recovery tool                                                -- https://www.gnu.org/software/ddrescue/ddrescue.html
+brew 'direnv'           # Load/unload environment variables based on $PWD                       -- https://github.com/direnv/direnv
+brew 'ffmpeg'           # Play, record, convert, and stream audio and video                     -- https://github.com/FFmpeg/FFmpeg
+brew 'fzf'              # Command-line fuzzy finder written in Go                               -- https://github.com/junegunn/fzf
+brew 'gawk'             # GNU awk utility                                                       -- https://git.savannah.gnu.org/git/gawk
+brew 'gh'               # GitHub command-line tool                                              -- https://github.com/cli/cli
+brew 'git'              # Distributed revision control system                                   -- https://github.com/git/git
+brew 'gzip'             # Popular GNU data compression programming                              -- https://www.gnu.org/software/gzip/
+brew 'less'             # Pager program similar to more                                         -- https://github.com/gwsw/less
+brew 'mackup'           # Keep your Mac's application settings in sync                          -- https://github.com/lra/mackup
+brew 'make'             # Utility for directing compilation                                     -- https://git.savannah.gnu.org/git/make
+brew 'mas'              # Mac App Store command-line interface                                  -- https://github.com/mas-cli/mas
+brew 'nano'             # Free (GNU) replacement for the Pico text editor                       -- https://www.nano-editor.org/
+brew 'neovim'           # Ambitious Vim-fork focused on extensibility and agility               -- https://github.com/neovim/neovim
+brew 'node'             # Platform built on V8 to build network applications                    -- https://github.com/nodejs/node
+brew 'pygments'         # Generic syntax highlighter                                            -- https://github.com/pygments/pygments
+brew 'python3'          # Interpreted, interactive, object-oriented programming language        -- https://www.python.org/
+brew 'rsync'            # Utility that provides fast incremental file transfer                  -- https://rsync.samba.org/
+brew 'ruby'             # Powerful, clean, object-oriented scripting language                   -- https://github.com/ruby/ruby
+brew 'tmux'             # Terminal multiplexer                                                  -- https://github.com/tmux/tmux
+brew 'uv'               # Extremely fast Python package installer and resolver                  -- https://github.com/astral-sh/uv
+brew 'zsh-completions'  # Additional completion definitions for zsh-users                       -- https://github.com/zsh-users/zsh-completions
 
-brew 'antigen'			# zsh/oh-my-zsh plug-in manager
-brew 'chezmoi'			# dotfiles manager
-brew 'coreutils'		# updates macOS CLI tools
-brew 'ddrescue'			# GNU disk recovery tool
-brew 'direnv'			# shell hooks when cd'ing
-brew 'ffmpeg'			# tools for managing AV streams
-brew 'gawk'				# newer `awk`
-brew 'gh'				# github CLI
-brew 'git'				# git CLI
-brew 'gzip'				# new zip tools
-brew 'less'				# newer `less`
-brew 'mackup'			# dotfiles-like macOS settings backup/manager
-brew 'make'				# newer `make`
-brew 'mas'				# Mac App Store CLI
-brew 'nano'				# CLI text editor
-brew 'neovim'			# New VIM
-brew 'node'				# Node.js JS runtime
-brew 'pygments'			# CLI syntax highlighter
-brew 'python3'			# Python
-brew 'rsync'			# newer `rsync`
-brew 'ruby'				# Ruby runtime
-brew 'tmux'				# Terminal Multiplexer
-brew 'uv'				# Python package/project manager
-brew 'zsh-completions'	# zsh completion definitions
 
 # Apps with casks (typically not on App Store)
 # TODO: pull URL and App Store URL to put in comments
-	
-cask 'alfred'				# Alfred 5
-cask 'beyond-compare'		# Beyond Compare
-cask 'chatgpt'				# ChatGPT Desktop
-cask 'claude'				# Claude AI Desktop
-cask 'cursor'				# Cursor IDE
-cask 'discord'				# Discord Desktop
-cask 'docker'				# Docker System
-cask 'figma'				# Figma design/prototyping tool
-cask 'github'				# Github Desktop
-cask 'iterm2'				# iTerm2 CLI
-cask 'itermai'				# iTerm2 AI add-on
-cask 'menuwhere'			# Menuwhere (Opens app Menubar menu anywhere)
-cask 'obsidian'				# Obsidian MD/Notes app
-cask 'postman'				# API Platform Desktop 
-cask 'softraid'				# SoftRAID Drivers and menubar tool
-cask 'sublime-merge'		# Sublime Merge tool
-cask 'sublime-text'			# Subline Text
-cask 'visual-studio-code'	# VS Code
-cask 'webex-meetings'		# WebEx
-cask 'zoom'					# Zoom
+    
+cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
+cask 'beyond-compare'       # Compare files and folders                                         -- https://www.scootersoftware.com/
+cask 'chatgpt'              # OpenAI's official ChatGPT desktop app                             -- https://chatgpt.com/
+cask 'claude'               # Anthropic's official Claude AI desktop app                        -- https://claude.ai/download
+cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
+cask 'discord'              # Voice and text chat software                                      -- https://discord.com/
+cask 'docker'               # Pack, ship and run any application as a lightweight container     -- https://www.docker.com/
+cask 'figma'                # Collaborative team software                                       -- https://www.figma.com/
+cask 'github'               # Desktop client for GitHub repositories                            -- https://desktop.github.com/
+cask 'iterm2'               # Terminal emulator as alternative to Apple's Terminal app          -- https://iterm2.com/
+cask 'itermai'              # Enable generative AI features in iTerm2                           -- https://iterm2.com/ai-plugin.html
+cask 'menuwhere'            # Access the menu from anywhere                                     -- https://manytricks.com/menuwhere/
+cask 'obsidian'             # Knowledge base in local folder of plain text Markdown files       -- https://obsidian.md/
+cask 'postman'              # Collaboration platform for API development                        -- https://www.postman.com/
+cask 'softraid'             # Powerful and intuitive software RAID utility                      -- https://www.softraid.com/
+cask 'sublime-merge'        # Git client                                                        -- https://www.sublimemerge.com/
+cask 'sublime-text'         # Text editor for code, markup and prose                            -- https://www.sublimetext.com/
+cask 'visual-studio-code'   # Open-source code editor                                           -- https://code.visualstudio.com/
+cask 'webex-meetings'       # Video communication and virtual meeting platform                  -- https://www.webex.com/
+cask 'zoom'                 # Video communication and virtual meeting platform                  -- https://www.zoom.us/
 
-# cask 'warp'				# Warp Terminal
+# cask 'warp'               # Warp Terminal
 
 
 tap 'rcmdnk/file'
 brew 'brew-file'
 
 # App Store applications
-
-# TODO: pull URL and App Store URL to put in comments
 
 mas 'Amphetamine (5.3.2)', id: 937984704
 mas 'Apple Configurator (2.18)', id: 1037126344

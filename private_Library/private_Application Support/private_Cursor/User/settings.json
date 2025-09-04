@@ -109,5 +109,22 @@
     "shellcheck.run": "manual",
     "shellcheck.enable": false,
     "markdownlint.run": "onSave",
-    "redhat.telemetry.enabled": false
+    "redhat.telemetry.enabled": false,
+    "githubIssues.queries": [
+        {
+            "label": "My Issues",
+            "query": "is:open assignee:${user} repo:${owner}/${repository}",
+            "groupBy": [
+                "milestone"
+            ]
+        },
+        {
+            "label": "Created Issues",
+            "query": "author:${user} state:open repo:${owner}/${repository} sort:created-desc"
+        },
+        {
+            "label": "Recent Issues",
+            "query": "state:open repo:${owner}/${repository} sort:updated-desc"
+        }
+    ]
 }

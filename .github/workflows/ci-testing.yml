@@ -1,0 +1,343 @@
+name: CI/CD Testing Pipeline
+
+# Trigger only on pull requests to prevent blocking main development
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'bootstrap/**'
+      - 'tests/**'
+      - 'dot_*'
+      - '.chezmoi*'
+      - '*.md'
+      - '.github/workflows/**'
+
+# Cancel previous workflow runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: BATS Framework Setup and Basic Validation
+  setup-validation:
+    name: Setup Validation & BATS Installation
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install BATS testing framework
+        run: |
+          # Install BATS using Homebrew (most reliable on macOS)
+          brew install bats-core
+          
+          # Verify BATS installation
+          bats --version
+          
+          # Verify test structure
+          ls -la tests/
+          ls -la tests/lib/
+          ls -la tests/system/
+          ls -la tests/integration/
+
+      - name: Validate test helper and configuration
+        run: |
+          # Verify test helper exists and is syntactically correct
+          bash -n tests/lib/test_helper.bash
+          
+          # Verify BATS configuration
+          cat tests/bats.config
+
+      - name: Basic repository structure validation
+        run: |
+          # Verify essential files exist
+          test -f bootstrap/setup.core.sh
+          test -f bootstrap/lib/common.sh
+          test -f .chezmoiignore
+          test -f .chezmoiexternal.toml
+          
+          # Verify bootstrap scripts are executable and syntactically correct
+          bash -n bootstrap/setup.core.sh
+          bash -n bootstrap/lib/common.sh
+
+  # Job 2: FR-7 Debug Capabilities Matrix Testing
+  test-fr7-debug-matrix:
+    name: FR-7 Debug Capabilities Matrix
+    needs: setup-validation
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test all command-line argument combinations
+        test_scenario:
+          # Basic single arguments
+          - { name: "help", args: "--help", expected: "help_output" }
+          - { name: "dry-run", args: "--dry-run", expected: "dry_run_output" }
+          - { name: "debug-trace", args: "--debug-trace", expected: "trace_output" }
+          - { name: "debug-verbose", args: "--debug-verbose", expected: "verbose_output" }
+          
+          # Positive combination arguments
+          - { name: "dry-run-trace", args: "--dry-run --debug-trace", expected: "both_dry_trace" }
+          - { name: "dry-run-verbose", args: "--dry-run --debug-verbose", expected: "both_dry_verbose" }
+          - { name: "trace-verbose", args: "--debug-trace --debug-verbose", expected: "both_trace_verbose" }
+          - { name: "all-flags", args: "--dry-run --debug-trace --debug-verbose", expected: "all_flags" }
+          
+          # Order variation testing
+          - { name: "verbose-dry", args: "--debug-verbose --dry-run", expected: "order_verbose_dry" }
+          - { name: "verbose-trace", args: "--debug-verbose --debug-trace", expected: "order_verbose_trace" }
+          - { name: "trace-dry", args: "--debug-trace --dry-run", expected: "order_trace_dry" }
+          
+          # Negative cases
+          - { name: "invalid-flag", args: "--invalid-flag", expected: "error" }
+          - { name: "mixed-valid-invalid", args: "--dry-run --invalid-flag", expected: "error" }
+          - { name: "empty-args", args: "", expected: "default_execution" }
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: brew install bats-core
+
+      - name: Run FR-7 Matrix Test - ${{ matrix.test_scenario.name }}
+        run: |
+          echo "Testing scenario: ${{ matrix.test_scenario.name }}"
+          echo "Arguments: ${{ matrix.test_scenario.args }}"
+          echo "Expected: ${{ matrix.test_scenario.expected }}"
+          
+          # Set matrix testing environment variables
+          export TEST_SCENARIO="${{ matrix.test_scenario.name }}"
+          export TEST_ARGS="${{ matrix.test_scenario.args }}"
+          export EXPECTED_BEHAVIOR="${{ matrix.test_scenario.expected }}"
+          
+          # Run specific FR-7 tests
+          bats tests/system/test_fr7_debug_capabilities.bats
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fr7-results-${{ matrix.test_scenario.name }}
+          path: |
+            tests/logs/
+            *.log
+
+  # Job 3: Functional Requirements Testing
+  test-functional-requirements:
+    name: Functional Requirements Testing
+    needs: setup-validation
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test each functional requirement separately
+        requirement:
+          - { id: "FR-1", name: "One-Command Bootstrap", test_file: "tests/system/test_fr1_bootstrap.bats" }
+          - { id: "FR-2", name: "Package Management", test_file: "tests/integration/test_fr2_package_management.bats" }
+          - { id: "FR-3", name: "Configuration Management", test_file: "tests/integration/test_fr3_configuration_management.bats" }
+          - { id: "FR-7", name: "Debug Capabilities", test_file: "tests/system/test_fr7_debug_capabilities.bats" }
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install BATS and dependencies
+        run: |
+          brew install bats-core
+          
+          # Install chezmoi for FR-3 testing
+          brew install chezmoi
+
+      - name: Run ${{ matrix.requirement.id }} Tests
+        run: |
+          echo "Testing ${{ matrix.requirement.id }}: ${{ matrix.requirement.name }}"
+          
+          # Set requirement-specific environment
+          export REQUIREMENT_ID="${{ matrix.requirement.id }}"
+          export REQUIREMENT_NAME="${{ matrix.requirement.name }}"
+          
+          # Run the specific requirement test
+          bats "${{ matrix.requirement.test_file }}"
+
+      - name: Archive requirement test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.requirement.id }}-test-results
+          path: |
+            tests/logs/
+            *.log
+
+  # Job 4: Performance and Integration Testing
+  performance-integration:
+    name: Performance & Integration Testing
+    needs: [setup-validation, test-functional-requirements]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install bats-core chezmoi
+
+      - name: Performance benchmarking
+        run: |
+          echo "=== Performance Benchmarking ==="
+          
+          # Time the dry-run execution
+          start_time=$(date +%s)
+          ./bootstrap/setup.core.sh --dry-run --debug-verbose > performance.log 2>&1
+          end_time=$(date +%s)
+          
+          duration=$((end_time - start_time))
+          echo "Dry-run execution time: ${duration} seconds"
+          
+          # Validate performance target (should be under 120 seconds for dry-run)
+          if [ $duration -gt 120 ]; then
+            echo "WARNING: Dry-run took longer than expected (${duration}s > 120s)"
+            exit 1
+          fi
+
+      - name: Full integration test
+        run: |
+          echo "=== Full Integration Test ==="
+          
+          # Run all tests in sequence to verify integration
+          bats tests/system/test_fr1_bootstrap.bats
+          bats tests/integration/test_fr2_package_management.bats
+          bats tests/integration/test_fr3_configuration_management.bats
+
+      - name: Archive performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-integration-results
+          path: |
+            performance.log
+            tests/logs/
+            *.log
+
+  # Job 5: Security and Quality Gates
+  security-quality:
+    name: Security & Quality Validation
+    needs: setup-validation
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Shell script linting
+        run: |
+          # Install ShellCheck for script validation
+          brew install shellcheck
+          
+          # Lint bootstrap scripts
+          shellcheck bootstrap/*.sh
+          shellcheck bootstrap/lib/*.sh
+          
+          # Lint test helper
+          shellcheck tests/lib/test_helper.bash
+
+      - name: Secret scanning
+        run: |
+          echo "=== Secret Scanning ==="
+          
+          # Basic secret pattern detection
+          if grep -r -i "password\|secret\|key\|token" --include="*.sh" --include="*.bash" .; then
+            echo "WARNING: Potential secrets found in scripts"
+            # Don't fail on this as they might be variable names
+          fi
+          
+          # Ensure no hardcoded credentials
+          if grep -r -E "(api_key|password|secret|token) *= *['\"][^'\"]{8,}" .; then
+            echo "ERROR: Hardcoded credentials detected"
+            exit 1
+          fi
+
+      - name: Documentation validation
+        run: |
+          echo "=== Documentation Validation ==="
+          
+          # Verify all test files reference their FR requirements
+          for test_file in tests/system/*.bats tests/integration/*.bats; do
+            if ! grep -q "FR-[0-9]" "$test_file"; then
+              echo "WARNING: $test_file doesn't reference FR requirements"
+            fi
+          done
+
+  # Job 6: Test Summary and Reporting
+  test-summary:
+    name: Test Summary & PR Status
+    needs: [test-fr7-debug-matrix, test-functional-requirements, performance-integration, security-quality]
+    runs-on: macos-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate test summary
+        run: |
+          echo "# CI/CD Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Execution Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Setup Validation: ${{ needs.setup-validation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- FR-7 Debug Matrix: ${{ needs.test-fr7-debug-matrix.result }}" >> $GITHUB_STEP_SUMMARY  
+          echo "- Functional Requirements: ${{ needs.test-functional-requirements.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance Integration: ${{ needs.performance-integration.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Quality: ${{ needs.security-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Determine overall status
+          if [[ "${{ needs.setup-validation.result }}" == "success" && \
+                "${{ needs.test-fr7-debug-matrix.result }}" == "success" && \
+                "${{ needs.test-functional-requirements.result }}" == "success" && \
+                "${{ needs.performance-integration.result }}" == "success" && \
+                "${{ needs.security-quality.result }}" == "success" ]]; then
+            echo "## ✅ Overall Status: PASS" >> $GITHUB_STEP_SUMMARY
+            echo "All tests passed. PR is ready for merge." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Overall Status: FAIL" >> $GITHUB_STEP_SUMMARY
+            echo "Some tests failed. PR merge is blocked." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Comment PR with results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = {
+              setup: '${{ needs.setup-validation.result }}',
+              matrix: '${{ needs.test-fr7-debug-matrix.result }}',
+              functional: '${{ needs.test-functional-requirements.result }}',
+              performance: '${{ needs.performance-integration.result }}',
+              security: '${{ needs.security-quality.result }}'
+            };
+            
+            const passed = Object.values(results).every(r => r === 'success');
+            const emoji = passed ? '✅' : '❌';
+            const status = passed ? 'PASS' : 'FAIL';
+            
+            const comment = `## ${emoji} CI/CD Test Results: ${status}
+            
+            | Test Category | Status |
+            |---------------|--------|
+            | Setup Validation | ${results.setup === 'success' ? '✅' : '❌'} |
+            | FR-7 Debug Matrix | ${results.matrix === 'success' ? '✅' : '❌'} |
+            | Functional Requirements | ${results.functional === 'success' ? '✅' : '❌'} |
+            | Performance Integration | ${results.performance === 'success' ? '✅' : '❌'} |
+            | Security Quality | ${results.security === 'success' ? '✅' : '❌'} |
+            
+            ${passed ? 
+              '🎉 All tests passed! This PR is ready for merge.' : 
+              '⚠️ Some tests failed. Please review the failed jobs and fix any issues before merging.'}
+            
+            View detailed results in the [Actions tab](${context.payload.pull_request.html_url}/checks).`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

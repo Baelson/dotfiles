@@ -1,0 +1,81 @@
+# Pre-commit Hook Configuration for macOS Dotfiles
+# 
+# This configuration provides local CI integration to run the same tests
+# that execute in GitHub Actions, ensuring quality before commits.
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Manual execution:
+#   pre-commit run --all-files
+
+repos:
+  # Shell script linting and formatting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+        files: \.(sh|bash)$
+        exclude: ^tests/fixtures/
+
+  # File formatting and cleanup
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.md$
+      - id: end-of-file-fixer
+        exclude: \.md$
+      - id: check-yaml
+        files: \.(yaml|yml)$
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  # Local testing integration
+  - repo: local
+    hooks:
+      # BATS test execution for critical functional requirements
+      - id: run-critical-tests
+        name: Run Critical FR Tests
+        entry: ./scripts/run-critical-tests.sh
+        language: script
+        stages: [pre-commit]
+        files: \.(sh|bash|bats)$
+        pass_filenames: false
+        
+      # Validate test helper syntax
+      - id: validate-test-helper
+        name: Validate Test Helper Syntax
+        entry: bash -n tests/lib/test_helper.bash
+        language: system
+        files: tests/lib/test_helper.bash
+        pass_filenames: false
+        
+      # Validate bootstrap script syntax
+      - id: validate-bootstrap-syntax
+        name: Validate Bootstrap Script Syntax
+        entry: bash -n
+        language: system
+        files: bootstrap/.*\.sh$
+        
+      # Performance validation (dry-run timing)
+      - id: performance-check
+        name: Performance Check (Dry-run < 120s)
+        entry: ./scripts/performance-check.sh
+        language: script
+        stages: [pre-commit]
+        files: bootstrap/.*\.sh$
+        pass_filenames: false
+
+  # Documentation and markdown
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        args: [--disable, MD013, MD041]  # Disable line length and first line checks
+        files: \.md$
+        exclude: ^(tests/|\.github/)
