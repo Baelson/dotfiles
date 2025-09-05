@@ -38,18 +38,18 @@ log_section() {
 
 main() {
     log_section "Phase 2.5 CI/CD Testing Infrastructure Validation"
-    
+
     # Change to dotfiles root
     cd "$DOTFILES_ROOT" || {
         log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
         exit 1
     }
-    
+
     local validation_errors=0
-    
+
     # 1. Framework Validation
     log_section "1. BATS Framework Validation"
-    
+
     if command -v bats &> /dev/null; then
         local bats_version
         bats_version=$(bats --version)
@@ -58,10 +58,10 @@ main() {
         log_error "BATS not installed"
         ((validation_errors++))
     fi
-    
+
     # 2. Test Structure Validation
     log_section "2. Test Structure Validation"
-    
+
     local required_dirs=("tests/lib" "tests/system" "tests/integration" "tests/unit" "tests/fixtures")
     for dir in "${required_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
@@ -71,10 +71,10 @@ main() {
             ((validation_errors++))
         fi
     done
-    
+
     # 3. Test Files Validation
     log_section "3. Test Files Validation"
-    
+
     local test_files=(
         "tests/lib/test_helper.bash"
         "tests/system/test_fr1_bootstrap.bats"
@@ -85,7 +85,7 @@ main() {
         "tests/integration/test_fr5_application_preferences.bats"
         "tests/unit/test_fr6_environment_templating.bats"
     )
-    
+
     for file in "${test_files[@]}"; do
         if [[ -f "$file" ]]; then
             log_info "Test file exists: $file"
@@ -101,13 +101,13 @@ main() {
             ((validation_errors++))
         fi
     done
-    
+
     # 4. GitHub Actions Workflow Validation
     log_section "4. GitHub Actions Workflow Validation"
-    
+
     if [[ -f ".github/workflows/ci-testing.yml" ]]; then
         log_info "GitHub Actions workflow exists"
-        
+
         # Basic YAML syntax check
         if command -v python3 &> /dev/null; then
             if python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci-testing.yml'))" 2>/dev/null; then
@@ -120,13 +120,13 @@ main() {
         log_error "Missing GitHub Actions workflow"
         ((validation_errors++))
     fi
-    
+
     # 5. Pre-commit Configuration Validation
     log_section "5. Pre-commit Configuration Validation"
-    
+
     if [[ -f ".pre-commit-config.yaml" ]]; then
         log_info "Pre-commit configuration exists"
-        
+
         # Check for required scripts
         local required_scripts=("scripts/run-critical-tests.sh" "scripts/performance-check.sh")
         for script in "${required_scripts[@]}"; do
@@ -141,20 +141,20 @@ main() {
         log_error "Missing pre-commit configuration"
         ((validation_errors++))
     fi
-    
+
     # 6. Documentation Validation
     log_section "6. Documentation Validation"
-    
+
     local doc_files=(
         "tests/TEST_EXECUTION_SUMMARY.md"
         "docs/SYSTEM_DESIGN.md"
         "docs/TESTING.md"
     )
-    
+
     for doc in "${doc_files[@]}"; do
         if [[ -f "$doc" ]]; then
             log_info "Documentation exists: $doc"
-            
+
             # Check for testing-related content
             if grep -q -i "test\|bats\|ci/cd" "$doc"; then
                 log_info "✓ Contains testing content: $doc"
@@ -166,10 +166,10 @@ main() {
             ((validation_errors++))
         fi
     done
-    
+
     # 7. Test Count Validation
     log_section "7. Test Coverage Validation"
-    
+
     local total_tests=0
     for test_file in tests/*/*.bats; do
         if [[ -f "$test_file" ]]; then
@@ -179,9 +179,9 @@ main() {
             log_info "Tests in $(basename "$test_file"): $file_tests"
         fi
     done
-    
+
     log_info "Total automated tests: $total_tests"
-    
+
     if [[ $total_tests -ge 70 ]]; then
         log_info "✓ Good test coverage ($total_tests tests)"
     elif [[ $total_tests -ge 50 ]]; then
@@ -190,10 +190,10 @@ main() {
         log_error "✗ Insufficient test coverage ($total_tests tests)"
         ((validation_errors++))
     fi
-    
+
     # 8. Sample Test Execution
     log_section "8. Sample Test Execution"
-    
+
     log_info "Running quick validation test..."
     if timeout 30s bash -n tests/lib/test_helper.bash; then
         log_info "✓ Test helper syntax validation passed"
@@ -201,10 +201,10 @@ main() {
         log_error "✗ Test helper syntax validation failed"
         ((validation_errors++))
     fi
-    
+
     # Final Summary
     log_section "Validation Summary"
-    
+
     if [[ $validation_errors -eq 0 ]]; then
         log_info "🎉 All validations passed! CI/CD testing infrastructure is ready."
         log_info "📊 Test Statistics:"

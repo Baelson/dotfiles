@@ -30,13 +30,13 @@ main() {
 
 check_prerequisites() {
     echo "🔍 Checking prerequisites..."
-    
+
     # Check if we're on macOS
     if [[ "$OSTYPE" != "darwin"* ]]; then
         echo "❌ Error: This script is designed for macOS only"
         exit 1
     fi
-    
+
     # Check if git is available
     if ! command -v git &> /dev/null; then
         echo "❌ Error: Git is not installed"
@@ -44,28 +44,28 @@ check_prerequisites() {
         echo "   xcode-select --install"
         exit 1
     fi
-    
+
     echo "✅ Prerequisites check passed"
 }
 
 setup_directory_structure() {
     echo "📁 Setting up directory structure..."
-    
+
     # Create Git directory if it doesn't exist
     if [[ ! -d "$HOME/Git" ]]; then
         mkdir -p "$HOME/Git"
         echo "✅ Created $HOME/Git directory"
     fi
-    
+
     echo "✅ Directory structure ready"
 }
 
 clone_repository_if_needed() {
     echo "📥 Checking repository status..."
-    
+
     if [[ -d "$REPO_DIR/.git" ]]; then
         echo "✅ Repository already exists at $REPO_DIR"
-        
+
         # Update existing repository (skip if there are conflicts)
         echo "🔄 Updating existing repository..."
         cd "$REPO_DIR"
@@ -74,9 +74,9 @@ clone_repository_if_needed() {
         }
         return 0
     fi
-    
+
     echo "📥 Cloning repository..."
-    
+
     # Try SSH first, fallback to HTTPS
     if ! git clone "$REPO_URL" "$REPO_DIR" 2>/dev/null; then
         echo "⚠️  SSH clone failed, trying HTTPS..."
@@ -87,26 +87,26 @@ clone_repository_if_needed() {
             exit 1
         }
     fi
-    
+
     echo "✅ Repository cloned successfully"
 }
 
 verify_repository_structure() {
     echo "🔍 Verifying repository structure..."
-    
+
     # Check if we're in the right directory
     if [[ ! -f "$REPO_DIR/bootstrap/setup.core.sh" ]]; then
         echo "❌ Error: Required file bootstrap/setup.core.sh not found"
         echo "💡 Repository structure may be corrupted, try removing $REPO_DIR and re-running"
         exit 1
     fi
-    
+
     if [[ ! -f "$REPO_DIR/bootstrap/lib/common.sh" ]]; then
         echo "❌ Error: Required file bootstrap/lib/common.sh not found"
         echo "💡 Repository structure may be corrupted, try removing $REPO_DIR and re-running"
         exit 1
     fi
-    
+
     echo "✅ Repository structure verified"
 }
 
@@ -115,9 +115,9 @@ handoff_to_core_setup() {
     echo "🔄 Repository ready! Handing off to core setup..."
     echo "📍 Switching to: $REPO_DIR"
     echo ""
-    
+
     cd "$REPO_DIR"
-    
+
     # Execute the core setup script with any arguments passed to this script
     exec ./bootstrap/setup.core.sh "$@"
 }

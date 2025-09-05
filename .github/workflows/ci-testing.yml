@@ -30,10 +30,10 @@ jobs:
         run: |
           # Install BATS using Homebrew (most reliable on macOS)
           brew install bats-core
-          
+
           # Verify BATS installation
           bats --version
-          
+
           # Verify test structure
           ls -la tests/
           ls -la tests/lib/
@@ -44,7 +44,7 @@ jobs:
         run: |
           # Verify test helper exists and is syntactically correct
           bash -n tests/lib/test_helper.bash
-          
+
           # Verify BATS configuration
           cat tests/bats.config
 
@@ -55,7 +55,7 @@ jobs:
           test -f bootstrap/lib/common.sh
           test -f .chezmoiignore
           test -f .chezmoiexternal.toml
-          
+
           # Verify bootstrap scripts are executable and syntactically correct
           bash -n bootstrap/setup.core.sh
           bash -n bootstrap/lib/common.sh
@@ -75,18 +75,18 @@ jobs:
           - { name: "dry-run", args: "--dry-run", expected: "dry_run_output" }
           - { name: "debug-trace", args: "--debug-trace", expected: "trace_output" }
           - { name: "debug-verbose", args: "--debug-verbose", expected: "verbose_output" }
-          
+
           # Positive combination arguments
           - { name: "dry-run-trace", args: "--dry-run --debug-trace", expected: "both_dry_trace" }
           - { name: "dry-run-verbose", args: "--dry-run --debug-verbose", expected: "both_dry_verbose" }
           - { name: "trace-verbose", args: "--debug-trace --debug-verbose", expected: "both_trace_verbose" }
           - { name: "all-flags", args: "--dry-run --debug-trace --debug-verbose", expected: "all_flags" }
-          
+
           # Order variation testing
           - { name: "verbose-dry", args: "--debug-verbose --dry-run", expected: "order_verbose_dry" }
           - { name: "verbose-trace", args: "--debug-verbose --debug-trace", expected: "order_verbose_trace" }
           - { name: "trace-dry", args: "--debug-trace --dry-run", expected: "order_trace_dry" }
-          
+
           # Negative cases
           - { name: "invalid-flag", args: "--invalid-flag", expected: "error" }
           - { name: "mixed-valid-invalid", args: "--dry-run --invalid-flag", expected: "error" }
@@ -104,12 +104,12 @@ jobs:
           echo "Testing scenario: ${{ matrix.test_scenario.name }}"
           echo "Arguments: ${{ matrix.test_scenario.args }}"
           echo "Expected: ${{ matrix.test_scenario.expected }}"
-          
+
           # Set matrix testing environment variables
           export TEST_SCENARIO="${{ matrix.test_scenario.name }}"
           export TEST_ARGS="${{ matrix.test_scenario.args }}"
           export EXPECTED_BEHAVIOR="${{ matrix.test_scenario.expected }}"
-          
+
           # Run specific FR-7 tests
           bats tests/system/test_fr7_debug_capabilities.bats
 
@@ -144,18 +144,18 @@ jobs:
       - name: Install BATS and dependencies
         run: |
           brew install bats-core
-          
+
           # Install chezmoi for FR-3 testing
           brew install chezmoi
 
       - name: Run ${{ matrix.requirement.id }} Tests
         run: |
           echo "Testing ${{ matrix.requirement.id }}: ${{ matrix.requirement.name }}"
-          
+
           # Set requirement-specific environment
           export REQUIREMENT_ID="${{ matrix.requirement.id }}"
           export REQUIREMENT_NAME="${{ matrix.requirement.name }}"
-          
+
           # Run the specific requirement test
           bats "${{ matrix.requirement.test_file }}"
 
@@ -184,15 +184,15 @@ jobs:
       - name: Performance benchmarking
         run: |
           echo "=== Performance Benchmarking ==="
-          
+
           # Time the dry-run execution
           start_time=$(date +%s)
           ./bootstrap/setup.core.sh --dry-run --debug-verbose > performance.log 2>&1
           end_time=$(date +%s)
-          
+
           duration=$((end_time - start_time))
           echo "Dry-run execution time: ${duration} seconds"
-          
+
           # Validate performance target (should be under 120 seconds for dry-run)
           if [ $duration -gt 120 ]; then
             echo "WARNING: Dry-run took longer than expected (${duration}s > 120s)"
@@ -202,7 +202,7 @@ jobs:
       - name: Full integration test
         run: |
           echo "=== Full Integration Test ==="
-          
+
           # Run all tests in sequence to verify integration
           bats tests/system/test_fr1_bootstrap.bats
           bats tests/integration/test_fr2_package_management.bats
@@ -231,24 +231,24 @@ jobs:
         run: |
           # Install ShellCheck for script validation
           brew install shellcheck
-          
+
           # Lint bootstrap scripts
           shellcheck bootstrap/*.sh
           shellcheck bootstrap/lib/*.sh
-          
+
           # Lint test helper
           shellcheck tests/lib/test_helper.bash
 
       - name: Secret scanning
         run: |
           echo "=== Secret Scanning ==="
-          
+
           # Basic secret pattern detection
           if grep -r -i "password\|secret\|key\|token" --include="*.sh" --include="*.bash" .; then
             echo "WARNING: Potential secrets found in scripts"
             # Don't fail on this as they might be variable names
           fi
-          
+
           # Ensure no hardcoded credentials
           if grep -r -E "(api_key|password|secret|token) *= *['\"][^'\"]{8,}" .; then
             echo "ERROR: Hardcoded credentials detected"
@@ -258,7 +258,7 @@ jobs:
       - name: Documentation validation
         run: |
           echo "=== Documentation Validation ==="
-          
+
           # Verify all test files reference their FR requirements
           for test_file in tests/system/*.bats tests/integration/*.bats; do
             if ! grep -q "FR-[0-9]" "$test_file"; then
@@ -282,12 +282,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Execution Status" >> $GITHUB_STEP_SUMMARY
           echo "- Setup Validation: ${{ needs.setup-validation.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- FR-7 Debug Matrix: ${{ needs.test-fr7-debug-matrix.result }}" >> $GITHUB_STEP_SUMMARY  
+          echo "- FR-7 Debug Matrix: ${{ needs.test-fr7-debug-matrix.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Functional Requirements: ${{ needs.test-functional-requirements.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Performance Integration: ${{ needs.performance-integration.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Security Quality: ${{ needs.security-quality.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Determine overall status
           if [[ "${{ needs.setup-validation.result }}" == "success" && \
                 "${{ needs.test-fr7-debug-matrix.result }}" == "success" && \
@@ -314,13 +314,13 @@ jobs:
               performance: '${{ needs.performance-integration.result }}',
               security: '${{ needs.security-quality.result }}'
             };
-            
+
             const passed = Object.values(results).every(r => r === 'success');
             const emoji = passed ? '✅' : '❌';
             const status = passed ? 'PASS' : 'FAIL';
-            
+
             const comment = `## ${emoji} CI/CD Test Results: ${status}
-            
+
             | Test Category | Status |
             |---------------|--------|
             | Setup Validation | ${results.setup === 'success' ? '✅' : '❌'} |
@@ -328,13 +328,13 @@ jobs:
             | Functional Requirements | ${results.functional === 'success' ? '✅' : '❌'} |
             | Performance Integration | ${results.performance === 'success' ? '✅' : '❌'} |
             | Security Quality | ${results.security === 'success' ? '✅' : '❌'} |
-            
-            ${passed ? 
-              '🎉 All tests passed! This PR is ready for merge.' : 
+
+            ${passed ?
+              '🎉 All tests passed! This PR is ready for merge.' :
               '⚠️ Some tests failed. Please review the failed jobs and fix any issues before merging.'}
-            
+
             View detailed results in the [Actions tab](${context.payload.pull_request.html_url}/checks).`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

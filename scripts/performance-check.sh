@@ -34,31 +34,31 @@ log_error() {
 
 main() {
     log_info "Running performance check (dry-run timing validation)..."
-    
+
     # Change to dotfiles root
     cd "$DOTFILES_ROOT" || {
         log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
         exit 1
     }
-    
+
     # Verify bootstrap script exists
     if [[ ! -f "$BOOTSTRAP_DIR/setup.core.sh" ]]; then
         log_error "Bootstrap script not found: $BOOTSTRAP_DIR/setup.core.sh"
         exit 1
     fi
-    
+
     # Performance test: time the dry-run execution
     log_info "Timing bootstrap dry-run execution..."
-    
+
     start_time=$(date +%s)
-    
+
     # Run bootstrap in dry-run mode with timeout
     if timeout 180s "$BOOTSTRAP_DIR/setup.core.sh" --dry-run --debug-verbose > /dev/null 2>&1; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
-        
+
         log_info "Dry-run completed in ${duration} seconds"
-        
+
         # Check if within performance limits
         if [[ $duration -gt $PERFORMANCE_LIMIT ]]; then
             log_error "Performance regression detected!"
@@ -78,7 +78,7 @@ main() {
         fi
         exit 1
     fi
-    
+
     log_info "✅ Performance validation completed successfully!"
 }
 

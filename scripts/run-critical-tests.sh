@@ -33,13 +33,13 @@ log_error() {
 
 main() {
     log_info "Running critical tests for pre-commit validation..."
-    
+
     # Change to dotfiles root
     cd "$DOTFILES_ROOT" || {
         log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
         exit 1
     }
-    
+
     # Check if BATS is installed
     if ! command -v bats &> /dev/null; then
         log_warn "BATS not found. Installing via Homebrew..."
@@ -50,13 +50,13 @@ main() {
             exit 1
         fi
     fi
-    
+
     # Verify test structure exists
     if [[ ! -d "$TESTS_DIR" ]]; then
         log_error "Tests directory not found: $TESTS_DIR"
         exit 1
     fi
-    
+
     # Run critical tests (subset for speed)
     log_info "Running FR-1 Bootstrap tests..."
     if [[ -f "$TESTS_DIR/system/test_fr1_bootstrap.bats" ]]; then
@@ -67,7 +67,7 @@ main() {
     else
         log_warn "FR-1 test file not found, skipping..."
     fi
-    
+
     log_info "Running FR-7 Debug Capabilities tests (sample)..."
     if [[ -f "$TESTS_DIR/system/test_fr7_debug_capabilities.bats" ]]; then
         # Run just a few critical FR-7 tests for speed
@@ -78,7 +78,7 @@ main() {
     else
         log_warn "FR-7 test file not found, skipping..."
     fi
-    
+
     log_info "Running basic configuration validation..."
     if [[ -f "$TESTS_DIR/integration/test_fr3_configuration_management.bats" ]]; then
         # Run just configuration existence tests for speed
@@ -89,7 +89,7 @@ main() {
     else
         log_warn "FR-3 test file not found, skipping..."
     fi
-    
+
     log_info "✅ Critical tests passed successfully!"
 }
 

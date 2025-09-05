@@ -24,27 +24,27 @@ teardown() {
     # Check for zsh dotfiles in chezmoi management
     managed_zsh_files=("dot_zshrc" "dot_zshenv" "dot_zprofile")
     found_files=0
-    
+
     for file in "${managed_zsh_files[@]}"; do
         if [[ -f "$DOTFILES_ROOT/$file" || -f "$DOTFILES_ROOT/${file}.tmpl" ]]; then
             found_files=$((found_files + 1))
         fi
     done
-    
+
     # Should have at least 2 of the 3 zsh configuration files
     [[ $found_files -ge 2 ]]
 }
 
 @test "FR-4.2: Oh My Zsh external repository management" {
     [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
-    
+
     # Should contain Oh My Zsh configuration
     grep -q -i "oh-my-zsh\|ohmyzsh" "$DOTFILES_ROOT/.chezmoiexternal.toml"
 }
 
 @test "FR-4.3: Antigen plugin manager configuration" {
     [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
-    
+
     # Should contain Antigen configuration
     grep -q -i "antigen" "$DOTFILES_ROOT/.chezmoiexternal.toml"
 }
@@ -52,7 +52,7 @@ teardown() {
 @test "FR-4.4: Powerlevel10k theme configuration" {
     # Check for p10k configuration file
     [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" || -f "$DOTFILES_ROOT/dot_p10k.zsh.tmpl" ]]
-    
+
     # Verify it contains powerlevel10k configuration
     if [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
         grep -q -i "powerlevel10k\|p10k" "$DOTFILES_ROOT/dot_p10k.zsh"
@@ -63,7 +63,7 @@ teardown() {
     # Check for dircolors configuration - can be external or managed directly
     # External management via .chezmoiexternal.toml is preferred
     grep -q -i "dircolors" "$DOTFILES_ROOT/.chezmoiexternal.toml" || [[ -d "$DOTFILES_ROOT/dot_dircolors" || -f "$DOTFILES_ROOT/dot_dircolors" ]]
-    
+
     # Should be managed via external repository
     grep -q -i "dircolors" "$DOTFILES_ROOT/.chezmoiexternal.toml"
 }
@@ -100,7 +100,7 @@ teardown() {
             grep -q -i "shell_integration\|iterm2" "$DOTFILES_ROOT/dot_zshrc"
         fi
     fi
-    
+
     # Test passes regardless - iTerm2 integration is optional
     true
 }
@@ -114,7 +114,7 @@ teardown() {
             grep -q -E "(antigen bundle|antigen theme|antigen apply)" "$DOTFILES_ROOT/dot_zshrc"
         fi
     fi
-    
+
     # Also check that antigen is managed via external
     grep -q -i "antigen" "$DOTFILES_ROOT/.chezmoiexternal.toml"
 }
@@ -128,7 +128,7 @@ teardown() {
             grep -q -E "(compinit|autoload.*comp)" "$DOTFILES_ROOT/dot_zshrc"
         fi
     fi
-    
+
     # Test passes if no completion config found (may be handled by oh-my-zsh)
     true
 }
@@ -137,7 +137,7 @@ teardown() {
 @test "FR-4.11: Shell environment setup integrated with bootstrap" {
     # Check if bootstrap scripts reference shell setup
     shell_setup_found=false
-    
+
     for script in "$BOOTSTRAP_DIR"/*.sh; do
         if [[ -f "$script" ]]; then
             if grep -q -i "shell\|zsh\|oh-my-zsh\|antigen" "$script"; then
@@ -146,7 +146,7 @@ teardown() {
             fi
         fi
     done
-    
+
     # At minimum, chezmoi apply should handle shell configuration
     if [[ "$shell_setup_found" == "false" ]]; then
         # Check for chezmoi integration (which handles shell configs)
@@ -157,16 +157,16 @@ teardown() {
             fi
         done
     fi
-    
+
     [[ "$shell_setup_found" == "true" ]]
 }
 
 @test "FR-4.12: External repository update frequency configuration" {
     [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
-    
+
     # Check for refresh period configuration in external repos
     external_content=$(cat "$DOTFILES_ROOT/.chezmoiexternal.toml")
-    
+
     # Should contain refresh period for at least one external tool
     [[ "$external_content" =~ refreshPeriod || "$external_content" =~ refresh ]]
 }
@@ -185,7 +185,7 @@ teardown() {
     # Test that shell configuration doesn't interfere with dry-run
     run_bootstrap "setup.core.sh" "--dry-run"
     assert_bootstrap_success
-    
+
     # Should complete without shell configuration errors
     [[ ! "$output" =~ "shell error" ]]
     [[ ! "$output" =~ "zsh.*error" ]]
@@ -193,10 +193,10 @@ teardown() {
 
 @test "FR-4.15: External tool archive method validation" {
     [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
-    
+
     # Check that external tools use archive method for security
     external_content=$(cat "$DOTFILES_ROOT/.chezmoiexternal.toml")
-    
+
     # Should use archive or git-repo type (not direct download)
     [[ "$external_content" =~ 'type = "archive"' || "$external_content" =~ 'type = "git-repo"' ]]
 }

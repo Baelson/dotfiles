@@ -22,7 +22,7 @@ teardown() {
 # FR-2.1: Brewfile package installation validation
 @test "FR-2.1: Brewfile exists and contains expected packages" {
     [[ -f "$DOTFILES_ROOT/Brewfile" || -f "$DOTFILES_ROOT/dot_Brewfile" || -f "$DOTFILES_ROOT/.Brewfile" ]]
-    
+
     # Find the Brewfile (could be managed by chezmoi)
     brewfile=""
     if [[ -f "$DOTFILES_ROOT/Brewfile" ]]; then
@@ -32,9 +32,9 @@ teardown() {
     elif [[ -f "$DOTFILES_ROOT/.Brewfile" ]]; then
         brewfile="$DOTFILES_ROOT/.Brewfile"
     fi
-    
+
     [[ -n "$brewfile" ]]
-    
+
     # Verify it contains essential packages
     grep -q "brew " "$brewfile"
     grep -q "cask " "$brewfile"
@@ -48,17 +48,17 @@ teardown() {
     [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
-    
+
     # Check for essential development CLI tools
     essential_tools=("git" "python" "uv" "gh" "neovim")
     found_tools=0
-    
+
     for tool in "${essential_tools[@]}"; do
         if grep -q "$tool" "$brewfile"; then
             found_tools=$((found_tools + 1))
         fi
     done
-    
+
     # Should find at least 3 of the 5 essential tools
     [[ $found_tools -ge 3 ]]
 }
@@ -70,17 +70,17 @@ teardown() {
     [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
-    
+
     # Check for desktop applications
     desktop_apps=("visual-studio-code" "iterm2" "docker" "figma")
     found_apps=0
-    
+
     for app in "${desktop_apps[@]}"; do
         if grep -q "$app" "$brewfile"; then
             found_apps=$((found_apps + 1))
         fi
     done
-    
+
     # Should find at least 2 of the 4 desktop apps
     [[ $found_apps -ge 2 ]]
 }
@@ -92,17 +92,17 @@ teardown() {
     [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
-    
+
     # Check for MAS applications
     mas_apps=("Xcode" "497799835" "1295203466")  # Xcode, Xcode (ID), Microsoft Remote Desktop
     found_mas=0
-    
+
     for app in "${mas_apps[@]}"; do
         if grep -q "$app" "$brewfile"; then
             found_mas=$((found_mas + 1))
         fi
     done
-    
+
     # Should find at least 1 MAS app
     [[ $found_mas -ge 1 ]]
 }
@@ -110,14 +110,14 @@ teardown() {
 # FR-2.5: Package installation integration with bootstrap
 @test "FR-2.5: setup.macos.sh integrates package installation" {
     [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]
-    
+
     # Should reference Brewfile or package installation
     grep -q -i "brewfile\|bundle\|brew install" "$BOOTSTRAP_DIR/setup.macos.sh"
 }
 
 @test "FR-2.6: Package installation verification exists" {
     [[ -f "$BOOTSTRAP_DIR/verify.macos.sh" ]]
-    
+
     # Should contain package verification logic
     grep -q -i "brew\|package\|install" "$BOOTSTRAP_DIR/verify.macos.sh"
 }
@@ -125,7 +125,7 @@ teardown() {
 # FR-2.7: Package management dry-run capability
 @test "FR-2.7: Package management supports dry-run preview" {
     run_bootstrap "setup.macos.sh" "--dry-run"
-    
+
     if [[ "$status" -eq 0 ]]; then
         # If setup.macos.sh supports dry-run, should show package preview
         [[ "$output" =~ (brew|Brewfile|package) ]]
@@ -156,10 +156,10 @@ teardown() {
     [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
-    
+
     # Count packages (brew, cask, mas entries)
     package_count=$(grep -E "^(brew |cask |mas )" "$brewfile" | wc -l | tr -d ' ')
-    
+
     # Should have a reasonable number of packages (at least 20, targeting 70+)
     [[ $package_count -ge 20 ]]
 }
@@ -176,7 +176,7 @@ teardown() {
         [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
         [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
         [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
-        
+
         if [[ -n "$brewfile" ]]; then
             mas_count=$(grep -c "mas " "$brewfile")
             [[ $mas_count -ge 0 ]]  # If MAS packages exist, authentication is implied

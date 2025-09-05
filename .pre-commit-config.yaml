@@ -1,5 +1,5 @@
 # Pre-commit Hook Configuration for macOS Dotfiles
-# 
+#
 # This configuration provides local CI integration to run the same tests
 # that execute in GitHub Actions, ensuring quality before commits.
 #
@@ -17,8 +17,8 @@ repos:
     hooks:
       - id: shellcheck
         args: [--severity=warning]
-        files: \.(sh|bash)$
-        exclude: ^tests/fixtures/
+        files: \.(bash)$  # Only check .bash files, skip .sh (which are zsh)
+        exclude: ^(tests/fixtures/|bootstrap/|.*\.sh$)
 
   # File formatting and cleanup
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -46,7 +46,7 @@ repos:
         stages: [pre-commit]
         files: \.(sh|bash|bats)$
         pass_filenames: false
-        
+
       # Validate test helper syntax
       - id: validate-test-helper
         name: Validate Test Helper Syntax
@@ -54,14 +54,14 @@ repos:
         language: system
         files: tests/lib/test_helper.bash
         pass_filenames: false
-        
-      # Validate bootstrap script syntax
+
+      # Validate bootstrap script syntax (skip zsh scripts)
       - id: validate-bootstrap-syntax
         name: Validate Bootstrap Script Syntax
         entry: bash -n
         language: system
-        files: bootstrap/.*\.sh$
-        
+        files: .*\.bash$  # Only validate .bash files
+
       # Performance validation (dry-run timing)
       - id: performance-check
         name: Performance Check (Dry-run < 120s)

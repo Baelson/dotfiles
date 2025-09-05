@@ -1,7 +1,7 @@
 #!/bin/zsh
 #
 # Validation Script for macOS Core Setup
-# 
+#
 # This script validates that all Phase 1 components are properly installed
 # and configured before proceeding to subsequent phases
 #
@@ -47,7 +47,7 @@ parse_arguments() {
             exit 0
         fi
     done
-    
+
     # Only parse debug arguments for verification scripts (no --dry-run)
     debug_trace "→ Entering: parse_arguments"
     debug_trace "Current arguments: $*"
@@ -104,7 +104,7 @@ main() {
     debug_trace "→ Entering: main"
     log "🔍 Running Phase 1 validation checks..."
     echo ""
-    
+
     # System Requirements
     log "📋 System Requirements:"
     validate_item "macOS operating system" '[[ "$OSTYPE" == "darwin"* ]]'
@@ -112,13 +112,13 @@ main() {
     validate_item "curl available" 'command -v curl'
     validate_item "git available" 'command -v git'
     echo ""
-    
+
     # Development Tools
     log "🛠  Development Tools:"
     validate_item "Xcode CLI Tools installed" 'xcode-select --print-path'
     validate_item "Homebrew installed" 'command -v brew'
     echo ""
-    
+
     # Repository Structure
     log "📁 Repository Structure:"
     validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
@@ -127,11 +127,11 @@ main() {
     validate_item "Bootstrap scripts exist" '[ -f "$REPO_DIR/bootstrap/setup.core.sh" -a -f "$REPO_DIR/bootstrap/setup.macos.sh" ]'
     validate_item "Common library exists" '[ -f "$REPO_DIR/bootstrap/lib/common.sh" ]'
     echo ""
-    
+
     # Optional: Check Homebrew packages if Brewfile was processed
     if command -v brew &> /dev/null && [ -f "$REPO_DIR/Brewfile" ]; then
         log "📦 Homebrew Package Status:"
-        
+
         # Check a few key packages that should be installed
         local key_packages=("git" "mas" "antigen" "chezmoi")
         for package in "${key_packages[@]}"; do
@@ -155,19 +155,19 @@ main() {
         local doctor_output
         doctor_output=$(chezmoi doctor 2>&1)
         local doctor_exit_code=$?
-        
+
         if [[ $doctor_exit_code -eq 0 ]]; then
             # Parse results and show warnings/errors
             local warnings=$(echo "$doctor_output" | grep -c "^warning")
             local errors=$(echo "$doctor_output" | grep -c "^error")
-            
+
             if [[ $warnings -gt 0 ]]; then
                 log_warning "chezmoi doctor found $warnings warning(s)"
                 echo "$doctor_output" | grep "^warning" | while read -r line; do
                     log_warning "  $line"
                 done
             fi
-            
+
             if [[ $errors -gt 0 ]]; then
                 log_error "chezmoi doctor found $errors error(s)"
                 echo "$doctor_output" | grep "^error" | while read -r line; do
@@ -182,7 +182,7 @@ main() {
             log_error "chezmoi doctor failed to run"
             ((++validation_failed))
         fi
-        
+
         # Check if external archives are available
         if [ -d "$HOME/.local/share/antigen" ]; then
             log_success "External archive: antigen downloaded"
@@ -190,14 +190,14 @@ main() {
         else
             log_warning "External archive: antigen not yet downloaded (run chezmoi apply)"
         fi
-        
+
         if [ -d "$HOME/.local/share/oh-my-zsh" ]; then
-            log_success "External archive: oh-my-zsh downloaded" 
+            log_success "External archive: oh-my-zsh downloaded"
             ((++validation_passed))
         else
             log_warning "External archive: oh-my-zsh not yet downloaded (run chezmoi apply)"
         fi
-        
+
         if [ -d "$HOME/.local/share/dircolors" ]; then
             log_success "External archive: dircolors downloaded"
             ((++validation_passed))
@@ -206,13 +206,13 @@ main() {
         fi
         echo ""
     fi
-    
+
     # Summary
     log "📊 Validation Summary:"
     log "   ✅ Passed: $validation_passed checks"
     log "   ❌ Failed: $validation_failed checks"
     echo ""
-    
+
     if [ $validation_failed -eq 0 ]; then
         log_success "🎉 All validations passed! Phase 1 setup is complete."
         log "Ready to proceed to Phase 2: Chezmoi Migration"

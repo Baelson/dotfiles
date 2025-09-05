@@ -110,7 +110,7 @@ teardown() {
 @test "FR-7.12: Invalid argument --invalid-flag" {
     run_bootstrap "setup.core.sh" "--invalid-flag"
     assert_bootstrap_error
-    [[ "$output" =~ "Unknown option" || "$output" =~ "Invalid" || "$output" =~ "Error" ]]
+    [[ "$output" =~ "Unknown option" || "$output" =~ "unknown" || "$output" =~ "Error" ]]
 }
 
 @test "FR-7.13: Empty argument handling" {
@@ -136,7 +136,7 @@ teardown() {
     timestamp_before=$(date +%s)
     run_bootstrap "setup.core.sh" "--dry-run" "--debug-verbose"
     timestamp_after=$(date +%s)
-    
+
     assert_bootstrap_success
     validate_no_system_changes "$timestamp_before" "$timestamp_after"
     validate_dry_run_output "$output"
@@ -146,7 +146,7 @@ teardown() {
 @test "FR-7.17: Error messages are clear and actionable" {
     run_bootstrap "setup.core.sh" "--invalid-option"
     assert_bootstrap_error
-    
+
     # Error message should be helpful
     [[ "$output" =~ "Usage:" || "$output" =~ "Try --help" || "$output" =~ "Available options" ]]
 }

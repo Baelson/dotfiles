@@ -48,7 +48,7 @@ parse_arguments() {
             exit 0
         fi
     done
-    
+
     # Only parse debug arguments for verification scripts (no --dry-run)
     debug_trace "→ Entering: parse_arguments"
     debug_trace "Current arguments: $*"

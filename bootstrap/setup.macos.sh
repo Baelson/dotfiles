@@ -51,16 +51,16 @@ parse_arguments() {
             exit 0
         fi
     done
-    
+
     # Parse other arguments
     parse_standard_arguments "$@"
     local result=$?
-    
+
     if [[ $result -eq 2 ]]; then
         # Unknown argument encountered
         for arg in "$@"; do
             case $arg in
-                --dry-run|--debug-trace|--debug-verbose)
+                --dry-run|-n|--debug-trace|-t|--debug-verbose|-v)
                     ;;
                 *)
                     log_error "Unknown option: $arg"
@@ -121,7 +121,7 @@ apply_dotfiles_configuration() {
 
     if [[ "$DRY_RUN" == "true" ]]; then
         log_dry_run "Would apply dotfiles using: chezmoi apply"
-        log_dry_run "Would download external archives (antigen, oh-my-zsh, dircolors)"  
+        log_dry_run "Would download external archives (antigen, oh-my-zsh, dircolors)"
         log_dry_run "Would replace Mackup symlinks with actual file content"
         debug_trace "← Exiting: apply_dotfiles_configuration (dry-run)"
         return 0
@@ -133,7 +133,7 @@ apply_dotfiles_configuration() {
     log "  → Downloading external archives (antigen, oh-my-zsh, dircolors)..."
     log "  → Replacing Mackup symlinks with actual file content..."
     log "  → Updating application configurations..."
-    
+
     if ! chezmoi apply; then
         log_error "Failed to apply dotfiles configuration"
         log_error "You can manually run: cd $REPO_DIR && chezmoi apply"

@@ -153,7 +153,7 @@ Library/Application Support/Google/Chrome/Default/Cookies*
 Library/Application Support/Google/Chrome/Default/Current Session*
 Library/Application Support/Google/Chrome/Default/Current Tabs*
 
-# Firefox  
+# Firefox
 Library/Application Support/Firefox/Profiles/*/places.sqlite*
 Library/Application Support/Firefox/Profiles/*/cookies.sqlite*
 Library/Application Support/Firefox/Profiles/*/sessionstore.js*
@@ -211,7 +211,7 @@ Library/Application Support/Claude/**/cache/**
 .cache/p10k-*/**
 
 #======================================
-# Development Artifacts  
+# Development Artifacts
 #======================================
 
 # Node.js
@@ -270,7 +270,7 @@ dot_Brewfile
 {{- end }}
 
 {{ if ne .chezmoi.os "linux" -}}
-# Ignore Linux-specific files on non-Linux systems  
+# Ignore Linux-specific files on non-Linux systems
 .config/systemd/**
 .local/share/applications/**
 {{- end }}

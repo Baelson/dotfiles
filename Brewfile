@@ -29,7 +29,7 @@ brew 'zsh-completions'  # Additional completion definitions for zsh-users       
 
 # Apps with casks (typically not on App Store)
 # TODO: pull URL and App Store URL to put in comments
-    
+
 cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
 cask 'beyond-compare'       # Compare files and folders                                         -- https://www.scootersoftware.com/
 cask 'chatgpt'              # OpenAI's official ChatGPT desktop app                             -- https://chatgpt.com/

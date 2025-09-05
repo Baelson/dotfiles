@@ -10,6 +10,7 @@
 export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
 export BOOTSTRAP_DIR="${DOTFILES_ROOT}/bootstrap"
+export TESTS_DIR="${DOTFILES_ROOT}/tests"
 
 # Test execution modes
 export TEST_MODE="${TEST_MODE:-unit}"
@@ -25,19 +26,19 @@ setup_test_logging() {
 # Common test setup
 setup_common() {
     setup_test_logging
-    
+
     # Ensure we're in the right directory
     cd "$DOTFILES_ROOT" || {
         echo "ERROR: Cannot change to dotfiles root directory: $DOTFILES_ROOT" >&2
         return 1
     }
-    
+
     # Verify critical files exist
     [[ -f "$BOOTSTRAP_DIR/setup.core.sh" ]] || {
         echo "ERROR: Bootstrap script not found: $BOOTSTRAP_DIR/setup.core.sh" >&2
         return 1
     }
-    
+
     [[ -f "$BOOTSTRAP_DIR/lib/common.sh" ]] || {
         echo "ERROR: Common library not found: $BOOTSTRAP_DIR/lib/common.sh" >&2
         return 1
@@ -49,18 +50,19 @@ run_bootstrap() {
     local script="$1"
     shift
     local args=("$@")
-    
+
     # Always run with dry-run in test mode unless explicitly disabled
     if [[ "$DRY_RUN_TESTS" == "true" && ! " ${args[*]} " =~ " --dry-run " ]]; then
         args+=("--dry-run")
     fi
-    
+
     # Capture both stdout and stderr for debug output
     run bash -c "$BOOTSTRAP_DIR/$script ${args[*]} 2>&1"
 }
 
 # Verify script output patterns
 assert_bootstrap_success() {
+    # shellcheck disable=SC2154 # status is set by BATS run command
     [[ "$status" -eq 0 ]]
 }
 
@@ -93,13 +95,13 @@ validate_dry_run_output() {
 validate_debug_trace_output() {
     local output="$1"
     # Debug trace should show TRACE messages
-    [[ "$output" =~ "\[TRACE\]" ]]
+    [[ "$output" =~ \[TRACE\] ]]
 }
 
 validate_debug_verbose_output() {
     local output="$1"
     # Debug verbose should show TRACE messages (our script uses TRACE, not DEBUG)
-    [[ "$output" =~ "\[TRACE\]" ]]
+    [[ "$output" =~ \[TRACE\] ]]
 }
 
 # Functional requirement validation helpers
@@ -111,16 +113,16 @@ validate_fr1_one_command_bootstrap() {
 
 validate_fr7_debug_capabilities() {
     # FR-7: Debugging and Troubleshooting
-    local args="$1"
+    local args_string="$1"
     local output="$2"
-    
-    if [[ "$args" =~ "--help" ]]; then
+
+    if [[ "$args_string" =~ --help ]]; then
         validate_help_output "$output"
-    elif [[ "$args" =~ "--dry-run" ]]; then
+    elif [[ "$args_string" =~ --dry-run ]]; then
         validate_dry_run_output "$output"
-    elif [[ "$args" =~ "--debug-verbose" ]]; then
+    elif [[ "$args_string" =~ --debug-verbose ]]; then
         validate_debug_verbose_output "$output"
-    elif [[ "$args" =~ "--debug-trace" ]]; then
+    elif [[ "$args_string" =~ --debug-trace ]]; then
         validate_debug_trace_output "$output"
     fi
 }
@@ -130,7 +132,7 @@ validate_no_system_changes() {
     # Ensure dry-run tests don't modify system state
     local timestamp_before="$1"
     local timestamp_after="$2"
-    
+
     # Check that critical system directories weren't modified
     # This is a basic check - in practice, we'd compare specific file timestamps
     [[ "$timestamp_after" -ge "$timestamp_before" ]]
@@ -152,7 +154,7 @@ setup_github_actions_env() {
     # Set up environment variables for GitHub Actions compatibility
     export CI="${CI:-false}"
     export GITHUB_ACTIONS="${GITHUB_ACTIONS:-false}"
-    
+
     if [[ "$GITHUB_ACTIONS" == "true" ]]; then
         # GitHub Actions specific setup
         export HOMEBREW_NO_INSTALL_CLEANUP=1
@@ -166,7 +168,7 @@ validate_matrix_parameters() {
     local test_name="$1"
     local cli_args="$2"
     local expected_behavior="$3"
-    
+
     echo "Matrix Test: $test_name"
     echo "CLI Args: $cli_args"
     echo "Expected: $expected_behavior"

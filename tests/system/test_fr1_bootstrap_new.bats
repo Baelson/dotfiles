@@ -23,7 +23,7 @@ teardown() {
     run_bootstrap "setup.core.sh" "--dry-run"
     assert_bootstrap_success
     validate_fr1_one_command_bootstrap
-    
+
     # Should show bootstrap progression
     [[ "$output" =~ "Bootstrap" || "$output" =~ "Setup" || "$output" =~ "macOS" ]]
 }
@@ -31,10 +31,10 @@ teardown() {
 @test "FR-1.2: Bootstrap provides clear progress feedback" {
     run_bootstrap "setup.core.sh" "--dry-run" "--debug-verbose"
     assert_bootstrap_success
-    
+
     # Should show progress indicators
     [[ "$output" =~ "Checking" || "$output" =~ "Installing" || "$output" =~ "Setting up" || "$output" =~ "Verifying" ]]
-    
+
     # Should show step-by-step progression
     [[ "$output" =~ "Prerequisites" || "$output" =~ "Xcode" || "$output" =~ "Homebrew" || "$output" =~ "Git" ]]
 }
@@ -42,7 +42,7 @@ teardown() {
 @test "FR-1.3: Bootstrap handles fresh macOS prerequisites" {
     run_bootstrap "setup.core.sh" "--dry-run" "--debug-trace"
     assert_bootstrap_success
-    
+
     # Should check for and plan to install prerequisites
     [[ "$output" =~ "Xcode CLI Tools" || "$output" =~ "xcode-select" ]]
     [[ "$output" =~ "Homebrew" || "$output" =~ "brew" ]]
