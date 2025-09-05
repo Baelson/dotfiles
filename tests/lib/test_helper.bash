@@ -56,14 +56,32 @@ run_bootstrap() {
         args+=("--dry-run")
     fi
 
-    # Capture both stdout and stderr for debug output
-    run bash -c "$BOOTSTRAP_DIR/$script ${args[*]} 2>&1"
+    # Set up CI-friendly environment if running in GitHub Actions
+    local run_command="$BOOTSTRAP_DIR/$script ${args[*]} 2>&1"
+    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+        # In CI, provide explicit path and environment setup
+        run_command="cd '$DOTFILES_ROOT' && DOTFILES_REPO='$DOTFILES_ROOT' $run_command"
+    fi
+
+    # Bootstrap scripts are zsh, not bash - use zsh to execute them
+    run zsh -c "$run_command"
 }
 
 # Verify script output patterns
 assert_bootstrap_success() {
     # shellcheck disable=SC2154 # status is set by BATS run command
-    [[ "$status" -eq 0 ]]
+    if [[ "$status" -ne 0 ]]; then
+        echo "Bootstrap script failed with exit code: $status" >&2
+        if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+            echo "Output in CI:" >&2
+            echo "$output" >&2
+            echo "Working directory: $PWD" >&2
+            echo "DOTFILES_ROOT: $DOTFILES_ROOT" >&2
+            echo "BOOTSTRAP_DIR: $BOOTSTRAP_DIR" >&2
+        fi
+        return 1
+    fi
+    return 0
 }
 
 assert_bootstrap_output_contains() {
