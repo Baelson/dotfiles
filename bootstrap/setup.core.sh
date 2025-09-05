@@ -31,6 +31,8 @@ readonly SCRIPT_DIR="$(cd "${0:A:h}" && pwd)"
 
 # Source common functions - should always be available
 source "$SCRIPT_DIR/lib/common.sh"
+source "$SCRIPT_DIR/lib/xcode.sh"
+source "$SCRIPT_DIR/lib/homebrew.sh"
 init_logging "setup.core"
 setup_error_trap "setup.core"
 check_macos
@@ -92,17 +94,17 @@ main() {
     # Step 1: Install Xcode CLI Tools
     ((++current_step))
     show_progress $current_step $total_steps "Installing Xcode CLI Tools..."
-    install_xcode_cli_tools
+    time_operation "Xcode CLI Tools Installation" install_xcode_cli_tools
 
     # Step 2: Install Homebrew
     ((++current_step))
     show_progress $current_step $total_steps "Installing Homebrew..."
-    install_homebrew
+    time_operation "Homebrew Installation" install_homebrew
 
     # Step 3: Run validation
     ((++current_step))
     show_progress $current_step $total_steps "Running validation..."
-    run_validation
+    time_operation "System Validation" run_validation
 
     log_success "🎉 Phase 1: Core Foundation completed successfully!"
     echo ""
@@ -114,102 +116,9 @@ main() {
     debug_trace "← Exiting: main"
 }
 
-install_xcode_cli_tools() {
-    debug_trace "→ Entering: install_xcode_cli_tools"
+# install_xcode_cli_tools() function moved to bootstrap/lib/xcode.sh
 
-    if xcode-select --print-path &> /dev/null; then
-        log_success "Xcode CLI Tools already installed"
-        debug_trace "← Exiting: install_xcode_cli_tools (already installed)"
-        return 0
-    fi
-
-    log "Installing Xcode Command Line Tools..."
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        log_dry_run "Would run: xcode-select --install"
-        log_dry_run "Would wait for installation to complete with user interaction"
-        debug_trace "← Exiting: install_xcode_cli_tools (dry-run)"
-        return 0
-    fi
-
-    # Trigger the installation
-    debug_verbose "Triggering Xcode CLI Tools installation"
-    xcode-select --install &> /dev/null || true
-
-    # Wait for installation to complete
-    log "Waiting for Xcode CLI Tools installation to complete..."
-    log "⏳ This may take several minutes and require user interaction..."
-
-    local timeout=600  # 10 minutes timeout
-    local elapsed=0
-
-    until xcode-select --print-path &> /dev/null; do
-        sleep 5
-        ((elapsed += 5))
-
-        if [[ $elapsed -ge $timeout ]]; then
-            log_error "Xcode CLI Tools installation timed out after ${timeout} seconds"
-            log_error "Please check the installation manually and try again"
-            exit 1
-        fi
-    done
-
-    log_success "Xcode CLI Tools installed successfully"
-    debug_trace "← Exiting: install_xcode_cli_tools"
-}
-
-install_homebrew() {
-    debug_trace "→ Entering: install_homebrew"
-
-    if command -v brew &> /dev/null; then
-        log_success "Homebrew already installed"
-        debug_trace "← Exiting: install_homebrew (already installed)"
-        return 0
-    fi
-
-    log "Installing Homebrew..."
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        log_dry_run "Would install Homebrew using official installer"
-        log_dry_run "Would add Homebrew to PATH based on architecture"
-        debug_trace "← Exiting: install_homebrew (dry-run)"
-        return 0
-    fi
-
-    # Install Homebrew using the official installer
-    # single-line CLI: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    debug_verbose "Installing Homebrew with explicit bash shebang handling"
-    local homebrew_install_script="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-
-    /bin/bash -c "$(curl \
-        --fail \
-        --silent \
-        --show-error \
-        --location \
-        "$homebrew_install_script")" || {
-        log_error "Failed to install Homebrew"
-        log_error "Please check the official installation guide at https://brew.sh"
-        exit 1
-    }
-
-    # Add Homebrew to PATH based on architecture
-    debug_verbose "Configuring Homebrew PATH for current architecture"
-    if [[ -f "/opt/homebrew/bin/brew" ]]; then
-        # Apple Silicon
-        debug_verbose "Detected Apple Silicon, using /opt/homebrew"
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [[ -f "/usr/local/bin/brew" ]]; then
-        # Intel
-        debug_verbose "Detected Intel Mac, using /usr/local"
-        eval "$(/usr/local/bin/brew shellenv)"
-    else
-        log_error "Could not find Homebrew installation"
-        exit 1
-    fi
-
-    log_success "Homebrew installed and configured successfully"
-    debug_trace "← Exiting: install_homebrew"
-}
+# install_homebrew() function moved to bootstrap/lib/homebrew.sh
 
 run_validation() {
     debug_trace "→ Entering: run_validation"

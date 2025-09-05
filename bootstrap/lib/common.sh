@@ -292,6 +292,81 @@ parse_standard_arguments() {
 }
 
 #======================================
+# Performance Timing Functions
+#======================================
+
+# Time a command execution and log the duration
+time_operation() {
+    local description="$1"
+    shift
+    local start_time
+    start_time=$(date +%s)
+
+    debug_trace "→ Starting timed operation: $description"
+
+    # Execute the command
+    if "$@"; then
+        local end_time
+        end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+
+        debug_verbose "Operation '$description' completed in ${duration}s"
+        log_success "✅ $description (${duration}s)"
+        return 0
+    else
+        local end_time
+        end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+
+        debug_verbose "Operation '$description' failed after ${duration}s"
+        log_error "❌ $description failed (${duration}s)"
+        return 1
+    fi
+}
+
+# Time a function execution (for internal functions)
+time_function() {
+    local function_name="$1"
+    local start_time
+    start_time=$(date +%s)
+
+    debug_trace "→ Starting timed function: $function_name"
+
+    # Call the function (assumes it's defined)
+    if "$function_name"; then
+        local end_time
+        end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+
+        debug_verbose "Function '$function_name' completed in ${duration}s"
+        return 0
+    else
+        local end_time
+        end_time=$(date +%s)
+        local duration=$((end_time - start_time))
+
+        debug_verbose "Function '$function_name' failed after ${duration}s"
+        return 1
+    fi
+}
+
+# Get current timestamp for performance logging
+get_timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Log performance metrics
+log_performance() {
+    local operation="$1"
+    local duration="$2"
+    local status="${3:-success}"
+
+    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
+        echo "[PERF] $(get_timestamp) | $operation | ${duration}s | $status" >> "${LOG_FILE:-/tmp/dotfiles_performance.log}"
+    fi
+}
+
+#======================================
 # Utility Functions
 #======================================
 
