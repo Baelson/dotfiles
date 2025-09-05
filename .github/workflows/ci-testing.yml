@@ -56,9 +56,9 @@ jobs:
           test -f .chezmoiignore
           test -f .chezmoiexternal.toml
 
-          # Verify bootstrap scripts are executable and syntactically correct
-          bash -n bootstrap/setup.core.sh
-          bash -n bootstrap/lib/common.sh
+          # Verify bootstrap scripts are syntactically correct (using zsh)
+          zsh -n bootstrap/setup.core.sh
+          zsh -n bootstrap/lib/common.sh
 
   # Job 2: FR-7 Debug Capabilities Matrix Testing
   test-fr7-debug-matrix:
@@ -135,6 +135,9 @@ jobs:
           - { id: "FR-1", name: "One-Command Bootstrap", test_file: "tests/system/test_fr1_bootstrap.bats" }
           - { id: "FR-2", name: "Package Management", test_file: "tests/integration/test_fr2_package_management.bats" }
           - { id: "FR-3", name: "Configuration Management", test_file: "tests/integration/test_fr3_configuration_management.bats" }
+          - { id: "FR-4", name: "Shell Environment", test_file: "tests/integration/test_fr4_shell_environment.bats" }
+          - { id: "FR-5", name: "Application Preferences", test_file: "tests/integration/test_fr5_application_preferences.bats" }
+          - { id: "FR-6", name: "Environment Templating", test_file: "tests/unit/test_fr6_environment_templating.bats" }
           - { id: "FR-7", name: "Debug Capabilities", test_file: "tests/system/test_fr7_debug_capabilities.bats" }
 
     steps:
@@ -232,12 +235,14 @@ jobs:
           # Install ShellCheck for script validation
           brew install shellcheck
 
-          # Lint bootstrap scripts
-          shellcheck bootstrap/*.sh
-          shellcheck bootstrap/lib/*.sh
+          # Lint bash files only (skip zsh scripts)
+          echo "Linting bash files..."
+          find . -name "*.bash" -exec shellcheck {} +
 
-          # Lint test helper
-          shellcheck tests/lib/test_helper.bash
+          # Note: Bootstrap scripts use zsh and are syntax-checked separately
+          echo "Syntax checking zsh bootstrap scripts..."
+          zsh -n bootstrap/setup.core.sh
+          zsh -n bootstrap/lib/common.sh
 
       - name: Secret scanning
         run: |
