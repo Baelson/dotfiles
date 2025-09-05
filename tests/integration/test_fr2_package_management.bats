@@ -21,14 +21,14 @@ teardown() {
 
 # FR-2.1: Brewfile package installation validation
 @test "FR-2.1: Brewfile exists and contains expected packages" {
-    [[ -f "$DOTFILES_ROOT/Brewfile" || -f "$DOTFILES_ROOT/dot_Brewfile" || -f "$DOTFILES_ROOT/.Brewfile" ]]
+    [[ -f "$DOTFILES_ROOT/Brewfile" || -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" || -f "$DOTFILES_ROOT/.Brewfile" ]]
 
     # Find the Brewfile (could be managed by chezmoi)
     brewfile=""
     if [[ -f "$DOTFILES_ROOT/Brewfile" ]]; then
         brewfile="$DOTFILES_ROOT/Brewfile"
-    elif [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]]; then
-        brewfile="$DOTFILES_ROOT/dot_Brewfile"
+    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]; then
+        brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
     elif [[ -f "$DOTFILES_ROOT/.Brewfile" ]]; then
         brewfile="$DOTFILES_ROOT/.Brewfile"
     fi
@@ -45,7 +45,7 @@ teardown() {
     # Find Brewfile
     brewfile=""
     [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
 
@@ -67,7 +67,7 @@ teardown() {
     # Find Brewfile
     brewfile=""
     [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
 
@@ -89,7 +89,7 @@ teardown() {
     # Find Brewfile
     brewfile=""
     [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
 
@@ -153,7 +153,7 @@ teardown() {
     # Find Brewfile
     brewfile=""
     [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
     [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
     [[ -n "$brewfile" ]]
 
@@ -166,15 +166,21 @@ teardown() {
 
 # FR-2.10: MAS authentication handling
 @test "FR-2.10: MAS authentication considerations present" {
+    # MAS authentication is handled by 'brew bundle' which includes MAS packages
+    # Check if brew bundle is used in package management (either in main script or lib modules)
     if [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]; then
-        # MAS authentication is handled by 'brew bundle' which includes MAS packages
-        # The script should use 'brew bundle' which handles MAS auth automatically
-        grep -q -i "brew bundle" "$BOOTSTRAP_DIR/setup.macos.sh"
+        if grep -q -i "brew bundle" "$BOOTSTRAP_DIR/setup.macos.sh"; then
+            true  # Found in main script
+        elif [[ -f "$BOOTSTRAP_DIR/lib/packages.sh" ]] && grep -q -i "brew bundle" "$BOOTSTRAP_DIR/lib/packages.sh"; then
+            true  # Found in packages module
+        else
+            false
+        fi
     else
         # Check if MAS packages exist in Brewfile (implies authentication handling needed)
         brewfile=""
         [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-        [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && brewfile="$DOTFILES_ROOT/dot_Brewfile"
+        [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
         [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
 
         if [[ -n "$brewfile" ]]; then

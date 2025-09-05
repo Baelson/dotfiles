@@ -81,7 +81,7 @@ antigen bundles <<EOBUNDLES
     xcode
     zsh-interactive-cd
     zsh_reload
-
+    
     # Syntax highlighting bundle
     zsh-users/zsh-syntax-highlighting
     zsh-users/zsh-completions

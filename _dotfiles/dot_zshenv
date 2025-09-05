@@ -6,8 +6,8 @@ path+=(/opt/homebrew/sbin)
 path+=(/opt/homebrew/opt/coreutils/libexec/gnubin)
 path+=(/opt/homebrew/opt/grep/libexec/gnubin)
 
-# Warning: /usr/bin occurs before /opt/homebrew/bin in your PATH. This means that
-# system-provided programs will be used instead of those provided by Homebrew.
+# Warning: /usr/bin occurs before /opt/homebrew/bin in your PATH. This means that 
+# system-provided programs will be used instead of those provided by Homebrew. 
 # Consider setting your PATH so that /opt/homebrew/bin occurs before /usr/bin.
 path+=($HOME/bin)
 path+=(/usr/local/bin)
@@ -33,7 +33,7 @@ export MANPATH="/usr/local/man:$MANPATH"
 export TERM="xterm-256color" CLICOLOR=1
 export LESS_TERMCAP_mb=$(printf "\e[1;31m")    # blink
 export LESS_TERMCAP_md=$(printf "\e[1;31m")    # bold
-export LESS_TERMCAP_me=$(printf "\e[0m")       # end bold, blink and underline
+export LESS_TERMCAP_me=$(printf "\e[0m")       # end bold, blink and underline 
 export LESS_TERMCAP_so=$(printf "\e[1;44;33m") # standout (reverse video)
 export LESS_TERMCAP_se=$(printf "\e[0m")       # end standout
 export LESS_TERMCAP_us=$(printf "\e[1;32m")    # underline

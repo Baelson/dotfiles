@@ -26,7 +26,7 @@ teardown() {
 # FR-6.1: Template file support infrastructure
 @test "FR-6.1: Chezmoi template infrastructure exists" {
     # Check for chezmoi configuration that supports templating (can be implicit)
-    [[ -f "$DOTFILES_ROOT/.chezmoi.yaml" || -f "$DOTFILES_ROOT/.chezmoi.toml" || -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
 
     # Template files use .tmpl extension
     template_count=$(find "$DOTFILES_ROOT" -name "*.tmpl" 2>/dev/null | wc -l | tr -d ' ')
@@ -40,8 +40,8 @@ teardown() {
     env_detection_found=false
 
     # Look for environment detection in chezmoi config
-    if [[ -f "$DOTFILES_ROOT/.chezmoi.yaml" ]]; then
-        if grep -q -E "(work|personal|hostname|domain)" "$DOTFILES_ROOT/.chezmoi.yaml"; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]]; then
+        if grep -q -E "(work|personal|hostname|domain)" "$DOTFILES_SOURCE_DIR/.chezmoi.yaml"; then
             env_detection_found=true
         fi
     fi
@@ -62,7 +62,7 @@ teardown() {
     fi
 
     # Test passes if infrastructure exists (even if not fully implemented)
-    [[ "$env_detection_found" == "true" ]] || [[ -f "$DOTFILES_ROOT/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_ROOT/.chezmoi.toml" ]]
+    [[ "$env_detection_found" == "true" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]
 }
 
 @test "FR-6.3: Template variable system" {
@@ -75,8 +75,8 @@ teardown() {
     fi
 
     # Check chezmoi config for data/variables
-    if [[ -f "$DOTFILES_ROOT/.chezmoi.yaml" ]]; then
-        if grep -q -E "(data:|variables:|\.)" "$DOTFILES_ROOT/.chezmoi.yaml"; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]]; then
+        if grep -q -E "(data:|variables:|\.)" "$DOTFILES_SOURCE_DIR/.chezmoi.yaml"; then
             template_vars_found=true
         fi
     fi
@@ -90,11 +90,11 @@ teardown() {
     git_templating_ready=false
 
     # Look for git template file
-    if [[ -f "$DOTFILES_ROOT/dot_gitconfig.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
         git_templating_ready=true
         # Should contain template variables for user info
-        grep -q "{{" "$DOTFILES_ROOT/dot_gitconfig.tmpl"
-    elif [[ -f "$DOTFILES_ROOT/dot_gitconfig" ]]; then
+        grep -q "{{" "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl"
+    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]]; then
         # Static gitconfig exists (could be converted to template)
         git_templating_ready=true
     fi
@@ -107,7 +107,7 @@ teardown() {
     ssh_templating_ready=false
 
     # Look for SSH template or encrypted SSH configs
-    if [[ -f "$DOTFILES_ROOT/dot_ssh/config.tmpl" ]] || find "$DOTFILES_ROOT" -name "encrypted_dot_ssh" -type d 2>/dev/null | grep -q .; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_ssh/config.tmpl" ]] || find "$DOTFILES_ROOT" -name "encrypted_dot_ssh" -type d 2>/dev/null | grep -q .; then
         ssh_templating_ready=true
     fi
 
@@ -124,9 +124,9 @@ teardown() {
     package_templating_ready=false
 
     # Look for Brewfile template
-    if [[ -f "$DOTFILES_ROOT/dot_Brewfile.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile.tmpl" ]]; then
         package_templating_ready=true
-    elif [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]]; then
+    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]; then
         # Static Brewfile exists (could support templating)
         package_templating_ready=true
     fi
@@ -139,9 +139,9 @@ teardown() {
     prompt_templating_ready=false
 
     # Look for shell config templates
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc.tmpl" ]] || [[ -f "$DOTFILES_ROOT/dot_p10k.zsh.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc.tmpl" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh.tmpl" ]]; then
         prompt_templating_ready=true
-    elif [[ -f "$DOTFILES_ROOT/dot_zshrc" ]] || [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
+    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]]; then
         # Shell configs exist (could support templating)
         prompt_templating_ready=true
     fi
@@ -156,12 +156,12 @@ teardown() {
     # Look for templated chezmoiignore
     if [[ -f "$DOTFILES_ROOT/.chezmoiignore.tmpl" ]]; then
         ignore_templating_ready=true
-    elif [[ -f "$DOTFILES_ROOT/.chezmoiignore" ]]; then
+    elif [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiignore" ]]; then
         # Static ignore file exists
         ignore_templating_ready=true
 
         # Check if it contains conditional patterns
-        if grep -q -E "({{|work|personal)" "$DOTFILES_ROOT/.chezmoiignore"; then
+        if grep -q -E "({{|work|personal)" "$DOTFILES_SOURCE_DIR/.chezmoiignore"; then
             ignore_templating_ready=true
         fi
     fi
@@ -184,7 +184,7 @@ teardown() {
     done
 
     # Check chezmoi config for data override capability
-    if [[ -f "$DOTFILES_ROOT/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_ROOT/.chezmoi.toml" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]; then
         override_mechanism_found=true  # Chezmoi supports data override
     fi
 
@@ -267,17 +267,17 @@ teardown() {
     required_components=0
 
     # Chezmoi configuration
-    if [[ -f "$DOTFILES_ROOT/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_ROOT/.chezmoi.toml" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]; then
         ((++required_components))
     fi
 
     # Git configuration (ready for templating)
-    if [[ -f "$DOTFILES_ROOT/dot_gitconfig" ]] || [[ -f "$DOTFILES_ROOT/dot_gitconfig.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
         ((++required_components))
     fi
 
     # Package management (ready for environment differentiation)
-    if [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] || [[ -f "$DOTFILES_ROOT/dot_Brewfile.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile.tmpl" ]]; then
         ((++required_components))
     fi
 
