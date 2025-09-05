@@ -72,10 +72,10 @@ init_logging() {
     local script_name="$1"
     LOG_FILE="$(get_log_file "$script_name")"
     export LOG_FILE
-    
+
     # Ensure log directory exists
     mkdir -p "$(dirname "$LOG_FILE")"
-    
+
     # Create log file
     touch "$LOG_FILE"
 }
@@ -118,7 +118,7 @@ show_progress() {
     local total=$2
     local description="$3"
     local percentage=$((current * 100 / total))
-    
+
     printf "\n${BLUE}Progress: [%3d%%] %s${NC}\n" "$percentage" "$description"
     if [ "$current" -eq "$total" ]; then
         echo ""
@@ -224,7 +224,7 @@ show_standard_help() {
     local script_name="$1"
     local description="$2"
     local usage_line="$3"
-    
+
     cat << EOF
 $script_name
 
@@ -234,15 +234,15 @@ USAGE:
     $usage_line
 
 OPTIONS:
-    --dry-run           Preview operations without executing
-    --debug-trace       Show control flow and decision points  
-    --debug-verbose     Show detailed execution including variables
-    --help             Display this help message
+    --dry-run|-n        Preview operations without executing
+    --debug-trace|-t    Show control flow and decision points
+    --debug-verbose|-v  Show detailed execution including variables
+    --help|-h           Display this help message
 
 EXAMPLES:
     $usage_line
-    $usage_line --dry-run
-    $usage_line --debug-verbose
+    $usage_line --dry-run|-n
+    $usage_line --debug-verbose|-v
 
 EOF
 }
@@ -256,23 +256,23 @@ parse_standard_arguments() {
 
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --dry-run)
+            --dry-run|-n)
                 export DRY_RUN=true
                 debug_verbose "Set DRY_RUN=true"
                 shift
                 ;;
-            --debug-trace)
+            --debug-trace|-t)
                 export DEBUG_TRACE=true
                 debug_verbose "Set DEBUG_TRACE=true"
                 shift
                 ;;
-            --debug-verbose)
+            --debug-verbose|-v)
                 export DEBUG_VERBOSE=true
                 export DEBUG_TRACE=true  # verbose includes trace
                 debug_verbose "Set DEBUG_VERBOSE=true, DEBUG_TRACE=true"
                 shift
                 ;;
-            --help)
+            --help|-h)
                 # Let calling script handle --help
                 shift
                 return 1
@@ -280,6 +280,8 @@ parse_standard_arguments() {
             *)
                 # Return unknown argument for calling script to handle
                 debug_trace "← Exiting: parse_standard_arguments (unknown: $1)"
+                log_error "Unknown option: $1\
+                           \nAvailable options: --dry-run|-n, --debug-trace|-t, --debug-verbose|-v, --help|-h"
                 return 2
                 ;;
         esac
@@ -302,7 +304,7 @@ command_exists() {
 run_safe() {
     local description="$1"
     shift
-    
+
     log "Running: $description"
     if "$@"; then
         log_success "$description completed"

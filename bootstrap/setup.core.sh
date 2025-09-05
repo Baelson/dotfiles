@@ -49,7 +49,7 @@ Installs Xcode CLI Tools and Homebrew after repository is available." \
 parse_arguments() {
     # Handle --help first
     for arg in "$@"; do
-        if [[ "$arg" == "--help" ]]; then
+        if [[ "$arg" == "--help" || "$arg" == "-h" ]]; then
             show_help
             exit 0
         fi
@@ -63,7 +63,7 @@ parse_arguments() {
         # Unknown argument encountered
         for arg in "$@"; do
             case $arg in
-                --dry-run|--debug-trace|--debug-verbose)
+                --dry-run|-n|--debug-trace|-t|--debug-verbose|-v)
                     ;;
                 *)
                     log_error "Unknown option: $arg"
