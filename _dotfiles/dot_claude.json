@@ -471,6 +471,22 @@
       "allowedTools": [],
       "history": [
         {
+          "display": "I have not committed the extensive refactoring I've done. Please incorporate the changes you identified into the git commit",
+          "pastedContents": {}
+        },
+        {
+          "display": "I've made some significant updates which I've captured in most of the documentation. Please review the whole code base, read through all the documentation, and reconcile anything that is inconsistent.\\\n\\\nThen re-run all tests according to the documentation.",
+          "pastedContents": {}
+        },
+        {
+          "display": "/status ",
+          "pastedContents": {}
+        },
+        {
+          "display": "/ide ",
+          "pastedContents": {}
+        },
+        {
           "display": "Before I merge the PR, there were numerous errors in the CI/CD Pipeline on github -- https://github.com/Baelson/dotfiles/pull/8\n\nPlease review what these issues are and confirm that the Pipelines has the updated set of tests we just fixed",
           "pastedContents": {}
         },
@@ -877,22 +893,6 @@
         },
         {
           "display": "!echo $VISUAL",
-          "pastedContents": {}
-        },
-        {
-          "display": "!echo $EDITOR",
-          "pastedContents": {}
-        },
-        {
-          "display": "/memory ",
-          "pastedContents": {}
-        },
-        {
-          "display": "/exit ",
-          "pastedContents": {}
-        },
-        {
-          "display": "/export ",
           "pastedContents": {}
         },
         {
