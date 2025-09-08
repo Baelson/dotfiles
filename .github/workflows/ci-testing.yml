@@ -2,12 +2,23 @@ name: CI/CD Testing Pipeline
 
 # Trigger only on pull requests to prevent blocking main development
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'bootstrap/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '_dotfiles/**'
+      - '.chezmoi*'
+      - '*.md'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main ]
     paths:
       - 'bootstrap/**'
+      - 'scripts/**'
       - 'tests/**'
-      - 'dot_*'
+      - '_dotfiles/**'
       - '.chezmoi*'
       - '*.md'
       - '.github/workflows/**'
@@ -19,6 +30,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Job 0: Pre-commit and Full Test Run
+  precommit-and-all-tests:
+    name: Pre-commit Hooks & Full Test Suite
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (brew, bats, python for pre-commit)
+        run: |
+          brew update
+          brew install bats-core pre-commit || true
+          pre-commit --version || true
+          bats --version
+
+      - name: Run pre-commit on all files
+        run: pre-commit run --all-files
+
+      - name: Run all Bats tests via helper script
+        run: |
+          chmod +x scripts/test.sh
+          ./scripts/test.sh --all
+
+      - name: Archive test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-suite-logs
+          path: |
+            tests/logs/
+            *.log
+
   # Job 1: BATS Framework Setup and Basic Validation
   setup-validation:
     name: Setup Validation & BATS Installation

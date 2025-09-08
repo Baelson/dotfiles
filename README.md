@@ -36,6 +36,18 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap.sh 
 
 ## 🛠 Advanced Usage
 
+### Homebrew Bundle (Brewfile)
+The Brewfile is managed under `_dotfiles/Brewfile` by chezmoi and typically materializes to `~/Brewfile` after `chezmoi apply`.
+
+Examples:
+```bash
+# Preview (no installs):
+brew bundle --file="_dotfiles/Brewfile" --no-lock --help | sed -n '1,40p'
+
+# Apply after chezmoi has placed Brewfile in $HOME:
+brew bundle --file="$HOME/Brewfile" --no-lock
+```
+
 ### Debug and Testing Modes
 ```bash
 # Preview operations without making changes
@@ -79,7 +91,7 @@ dotfiles/
 │   ├── setup.macos.sh             # macOS-specific setup
 │   ├── verify.setup.sh            # Core validation (16 checks)
 │   └── verify.macos.sh            # macOS validation
-├── 📦 Brewfile                     # 70+ packages (CLI tools, apps, MAS)
+├── 📦 _dotfiles/Brewfile           # 70+ packages (CLI tools, apps, MAS)
 ├── 📚 docs/                        # Comprehensive documentation
 │   ├── PRD.md                     # Product requirements and use cases
 │   ├── SYSTEM_DESIGN.md           # Technical architecture
