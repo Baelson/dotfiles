@@ -26,7 +26,7 @@ teardown() {
     found_files=0
 
     for file in "${managed_zsh_files[@]}"; do
-        if [[ -f "$DOTFILES_ROOT/$file" || -f "$DOTFILES_ROOT/${file}.tmpl" ]]; then
+        if [[ -f "$DOTFILES_SOURCE_DIR/$file" || -f "$DOTFILES_SOURCE_DIR/${file}.tmpl" ]]; then
             found_files=$((found_files + 1))
         fi
     done
@@ -36,46 +36,46 @@ teardown() {
 }
 
 @test "FR-4.2: Oh My Zsh external repository management" {
-    [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
 
     # Should contain Oh My Zsh configuration
-    grep -q -i "oh-my-zsh\|ohmyzsh" "$DOTFILES_ROOT/.chezmoiexternal.toml"
+    grep -q -i "oh-my-zsh\|ohmyzsh" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
 }
 
 @test "FR-4.3: Antigen plugin manager configuration" {
-    [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
 
     # Should contain Antigen configuration
-    grep -q -i "antigen" "$DOTFILES_ROOT/.chezmoiexternal.toml"
+    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
 }
 
 @test "FR-4.4: Powerlevel10k theme configuration" {
     # Check for p10k configuration file
-    [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" || -f "$DOTFILES_ROOT/dot_p10k.zsh.tmpl" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" || -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh.tmpl" ]]
 
     # Verify it contains powerlevel10k configuration
-    if [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
-        grep -q -i "powerlevel10k\|p10k" "$DOTFILES_ROOT/dot_p10k.zsh"
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]]; then
+        grep -q -i "powerlevel10k\|p10k" "$DOTFILES_SOURCE_DIR/dot_p10k.zsh"
     fi
 }
 
 @test "FR-4.5: Directory colors configuration" {
     # Check for dircolors configuration - can be external or managed directly
     # External management via .chezmoiexternal.toml is preferred
-    grep -q -i "dircolors" "$DOTFILES_ROOT/.chezmoiexternal.toml" || [[ -d "$DOTFILES_ROOT/dot_dircolors" || -f "$DOTFILES_ROOT/dot_dircolors" ]]
+    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" || [[ -d "$DOTFILES_SOURCE_DIR/dot_dircolors" || -f "$DOTFILES_SOURCE_DIR/dot_dircolors" ]]
 
     # Should be managed via external repository
-    grep -q -i "dircolors" "$DOTFILES_ROOT/.chezmoiexternal.toml"
+    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
 }
 
 @test "FR-4.6: Shell environment variables configuration" {
     # Check for environment configuration
-    if [[ -f "$DOTFILES_ROOT/dot_zshenv" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshenv" ]]; then
         # Should contain environment variable definitions
-        grep -q -E "(export|PATH)" "$DOTFILES_ROOT/dot_zshenv"
-    elif [[ -f "$DOTFILES_ROOT/dot_zshrc" ]]; then
+        grep -q -E "(export|PATH)" "$DOTFILES_SOURCE_DIR/dot_zshenv"
+    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
         # Alternatively check zshrc for PATH modifications
-        grep -q -E "(export|PATH)" "$DOTFILES_ROOT/dot_zshrc"
+        grep -q -E "(export|PATH)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
     else
         skip "No zsh environment files found to test"
     fi
@@ -83,9 +83,9 @@ teardown() {
 
 @test "FR-4.7: Custom aliases and functions preservation" {
     # Check for custom aliases/functions in zsh config
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
         # Should contain some customization (aliases, functions, or includes)
-        grep -q -E "(alias|function|source|\\.)" "$DOTFILES_ROOT/dot_zshrc"
+        grep -q -E "(alias|function|source|\\.)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
     else
         skip "dot_zshrc not found for alias testing"
     fi
@@ -93,11 +93,11 @@ teardown() {
 
 @test "FR-4.8: iTerm2 shell integration considerations" {
     # Check for iTerm2 integration in shell config
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
         # May contain iTerm2 integration
-        if grep -q -i "iterm" "$DOTFILES_ROOT/dot_zshrc"; then
+        if grep -q -i "iterm" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
             # If iTerm2 integration is present, validate it
-            grep -q -i "shell_integration\|iterm2" "$DOTFILES_ROOT/dot_zshrc"
+            grep -q -i "shell_integration\|iterm2" "$DOTFILES_SOURCE_DIR/dot_zshrc"
         fi
     fi
 
@@ -107,25 +107,25 @@ teardown() {
 
 @test "FR-4.9: Shell plugin management via Antigen" {
     # Check if zshrc contains Antigen configuration
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
         # Should reference antigen for plugin management
-        if grep -q -i "antigen" "$DOTFILES_ROOT/dot_zshrc"; then
+        if grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
             # Validate antigen usage patterns
-            grep -q -E "(antigen bundle|antigen theme|antigen apply)" "$DOTFILES_ROOT/dot_zshrc"
+            grep -q -E "(antigen bundle|antigen theme|antigen apply)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
         fi
     fi
 
     # Also check that antigen is managed via external
-    grep -q -i "antigen" "$DOTFILES_ROOT/.chezmoiexternal.toml"
+    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
 }
 
 @test "FR-4.10: Shell completion enhancements" {
     # Check for completion configuration
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
         # Should contain completion setup
-        if grep -q -i "completion\|compinit" "$DOTFILES_ROOT/dot_zshrc"; then
+        if grep -q -i "completion\|compinit" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
             # Validate completion configuration
-            grep -q -E "(compinit|autoload.*comp)" "$DOTFILES_ROOT/dot_zshrc"
+            grep -q -E "(compinit|autoload.*comp)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
         fi
     fi
 
@@ -162,10 +162,10 @@ teardown() {
 }
 
 @test "FR-4.12: External repository update frequency configuration" {
-    [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
 
     # Check for refresh period configuration in external repos
-    external_content=$(cat "$DOTFILES_ROOT/.chezmoiexternal.toml")
+    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml")
 
     # Should contain refresh period for at least one external tool
     [[ "$external_content" =~ refreshPeriod || "$external_content" =~ refresh ]]
@@ -173,9 +173,9 @@ teardown() {
 
 @test "FR-4.13: Shell theme customization preservation" {
     # Check for theme configuration in p10k config
-    if [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]]; then
         # Should contain theme customization
-        grep -q -E "(POWERLEVEL9K|P9K)_" "$DOTFILES_ROOT/dot_p10k.zsh"
+        grep -q -E "(POWERLEVEL9K|P9K)_" "$DOTFILES_SOURCE_DIR/dot_p10k.zsh"
     else
         skip "p10k configuration file not found"
     fi
@@ -192,10 +192,10 @@ teardown() {
 }
 
 @test "FR-4.15: External tool archive method validation" {
-    [[ -f "$DOTFILES_ROOT/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
 
     # Check that external tools use archive method for security
-    external_content=$(cat "$DOTFILES_ROOT/.chezmoiexternal.toml")
+    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml")
 
     # Should use archive or git-repo type (not direct download)
     [[ "$external_content" =~ 'type = "archive"' || "$external_content" =~ 'type = "git-repo"' ]]

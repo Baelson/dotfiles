@@ -11,6 +11,7 @@ export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
 export BOOTSTRAP_DIR="${DOTFILES_ROOT}/bootstrap"
 export TESTS_DIR="${DOTFILES_ROOT}/tests"
+export DOTFILES_SOURCE_DIR="${DOTFILES_ROOT}/_dotfiles"  # New chezmoi source directory
 
 # Test execution modes
 export TEST_MODE="${TEST_MODE:-unit}"

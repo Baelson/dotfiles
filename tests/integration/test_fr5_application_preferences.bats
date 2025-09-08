@@ -35,8 +35,8 @@ teardown() {
     fi
 
     # Alternative: check for managed VS Code config directory
-    if [[ -d "$DOTFILES_ROOT/private_Library" ]]; then
-        if find "$DOTFILES_ROOT/private_Library" -name "*Code*" -type d 2>/dev/null | grep -q .; then
+    if [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]; then
+        if find "$DOTFILES_SOURCE_DIR/private_Library" -name "*Code*" -type d 2>/dev/null | grep -q .; then
             vscode_configs_found=$((vscode_configs_found + 1))
         fi
     fi
@@ -49,14 +49,14 @@ teardown() {
     # Check for Git configuration
     git_config_found=false
 
-    if [[ -f "$DOTFILES_ROOT/dot_gitconfig" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]]; then
         git_config_found=true
         # Should contain user information
-        grep -q -E "(name|email)" "$DOTFILES_ROOT/dot_gitconfig"
-    elif [[ -f "$DOTFILES_ROOT/dot_gitconfig.tmpl" ]]; then
+        grep -q -E "(name|email)" "$DOTFILES_SOURCE_DIR/dot_gitconfig"
+    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
         git_config_found=true
         # Template should contain user template variables
-        grep -q -E "(\{\{.*name.*\}\}|\{\{.*email.*\}\})" "$DOTFILES_ROOT/dot_gitconfig.tmpl"
+        grep -q -E "(\{\{.*name.*\}\}|\{\{.*email.*\}\})" "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl"
     fi
 
     [[ "$git_config_found" == "true" ]]
@@ -72,8 +72,8 @@ teardown() {
     fi
 
     # Look for terminal preferences in Library
-    if [[ -d "$DOTFILES_ROOT/private_Library" ]]; then
-        if find "$DOTFILES_ROOT/private_Library" -name "*Terminal*" -o -name "*iTerm*" 2>/dev/null | grep -q .; then
+    if [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]; then
+        if find "$DOTFILES_SOURCE_DIR/private_Library" -name "*Terminal*" -o -name "*iTerm*" 2>/dev/null | grep -q .; then
             terminal_config_found=true
         fi
     fi
@@ -157,7 +157,7 @@ teardown() {
     fi
 
     # Git
-    if [[ -f "$DOTFILES_ROOT/dot_gitconfig" ]] || [[ -f "$DOTFILES_ROOT/dot_gitconfig.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
         dev_tools_managed=$((dev_tools_managed + 1))
     fi
 
@@ -210,7 +210,7 @@ teardown() {
     fi
 
     # Check for consistent Git configuration
-    if [[ -f "$DOTFILES_ROOT/dot_gitconfig" ]] || [[ -f "$DOTFILES_ROOT/dot_gitconfig.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
         consistency_indicators=$((consistency_indicators + 1))
     fi
 
@@ -219,10 +219,11 @@ teardown() {
 }
 
 @test "FR-5.10: Application-specific ignore patterns" {
-    [[ -f "$DOTFILES_ROOT/.chezmoiignore" ]]
+    # Check for .chezmoiignore in the chezmoi source directory
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiignore" ]]
 
     # Should contain application-specific ignore patterns
-    ignore_content=$(cat "$DOTFILES_ROOT/.chezmoiignore")
+    ignore_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiignore")
 
     app_ignores=0
 

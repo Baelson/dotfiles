@@ -44,7 +44,7 @@ shellcheck --version
 cd /Users/baelson/Git/dotfiles
 
 # Run all tests
-bats tests/
+bats tests/**/*.bats
 
 # Run specific test suite
 bats tests/system/test_fr1_bootstrap.bats
@@ -125,7 +125,7 @@ pre-commit run --files tests/system/test_fr1_bootstrap.bats
 # Install act
 brew install act
 
-# Verify installation  
+# Verify installation
 act --version
 
 # List available workflows
@@ -184,7 +184,7 @@ not ok 3 FR-1.8: Dry-run shows complete setup plan
 ### Test Status Indicators
 
 - ✅ **ok**: Test passed
-- ❌ **not ok**: Test failed  
+- ❌ **not ok**: Test failed
 - **#**: Comments showing failure location and reason
 
 ### Common Test Issues and Solutions
@@ -233,7 +233,7 @@ act pull_request -j setup-validation
 Once you push to a PR, the GitHub Actions workflow will:
 
 1. **Setup Validation**: Install BATS and verify repository structure
-2. **FR-7 Matrix Testing**: Run 18 command-line argument variations  
+2. **FR-7 Matrix Testing**: Run 18 command-line argument variations
 3. **Functional Requirements**: Test all FR-1 through FR-7
 4. **Performance Integration**: Validate timing and benchmarks
 5. **Security Quality**: Run ShellCheck, secret scanning
@@ -273,7 +273,7 @@ BATS_VERBOSE_RUN=1 bats tests/system/test_fr1_bootstrap.bats
 ## Next Steps
 
 1. **Start with Basic Testing**: Run `bats tests/system/test_fr1_bootstrap.bats`
-2. **Set Up Pre-commit**: Run `pre-commit install`  
+2. **Set Up Pre-commit**: Run `pre-commit install`
 3. **Test Performance**: Run `./scripts/performance-check.sh`
 4. **Create a PR**: Push changes and verify GitHub Actions workflow
 

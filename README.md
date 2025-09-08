@@ -86,9 +86,11 @@ dotfiles/
 │   ├── TESTING.md                 # Verification & validation procedures
 │   ├── DEV_STATUS.md              # Development progress and lessons
 │   └── OPEN_ISSUES.md             # Issue tracking
-├── ⚙️ dot_*/                       # Chezmoi managed dotfiles
-├── 🔒 encrypted_dot_ssh/           # SSH keys (age encrypted)
-└── 🔗 .chezmoiexternal.toml       # External repositories (Oh My Zsh, etc.)
+└── 📁 _dotfiles/                   # Chezmoi managed dotfiles
+    ├── ⚙️ dot_*/                   # Configuration files
+    ├── 🔒 encrypted_*/             # Encrypted sensitive data
+    ├── 🔗 .chezmoiexternal.toml    # External repositories (Oh My Zsh, etc.)
+    └── 📋 .chezmoiignore           # Files to ignore
 ```
 
 ## 📖 Documentation
@@ -169,7 +171,7 @@ This system is designed for:
 
 ### Common Issues
 - **Homebrew Installation Fails**: Script uses explicit bash shebang handling
-- **Repository Clone Issues**: Automatic SSH/HTTPS fallback implemented  
+- **Repository Clone Issues**: Automatic SSH/HTTPS fallback implemented
 - **MAS Authentication**: Some Mac App Store apps require manual signin
 - **Permission Issues**: Script requests appropriate privileges as needed
 
