@@ -375,7 +375,9 @@ main() {
 
     # Get test files to run
     local test_files
-    readarray -t test_files < <(get_test_files)
+    # Use portable array population compatible with macOS bash 3.2 (no readarray)
+    IFS=$'\n' test_files=($(get_test_files))
+    unset IFS
 
     if [[ ${#test_files[@]} -eq 0 ]]; then
         log_warning "No test files found"

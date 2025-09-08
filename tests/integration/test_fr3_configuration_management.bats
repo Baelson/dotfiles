@@ -155,7 +155,7 @@ teardown() {
         std_file="${standard_files[$i]}"
         managed_file="${managed_equivalents[$i]}"
 
-        if [[ -f "$DOTFILES_ROOT/$managed_file" || -f "$DOTFILES_ROOT/${managed_file}.tmpl" ]]; then
+        if [[ -f "$DOTFILES_SOURCE_DIR/$managed_file" || -f "$DOTFILES_SOURCE_DIR/${managed_file}.tmpl" || -f "$DOTFILES_ROOT/$managed_file" || -f "$DOTFILES_ROOT/${managed_file}.tmpl" ]]; then
             found_standard=$((found_standard + 1))
         fi
     done

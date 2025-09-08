@@ -29,15 +29,21 @@ apply_dotfiles_configuration() {
         exit 1
     fi
 
-    # Verify we're in the dotfiles repository
-    if [[ ! -f "$REPO_DIR/.chezmoiexternal.toml" ]]; then
-        log_error "Not in a valid chezmoi source directory"
-        log_error "Expected to find .chezmoiexternal.toml in $REPO_DIR"
+    # Determine and verify chezmoi source directory within the repo
+    local CHEZMOI_SOURCE_DIR
+    CHEZMOI_SOURCE_DIR="$REPO_DIR/_dotfiles"
+    if [[ ! -d "$CHEZMOI_SOURCE_DIR" ]]; then
+        log_error "Chezmoi source directory not found: $CHEZMOI_SOURCE_DIR"
+        log_error "Ensure your chezmoi-managed files are under _dotfiles/"
+        exit 1
+    fi
+    if [[ ! -f "$CHEZMOI_SOURCE_DIR/.chezmoiexternal.toml" ]]; then
+        log_error "Missing .chezmoiexternal.toml in $CHEZMOI_SOURCE_DIR"
         exit 1
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_dry_run "Would apply dotfiles using: chezmoi apply"
+        log_dry_run "Would apply dotfiles using: chezmoi --source \"$CHEZMOI_SOURCE_DIR\" apply"
         log_dry_run "Would download external archives (antigen, oh-my-zsh, dircolors)"
         log_dry_run "Would replace Mackup symlinks with actual file content"
         debug_trace "← Exiting: apply_dotfiles_configuration (dry-run)"
@@ -50,9 +56,9 @@ apply_dotfiles_configuration() {
     log "  → Replacing Mackup symlinks with actual file content..."
     log "  → Updating application configurations..."
 
-    if ! chezmoi apply; then
+    if ! chezmoi --source "$CHEZMOI_SOURCE_DIR" apply; then
         log_error "Failed to apply dotfiles configuration"
-        log_error "You can manually run: cd $REPO_DIR && chezmoi apply"
+        log_error "You can manually run: chezmoi --source $CHEZMOI_SOURCE_DIR apply"
         exit 1
     fi
 

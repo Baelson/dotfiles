@@ -79,7 +79,7 @@ teardown() {
     fi
 
     # Alternative: Check for terminal-related dotfiles
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc" ]] || [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]] || [[ -f "$DOTFILES_ROOT/dot_zshrc" ]] || [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
         terminal_config_found=true
     fi
 
@@ -263,17 +263,17 @@ teardown() {
     extensions_managed=false
 
     # VS Code extensions
-    if find "$DOTFILES_ROOT" -name "extensions.json" 2>/dev/null | grep -q .; then
+    if find "$DOTFILES_ROOT" -name "extensions.json" -o -path "$DOTFILES_SOURCE_DIR/**/extensions.json" 2>/dev/null | grep -q .; then
         extensions_managed=true
     fi
 
     # Check for extension lists in VS Code settings
-    if find "$DOTFILES_ROOT" -name "settings.json" 2>/dev/null | head -1 | xargs -r grep -q "extensions\|plugins"; then
+    if { find "$DOTFILES_ROOT" -name "settings.json" -o -path "$DOTFILES_SOURCE_DIR/**/settings.json" 2>/dev/null | head -1 | xargs -r grep -q "extensions\|plugins"; } then
         extensions_managed=true
     fi
 
     # Alternative: Check for shell plugins (antigen)
-    if [[ -f "$DOTFILES_ROOT/dot_zshrc" ]] && grep -q "antigen bundle" "$DOTFILES_ROOT/dot_zshrc"; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] && grep -q "antigen bundle" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
         extensions_managed=true
     fi
 

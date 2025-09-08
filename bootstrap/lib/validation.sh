@@ -144,8 +144,11 @@ validate_chezmoi_configuration() {
 
     if command -v chezmoi &> /dev/null; then
         log "🏠 Chezmoi Configuration:"
-        validate_item "chezmoi external config exists" '[ -f "$REPO_DIR/.chezmoiexternal.toml" ]'
-        validate_item "chezmoi ignore config exists" '[ -f "$REPO_DIR/.chezmoiignore" ]'
+        # Determine source directory inside the repository
+        local SOURCE_DIR="$REPO_DIR/_dotfiles"
+        validate_item "chezmoi source directory exists" '[ -d "$REPO_DIR/_dotfiles" ]'
+        validate_item "chezmoi external config exists" '[ -f "$REPO_DIR/_dotfiles/.chezmoiexternal.toml" ]'
+        validate_item "chezmoi ignore config exists" '[ -f "$REPO_DIR/_dotfiles/.chezmoiignore" ]'
 
         # Skip chezmoi doctor in CI environments since it requires proper home directory setup
         if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -155,6 +158,7 @@ validate_chezmoi_configuration() {
             # Run chezmoi doctor and parse results
             log "Running chezmoi doctor..."
             local doctor_output
+            # Run doctor and allow non-zero to be handled below
             doctor_output=$(chezmoi doctor 2>&1)
             local doctor_exit_code=$?
 
