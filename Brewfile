@@ -2,6 +2,7 @@
 
 brew 'antigen'          # Plugin manager for zsh, inspired by oh-my-zsh and vundle              -- https://github.com/zsh-users/antigen
 brew 'chezmoi'          # Manage your dotfiles across multiple diverse machines, securely       -- https://github.com/twpayne/chezmoi
+brew 'codex'            # OpenAI's coding agent that runs in your terminal                      -- https://github.com/openai/codex
 brew 'coreutils'        # GNU File, Shell, and Text utilities                                   -- https://git.savannah.gnu.org/git/coreutils
 brew 'ddrescue'         # GNU data recovery tool                                                -- https://www.gnu.org/software/ddrescue/ddrescue.html
 brew 'direnv'           # Load/unload environment variables based on $PWD                       -- https://github.com/direnv/direnv
