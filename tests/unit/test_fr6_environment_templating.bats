@@ -123,10 +123,10 @@ teardown() {
     # Check if package management is ready for environment-specific packages
     package_templating_ready=false
 
-    # Look for Brewfile template
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile.tmpl" ]]; then
+    # Look for Brewfile template (chezmoi maps Brewfile -> ~/Brewfile)
+    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
         package_templating_ready=true
-    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]; then
+    elif [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]; then
         # Static Brewfile exists (could support templating)
         package_templating_ready=true
     fi
@@ -277,7 +277,7 @@ teardown() {
     fi
 
     # Package management (ready for environment differentiation)
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] || [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
         ((++required_components))
     fi
 
