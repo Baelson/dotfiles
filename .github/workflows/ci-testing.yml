@@ -11,6 +11,7 @@ on:
       - '.chezmoi*'
       - '*.md'
       - '.github/workflows/**'
+  workflow_dispatch:
 
 # Cancel previous workflow runs for the same PR
 concurrency:
