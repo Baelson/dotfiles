@@ -22,7 +22,7 @@
   },
   "sslWhitelist": [],
   "webConfig": {
-    "lastUpdatedAt": "2025-09-03T11:30:14.348Z",
+    "lastUpdatedAt": "2025-09-08T07:02:14.905Z",
     "config": {
       "callouts": [],
       "promos": [
@@ -58,7 +58,7 @@
     },
     "dismissedCallouts": {}
   },
-  "lastReleaseNotesDisplayed": "11.3.0",
+  "lastReleaseNotesDisplayed": "11.4.0",
   "ui": {
     "shouldShowStartupPromoModal": false
   },
@@ -78,44 +78,25 @@
     }
   },
   "userId": "227ca39f-0411-4f26-98b2-0e6409b6f440",
-  "licensedFeatures": [
-    "advanced",
-    "gitgui:advanced",
-    "gitlens:advanced",
-    "bundle:advanced",
-    "gitkraken_v1:advanced",
-    "suite:advanced",
-    "pro",
-    "gitgui:pro",
-    "gitlens:pro",
-    "bundle:pro",
-    "gitkraken_v1:pro",
-    "suite:pro",
-    "trial",
-    "gitgui:trial",
-    "gitlens:trial",
-    "bundle:trial",
-    "gitkraken_v1:trial",
-    "suite:trial"
-  ],
+  "licensedFeatures": [],
   "orgSettingsByOrgId": {
     "68a8ff209db749b990621694": {
       "aiSettings": {
         "enabled": true,
         "createdAt": "2025-08-22T23:38:05.996417Z",
-        "updatedAt": "2025-08-22T23:38:05.996417Z"
+        "updatedAt": "2025-09-06T01:33:08.179708Z"
       },
       "draftsSettings": {
         "enabled": true,
         "createdAt": "2025-08-22T23:38:06.00735Z",
-        "updatedAt": "2025-08-22T23:38:06.00735Z"
+        "updatedAt": "2025-09-06T01:33:08.168764Z"
       },
       "ssoSettings": {
         "enabled": false,
-        "enforced": true,
+        "enforced": false,
         "provision": false,
         "createdAt": "2025-08-22T23:38:05.996417Z",
-        "updatedAt": "2025-08-22T23:38:05.996417Z"
+        "updatedAt": "2025-09-06T01:33:08.179708Z"
       },
       "memberInvitesRequireApproval": false,
       "conflictDetectionEnabled": true,
@@ -123,10 +104,10 @@
       "enforceAiProviders": false,
       "aiProviders": {},
       "ssoEnabled": false,
-      "ssoEnforced": true,
+      "ssoEnforced": false,
       "ssoProvision": false,
       "createdAt": "2025-08-22T23:38:05.996417Z",
-      "updatedAt": "2025-08-22T23:38:05.996417Z"
+      "updatedAt": "2025-09-06T01:33:08.179708Z"
     }
   },
   "userFeatures": [
@@ -170,6 +151,9 @@
       "name": "gkdAIMergeConflictResolutionNudge_11_3_0"
     },
     {
+      "name": "gkdCollectRefreshMetrics_11_4_0"
+    },
+    {
       "name": "gkdCommitComposeWipButtonBottom_11_3_0"
     },
     {
@@ -177,6 +161,9 @@
     },
     {
       "name": "gkdevAllowInviteMessages"
+    },
+    {
+      "name": "gkdevEnableStudentPlan"
     },
     {
       "name": "gkDevReferralSystem"

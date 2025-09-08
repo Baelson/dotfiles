@@ -126,5 +126,8 @@
             "label": "Recent Issues",
             "query": "state:open repo:${owner}/${repository} sort:updated-desc"
         }
-    ]
+    ],
+    "vxplain.enableExtensionAutoStart": false,
+    "chatgpt.config": {},
+    "chatgpt.cliExecutable": ""
 }
