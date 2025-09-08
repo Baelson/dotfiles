@@ -26,7 +26,7 @@ on:
 
 # Cancel previous workflow runs for the same PR
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -97,8 +97,8 @@ jobs:
           # Verify essential files exist
           test -f bootstrap/setup.core.sh
           test -f bootstrap/lib/common.sh
-          test -f .chezmoiignore
-          test -f .chezmoiexternal.toml
+          test -f _dotfiles/.chezmoiignore
+          test -f _dotfiles/.chezmoiexternal.toml
 
           # Verify bootstrap scripts are syntactically correct (using zsh)
           zsh -n bootstrap/setup.core.sh
