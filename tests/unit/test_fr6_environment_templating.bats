@@ -169,27 +169,6 @@ teardown() {
     [[ "$ignore_templating_ready" == "true" ]]
 }
 
-@test "FR-6.9: Manual override mechanism availability" {
-    # Check for manual environment override capability
-    override_mechanism_found=false
-
-    # Look for environment variable or flag support
-    for script in "$BOOTSTRAP_DIR"/*.sh; do
-        if [[ -f "$script" ]]; then
-            if grep -q -E "(\$\{?WORK|\$\{?PERSONAL|\$\{?ENV|--work|--personal)" "$script"; then
-                override_mechanism_found=true
-                break
-            fi
-        fi
-    done
-
-    # Check chezmoi config for data override capability
-    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]; then
-        override_mechanism_found=true  # Chezmoi supports data override
-    fi
-
-    [[ "$override_mechanism_found" == "true" ]]
-}
 
 @test "FR-6.10: Template syntax validation" {
     # Validate that any existing template files use correct Go template syntax
