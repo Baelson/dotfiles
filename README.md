@@ -7,7 +7,7 @@ Transform a fresh macOS installation into a fully configured development environ
 ## 🚀 Quick Start
 
 ```bash
-# One-command bootstrap (works on fresh macOS)
+# One-command setup (works on fresh macOS)
 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap.sh | zsh
 ```
 
@@ -66,17 +66,17 @@ brew bundle --file="$HOME/Brewfile" --no-lock
 ### Debug and Testing Modes
 ```bash
 # Preview operations without making changes
-./bootstrap/setup.core.sh --dry-run
+./setup/setup.core.sh --dry-run
 
 # Detailed debugging with variable inspection
-./bootstrap/setup.core.sh --debug-verbose
+./setup/setup.core.sh --debug-verbose
 
 # Control flow tracing for troubleshooting
-./bootstrap/setup.core.sh --debug-trace
+./setup/setup.core.sh --debug-trace
 
 # Verify system is properly configured
-./bootstrap/verify.setup.sh
-./bootstrap/verify.macos.sh
+./setup/verify.setup.sh
+./setup/verify.macos.sh
 ```
 
 ### Configuration Management
@@ -101,8 +101,8 @@ chezmoi apply           # Execute
 ```
 dotfiles/
 ├── 📋 README.md                    # This file - project overview
-├── 🏗️ bootstrap/                    # One-command setup system
-│   ├── setup.core.sh              # Core bootstrap (Xcode, Homebrew, Git)
+├── 🏗️ setup/                        # One-command setup system
+│   ├── setup.core.sh              # Core setup (Xcode, Homebrew, Git)
 │   ├── setup.macos.sh             # macOS-specific setup
 │   ├── verify.setup.sh            # Core validation (16 checks)
 │   └── verify.macos.sh            # macOS validation

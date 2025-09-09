@@ -5,7 +5,7 @@
 # This script validates that all Phase 1 components are properly installed
 # and configured before proceeding to subsequent phases
 #
-# Usage: ./bootstrap/verify.setup.sh [OPTIONS]
+# Usage: ./setup/verify.setup.sh [OPTIONS]
 #
 # Options:
 #   --debug-trace       Show control flow and decision points

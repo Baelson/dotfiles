@@ -5,7 +5,7 @@
 # This script validates that all macOS-specific components from setup.macos.sh
 # are properly installed and configured
 #
-# Usage: ./bootstrap/verify.macos.sh [OPTIONS]
+# Usage: ./setup/verify.macos.sh [OPTIONS]
 #
 # Options:
 #   --debug-trace       Show control flow and decision points
