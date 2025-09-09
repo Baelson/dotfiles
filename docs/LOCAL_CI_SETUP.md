@@ -278,3 +278,18 @@ BATS_VERBOSE_RUN=1 bats tests/system/test_fr1_bootstrap.bats
 4. **Create a PR**: Push changes and verify GitHub Actions workflow
 
 The local CI infrastructure provides comprehensive testing capabilities that mirror the GitHub Actions pipeline, enabling fast feedback and reliable validation before pushing changes.
+## Local CI Runner (No GitHub Actions)
+
+Run the same core checks locally without incurring Actions minutes:
+
+```bash
+# From repo root
+./scripts/ci-local.sh
+```
+
+What it does:
+- Ensures `bats` and optionally `pre-commit` are installed (via Homebrew if present)
+- Runs `pre-commit run --all-files`
+- Runs the full BATS suite via `scripts/test.sh --all`
+
+Tip: Add a shell alias `ci=./scripts/ci-local.sh` for convenience.

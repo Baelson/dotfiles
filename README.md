@@ -36,6 +36,15 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap.sh 
 
 ## 🛠 Advanced Usage
 
+### Local CI (no GitHub Actions)
+Run core checks locally to avoid Actions usage on private repos:
+
+```bash
+./scripts/ci-local.sh
+```
+
+This runs `pre-commit run --all-files` and the full BATS suite (`scripts/test.sh --all`).
+
 ### Homebrew Bundle (Brewfile)
 The Brewfile is managed under `_dotfiles/Brewfile` by chezmoi and typically materializes to `~/Brewfile` after `chezmoi apply`.
 
