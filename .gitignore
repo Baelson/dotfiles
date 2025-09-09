@@ -7,7 +7,11 @@
 ehthumbs.db
 Thumbs.db
 
-# Bootstrap logs
+# Setup logs
+setup/logs/
+# Do not ignore tracked setup library scripts
+!setup/lib/
+!setup/lib/**
 bootstrap/*.log
 install_*.log
 macos-setup_*.log
@@ -82,3 +86,6 @@ env/
 ENV/
 venv.bak/
 venv/
+# Allow setup/lib to be tracked even though generic lib/ is ignored above
+!setup/lib/
+!setup/lib/**

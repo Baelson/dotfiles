@@ -2,7 +2,7 @@
 #
 # Performance Check Script for Pre-commit Hook
 #
-# This script validates that bootstrap dry-run execution completes
+# This script validates that setup dry-run execution completes
 # within acceptable time limits to catch performance regressions.
 #
 
@@ -11,7 +11,7 @@ set -euo pipefail
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
-BOOTSTRAP_DIR="$DOTFILES_ROOT/bootstrap"
+BOOTSTRAP_DIR="$DOTFILES_ROOT/setup"
 PERFORMANCE_LIMIT=120  # 120 seconds for dry-run
 
 # Colors for output
@@ -41,18 +41,18 @@ main() {
         exit 1
     }
 
-    # Verify bootstrap script exists
+    # Verify setup script exists
     if [[ ! -f "$BOOTSTRAP_DIR/setup.core.sh" ]]; then
-        log_error "Bootstrap script not found: $BOOTSTRAP_DIR/setup.core.sh"
+        log_error "Setup script not found: $BOOTSTRAP_DIR/setup.core.sh"
         exit 1
     fi
 
     # Performance test: time the dry-run execution
-    log_info "Timing bootstrap dry-run execution..."
+    log_info "Timing setup dry-run execution..."
 
     start_time=$(date +%s)
 
-    # Run bootstrap in dry-run mode with timeout
+    # Run setup in dry-run mode with timeout
     if timeout 180s "$BOOTSTRAP_DIR/setup.core.sh" --dry-run --debug-verbose > /dev/null 2>&1; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
@@ -63,7 +63,7 @@ main() {
         if [[ $duration -gt $PERFORMANCE_LIMIT ]]; then
             log_error "Performance regression detected!"
             log_error "Dry-run took ${duration}s (limit: ${PERFORMANCE_LIMIT}s)"
-            log_error "Please investigate bootstrap script performance"
+            log_error "Please investigate setup script performance"
             exit 1
         else
             log_info "✅ Performance check passed (${duration}s < ${PERFORMANCE_LIMIT}s)"

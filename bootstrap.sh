@@ -95,14 +95,14 @@ verify_repository_structure() {
     echo "🔍 Verifying repository structure..."
 
     # Check if we're in the right directory
-    if [[ ! -f "$REPO_DIR/bootstrap/setup.core.sh" ]]; then
-        echo "❌ Error: Required file bootstrap/setup.core.sh not found"
+    if [[ ! -f "$REPO_DIR/setup/setup.core.sh" ]]; then
+        echo "❌ Error: Required file setup/setup.core.sh not found"
         echo "💡 Repository structure may be corrupted, try removing $REPO_DIR and re-running"
         exit 1
     fi
 
-    if [[ ! -f "$REPO_DIR/bootstrap/lib/common.sh" ]]; then
-        echo "❌ Error: Required file bootstrap/lib/common.sh not found"
+    if [[ ! -f "$REPO_DIR/setup/lib/common.sh" ]]; then
+        echo "❌ Error: Required file setup/lib/common.sh not found"
         echo "💡 Repository structure may be corrupted, try removing $REPO_DIR and re-running"
         exit 1
     fi
@@ -119,7 +119,7 @@ handoff_to_core_setup() {
     cd "$REPO_DIR"
 
     # Execute the core setup script with any arguments passed to this script
-    exec ./bootstrap/setup.core.sh "$@"
+    exec ./setup/setup.core.sh "$@"
 }
 
 # Handle script interruption

@@ -33,8 +33,8 @@ if [[ -z "${REPO_DIR:-}" ]]; then
     readonly REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/Git/dotfiles")"
 fi
 if [[ -z "${LOG_DIR:-}" ]]; then
-    # Default logs under repository directory to avoid unwritable $HOME/Git in sandboxed environments
-    readonly LOG_DIR="${REPO_DIR:-$PWD}"
+    # Default logs under setup/logs inside the repo
+    readonly LOG_DIR="${REPO_DIR:-$PWD}/setup/logs"
 fi
 
 # Color Constants for Output

@@ -96,14 +96,14 @@ jobs:
       - name: Basic repository structure validation
         run: |
           # Verify essential files exist
-          test -f bootstrap/setup.core.sh
-          test -f bootstrap/lib/common.sh
+          test -f setup/setup.core.sh
+          test -f setup/lib/common.sh
           test -f _dotfiles/.chezmoiignore
           test -f _dotfiles/.chezmoiexternal.toml
 
-          # Verify bootstrap scripts are syntactically correct (using zsh)
-          zsh -n bootstrap/setup.core.sh
-          zsh -n bootstrap/lib/common.sh
+          # Verify setup scripts are syntactically correct (using zsh)
+          zsh -n setup/setup.core.sh
+          zsh -n setup/lib/common.sh
 
   # Job 2: FR-7 Debug Capabilities Matrix Testing
   test-fr7-debug-matrix:
