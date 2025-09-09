@@ -1,8 +1,28 @@
 name: CI/CD Testing Pipeline
 
 # Disabled automatic triggers to avoid Actions costs on private repo.
-# Re-enable by adding push/pull_request triggers when ready.
+# Re-enable by uncommenting the blocks below when ready.
 on:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'bootstrap/**'
+  #     - 'scripts/**'
+  #     - 'tests/**'
+  #     - '_dotfiles/**'
+  #     - '.chezmoi*'
+  #     - '*.md'
+  #     - '.github/workflows/**'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'bootstrap/**'
+  #     - 'scripts/**'
+  #     - 'tests/**'
+  #     - '_dotfiles/**'
+  #     - '.chezmoi*'
+  #     - '*.md'
+  #     - '.github/workflows/**'
   workflow_dispatch:
 
 # Cancel previous workflow runs for the same PR
