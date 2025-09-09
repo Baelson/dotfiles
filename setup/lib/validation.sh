@@ -100,7 +100,7 @@ validate_repository_structure() {
     log "📁 Repository Structure:"
 
     validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
-    validate_item "Brewfile exists" '[ -f "$REPO_DIR/_dotfiles/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]'
+    validate_item "Brewfile exists" '[ -f "$REPO_DIR/desired_state/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]'
     validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
     validate_item "Setup scripts exist" '[ -f "$REPO_DIR/setup/setup.core.sh" -a -f "$REPO_DIR/setup/setup.macos.sh" ]'
     validate_item "Common library exists" '[ -f "$REPO_DIR/setup/lib/common.sh" ]'
@@ -115,7 +115,7 @@ validate_repository_structure() {
 validate_package_management() {
     debug_trace "→ Entering: validate_package_management"
 
-    if command -v brew &> /dev/null && { [ -f "$REPO_DIR/_dotfiles/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]; }; then
+    if command -v brew &> /dev/null && { [ -f "$REPO_DIR/desired_state/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]; }; then
         log "📦 Homebrew Package Status:"
 
         # Check a few key packages that should be installed
@@ -145,10 +145,10 @@ validate_chezmoi_configuration() {
     if command -v chezmoi &> /dev/null; then
         log "🏠 Chezmoi Configuration:"
         # Determine source directory inside the repository
-        local SOURCE_DIR="$REPO_DIR/_dotfiles"
-        validate_item "chezmoi source directory exists" '[ -d "$REPO_DIR/_dotfiles" ]'
-        validate_item "chezmoi external config exists" '[ -f "$REPO_DIR/_dotfiles/.chezmoiexternal.toml" ]'
-        validate_item "chezmoi ignore config exists" '[ -f "$REPO_DIR/_dotfiles/.chezmoiignore" ]'
+        local SOURCE_DIR="$REPO_DIR/desired_state"
+        validate_item "chezmoi source directory exists" '[ -d "$REPO_DIR/desired_state" ]'
+        validate_item "chezmoi external config exists" '[ -f "$REPO_DIR/desired_state/.chezmoiexternal.toml" ]'
+        validate_item "chezmoi ignore config exists" '[ -f "$REPO_DIR/desired_state/.chezmoiignore" ]'
 
         # Skip chezmoi doctor in CI environments since it requires proper home directory setup
         if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then

@@ -52,12 +52,12 @@ echo "source \"$(pwd)/scripts/dev-aliases.sh\"" >> "$HOME/.zshrc"
 ```
 
 ### Homebrew Bundle (Brewfile)
-The Brewfile is managed under `_dotfiles/Brewfile` by chezmoi and typically materializes to `~/Brewfile` after `chezmoi apply`.
+The Brewfile is managed under `desired_state/Brewfile` by chezmoi and typically materializes to `~/Brewfile` after `chezmoi apply`.
 
 Examples:
 ```bash
 # Preview (no installs):
-brew bundle --file="_dotfiles/Brewfile" --no-lock --help | sed -n '1,40p'
+brew bundle --file="desired_state/Brewfile" --no-lock --help | sed -n '1,40p'
 
 # Apply after chezmoi has placed Brewfile in $HOME:
 brew bundle --file="$HOME/Brewfile" --no-lock
@@ -106,14 +106,14 @@ dotfiles/
 │   ├── setup.macos.sh             # macOS-specific setup
 │   ├── verify.setup.sh            # Core validation (16 checks)
 │   └── verify.macos.sh            # macOS validation
-├── 📦 _dotfiles/Brewfile           # 70+ packages (CLI tools, apps, MAS)
+├── 📦 desired_state/Brewfile           # 70+ packages (CLI tools, apps, MAS)
 ├── 📚 docs/                        # Comprehensive documentation
 │   ├── PRD.md                     # Product requirements and use cases
 │   ├── SYSTEM_DESIGN.md           # Technical architecture
 │   ├── TESTING.md                 # Verification & validation procedures
 │   ├── DEV_STATUS.md              # Development progress and lessons
 │   └── OPEN_ISSUES.md             # Issue tracking
-└── 📁 _dotfiles/                   # Chezmoi managed dotfiles
+└── 📁 desired_state/                   # Chezmoi managed dotfiles
     ├── ⚙️ dot_*/                   # Configuration files
     ├── 🔒 encrypted_*/             # Encrypted sensitive data
     ├── 🔗 .chezmoiexternal.toml    # External repositories (Oh My Zsh, etc.)

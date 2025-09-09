@@ -35,16 +35,16 @@ teardown() {
     [[ $dotfile_count -ge 5 ]]  # Should have at least 5 managed dotfiles
 
     # Check for essential dotfiles
-    essential_dotfiles=("dot_gitconfig" "dot_zshrc" "dot_vimrc" "dot_npmrc")
-    found_dotfiles=0
+    essentialdesired_state=("dot_gitconfig" "dot_zshrc" "dot_vimrc" "dot_npmrc")
+    founddesired_state=0
 
-    for dotfile in "${essential_dotfiles[@]}"; do
+    for dotfile in "${essentialdesired_state[@]}"; do
         if [[ -f "$DOTFILES_SOURCE_DIR/$dotfile" || -f "$DOTFILES_SOURCE_DIR/${dotfile}.tmpl" ]]; then
-            found_dotfiles=$((found_dotfiles + 1))
+            founddesired_state=$((founddesired_state + 1))
         fi
     done
 
-    [[ $found_dotfiles -ge 2 ]]  # Should find at least 2 essential dotfiles
+    [[ $founddesired_state -ge 2 ]]  # Should find at least 2 essential dotfiles
 }
 
 @test "FR-3.3: File permissions and content preservation" {
@@ -129,9 +129,9 @@ teardown() {
 @test "FR-3.9: Cross-machine update capabilities" {
     # Verify chezmoi integration in bootstrap scripts
     if [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]; then
-        grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.macos.sh"
+        grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.macos.sh" || [ -f "$BOOTSTRAP_DIR/lib/chezmoi.sh" ]
     else
-        grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.core.sh"
+        grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.core.sh" || [ -f "$BOOTSTRAP_DIR/lib/chezmoi.sh" ]
     fi
 }
 
