@@ -30,7 +30,7 @@ brew install bats-core
 
 ```
 dotfiles/
-├── bootstrap/                 # Core bootstrap scripts
+├── setup/                     # Core setup scripts
 │   ├── lib/                  # Modular function libraries
 │   │   ├── common.sh         # Shared utilities and logging
 │   │   ├── xcode.sh          # Xcode CLI Tools management
@@ -39,7 +39,7 @@ dotfiles/
 │   │   ├── chezmoi.sh        # Chezmoi configuration management
 │   │   ├── macos.sh          # macOS system configuration
 │   │   └── validation.sh     # System validation functions
-│   ├── setup.core.sh         # Core bootstrap (Xcode, Homebrew)
+│   ├── setup.core.sh         # Core setup (Xcode, Homebrew)
 │   ├── setup.macos.sh        # macOS-specific setup
 │   └── verify.setup.sh       # System validation
 ├── scripts/                  # Utility scripts
@@ -73,7 +73,7 @@ dotfiles/
    ./scripts/test.sh --quick
 
    # Run specific functional requirement tests
-   ./scripts/test.sh fr1  # For bootstrap changes
+   ./scripts/test.sh fr1  # For setup changes
    ./scripts/test.sh fr3  # For configuration changes
 
    # Run all tests
@@ -206,10 +206,10 @@ The project uses a modular architecture where functionality is organized into fo
 #### Script Execution Problems
 ```bash
 # Check script syntax
-bash -n bootstrap/setup.core.sh
+zsh -n setup/setup.core.sh
 
 # Run with debug output
-./bootstrap/setup.core.sh --debug-verbose
+./setup/setup.core.sh --debug-verbose
 
 # Check system health
 ./scripts/health-check.sh --full
@@ -230,14 +230,14 @@ bash -n tests/lib/test_helper.bash
 #### Module Loading Issues
 ```bash
 # Check module syntax
-bash -n bootstrap/lib/common.sh
+zsh -n setup/lib/common.sh
 
 # Test module loading
-source bootstrap/lib/common.sh
+source setup/lib/common.sh
 ```
 
 ### Debug Modes
-The bootstrap scripts support multiple debug levels:
+The setup scripts support multiple debug levels:
 
 - `--dry-run`: Preview operations without executing
 - `--debug-trace`: Show control flow and decision points

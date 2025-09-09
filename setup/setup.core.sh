@@ -5,7 +5,7 @@
 # This script handles the core installation after the repository has been cloned.
 # It focuses on installing Xcode CLI Tools and Homebrew.
 #
-# Usage: ./bootstrap/setup.core.sh [OPTIONS]
+# Usage: ./setup/setup.core.sh [OPTIONS]
 #
 # Options:
 #   --dry-run           Preview operations without executing (uses tools' native dry-run when available)

@@ -9,7 +9,7 @@
 # Test configuration
 export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
-export BOOTSTRAP_DIR="${DOTFILES_ROOT}/bootstrap"
+export BOOTSTRAP_DIR="${DOTFILES_ROOT}/setup"
 export TESTS_DIR="${DOTFILES_ROOT}/tests"
 export DOTFILES_SOURCE_DIR="${DOTFILES_ROOT}/_dotfiles"  # New chezmoi source directory
 
@@ -127,7 +127,7 @@ validate_debug_verbose_output() {
 validate_fr1_one_command_bootstrap() {
     # FR-1: One-Command Bootstrap
     [[ "$status" -eq 0 ]]
-    [[ "$output" =~ "macOS Development Environment Bootstrap" || "$output" =~ "Bootstrap" ]]
+    [[ "$output" =~ "Development Environment Setup" || "$output" =~ "Bootstrap" ]]
 }
 
 validate_fr7_debug_capabilities() {
