@@ -45,6 +45,12 @@ Run core checks locally to avoid Actions usage on private repos:
 
 This runs `pre-commit run --all-files` and the full BATS suite (`scripts/test.sh --all`).
 
+Optional shell aliases (shortcuts):
+```bash
+# One-time setup to add short commands (ci, t, pc) to your shell
+echo "source \"$(pwd)/scripts/dev-aliases.sh\"" >> "$HOME/.zshrc"
+```
+
 ### Homebrew Bundle (Brewfile)
 The Brewfile is managed under `_dotfiles/Brewfile` by chezmoi and typically materializes to `~/Brewfile` after `chezmoi apply`.
 

@@ -293,3 +293,11 @@ What it does:
 - Runs the full BATS suite via `scripts/test.sh --all`
 
 Tip: Add a shell alias `ci=./scripts/ci-local.sh` for convenience.
+
+### Optional: Short aliases for make-based CI
+
+To add `ci`, `t` (tests), and `pc` (pre-commit) shortcuts:
+
+```bash
+echo "source \"$(pwd)/scripts/dev-aliases.sh\"" >> "$HOME/.zshrc"
+```
