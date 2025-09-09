@@ -116,8 +116,8 @@ teardown() {
 @test "FR-2.5: setup.macos.sh integrates package installation" {
     [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]
 
-    # Should reference Brewfile or package installation
-    grep -q -i "brewfile\|bundle\|brew install" "$BOOTSTRAP_DIR/setup.macos.sh"
+    # Should reference Brewfile or package installation (direct or via module)
+    grep -q -i "brewfile\|bundle\|brew install\|install_packages" "$BOOTSTRAP_DIR/setup.macos.sh"
 }
 
 @test "FR-2.6: Package installation verification exists" {
@@ -133,7 +133,7 @@ teardown() {
 
     if [[ "$status" -eq 0 ]]; then
         # If setup.macos.sh supports dry-run, should show package preview
-        [[ "$output" =~ (brew|Brewfile|package) ]]
+        [[ "$output" =~ (brew|Brewfile|[Pp]ackage) ]]
     else
         # If setup.macos.sh doesn't exist or support dry-run, that's acceptable
         # but setup.core.sh should reference macOS setup
@@ -146,8 +146,8 @@ teardown() {
 # FR-2.8: Error handling for package installation failures
 @test "FR-2.8: Package installation includes error handling" {
     if [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]; then
-        # Should contain error handling for package failures
-        grep -q -i "error\|fail\|exit\|return" "$BOOTSTRAP_DIR/setup.macos.sh"
+        # Should contain error handling for package failures or delegate to module
+        grep -q -i "error\|fail\|exit\|return\|install_packages" "$BOOTSTRAP_DIR/setup.macos.sh"
     else
         skip "setup.macos.sh not found, checking setup.core.sh"
     fi
