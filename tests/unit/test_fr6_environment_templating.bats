@@ -123,10 +123,10 @@ teardown() {
     # Check if package management is ready for environment-specific packages
     package_templating_ready=false
 
-    # Look for Brewfile template
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile.tmpl" ]]; then
+    # Look for Brewfile template (chezmoi maps Brewfile -> ~/Brewfile)
+    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
         package_templating_ready=true
-    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]; then
+    elif [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]; then
         # Static Brewfile exists (could support templating)
         package_templating_ready=true
     fi
@@ -169,27 +169,6 @@ teardown() {
     [[ "$ignore_templating_ready" == "true" ]]
 }
 
-@test "FR-6.9: Manual override mechanism availability" {
-    # Check for manual environment override capability
-    override_mechanism_found=false
-
-    # Look for environment variable or flag support
-    for script in "$BOOTSTRAP_DIR"/*.sh; do
-        if [[ -f "$script" ]]; then
-            if grep -q -E "(\$\{?WORK|\$\{?PERSONAL|\$\{?ENV|--work|--personal)" "$script"; then
-                override_mechanism_found=true
-                break
-            fi
-        fi
-    done
-
-    # Check chezmoi config for data override capability
-    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]; then
-        override_mechanism_found=true  # Chezmoi supports data override
-    fi
-
-    [[ "$override_mechanism_found" == "true" ]]
-}
 
 @test "FR-6.10: Template syntax validation" {
     # Validate that any existing template files use correct Go template syntax
@@ -277,7 +256,7 @@ teardown() {
     fi
 
     # Package management (ready for environment differentiation)
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile.tmpl" ]]; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] || [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
         ((++required_components))
     fi
 

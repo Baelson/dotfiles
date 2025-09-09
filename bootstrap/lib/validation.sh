@@ -100,7 +100,7 @@ validate_repository_structure() {
     log "📁 Repository Structure:"
 
     validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
-    validate_item "Brewfile exists" '[ -f "$REPO_DIR/Brewfile" ]'
+    validate_item "Brewfile exists" '[ -f "$REPO_DIR/_dotfiles/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]'
     validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
     validate_item "Bootstrap scripts exist" '[ -f "$REPO_DIR/bootstrap/setup.core.sh" -a -f "$REPO_DIR/bootstrap/setup.macos.sh" ]'
     validate_item "Common library exists" '[ -f "$REPO_DIR/bootstrap/lib/common.sh" ]'
@@ -115,7 +115,7 @@ validate_repository_structure() {
 validate_package_management() {
     debug_trace "→ Entering: validate_package_management"
 
-    if command -v brew &> /dev/null && [ -f "$REPO_DIR/Brewfile" ]; then
+    if command -v brew &> /dev/null && { [ -f "$REPO_DIR/_dotfiles/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]; }; then
         log "📦 Homebrew Package Status:"
 
         # Check a few key packages that should be installed

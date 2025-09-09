@@ -1,14 +1,17 @@
 name: Claude Code Review
 
+# Disabled automatic triggers to avoid Actions costs on private repo.
+# Re-enable by uncommenting the block below when ready.
 on:
-  pull_request:
-    types: [opened, synchronize]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+  # pull_request:
+  #   types: [opened, synchronize]
+  #   # Optional: Only run on specific file changes
+  #   # paths:
+  #   #   - "src/**/*.ts"
+  #   #   - "src/**/*.tsx"
+  #   #   - "src/**/*.js"
+  #   #   - "src/**/*.jsx"
+  workflow_dispatch:
 
 jobs:
   claude-review:
