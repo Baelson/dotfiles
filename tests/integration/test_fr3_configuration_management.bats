@@ -35,16 +35,16 @@ teardown() {
     [[ $dotfile_count -ge 5 ]]  # Should have at least 5 managed dotfiles
 
     # Check for essential dotfiles
-    essentialdesired_state=("dot_gitconfig" "dot_zshrc" "dot_vimrc" "dot_npmrc")
-    founddesired_state=0
+    essentialhome=("dot_gitconfig" "dot_zshrc" "dot_vimrc" "dot_npmrc")
+    foundhome=0
 
-    for dotfile in "${essentialdesired_state[@]}"; do
+    for dotfile in "${essentialhome[@]}"; do
         if [[ -f "$DOTFILES_SOURCE_DIR/$dotfile" || -f "$DOTFILES_SOURCE_DIR/${dotfile}.tmpl" ]]; then
-            founddesired_state=$((founddesired_state + 1))
+            foundhome=$((foundhome + 1))
         fi
     done
 
-    [[ $founddesired_state -ge 2 ]]  # Should find at least 2 essential dotfiles
+    [[ $foundhome -ge 2 ]]  # Should find at least 2 essential dotfiles
 }
 
 @test "FR-3.3: File permissions and content preservation" {

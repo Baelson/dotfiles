@@ -3,7 +3,7 @@
 This repository manages a macOS developer environment using chezmoi-managed dotfiles, setup scripts, and a Bats-based test suite. Follow these guidelines to contribute safely and consistently.
 
 ## Project Structure & Module Organization
-- `desired_state/`: Source of truth for dotfiles managed by chezmoi (e.g., `dot_zshrc`, `dot_config/...`, `private_*/`, `encrypted_*.age`). Never commit decrypted secrets.
+- `home/`: Source of truth for dotfiles managed by chezmoi (e.g., `dot_zshrc`, `dot_config/...`, `private_*/`, `encrypted_*.age`). Never commit decrypted secrets.
 - `setup/`: Machine setup and verification scripts (e.g., `setup.macos.sh`, `verify.macos.sh`).
 - `scripts/`: Helper automation (e.g., `test.sh`, `run-critical-tests.sh`, `health-check.sh`).
 - `tests/`: Bats tests organized by `unit/`, `integration/`, `system/` (e.g., `tests/system/test_fr1_bootstrap.bats`).
@@ -20,7 +20,7 @@ This repository manages a macOS developer environment using chezmoi-managed dotf
 ## Coding Style & Naming Conventions
 - Shell: Prefer POSIX-compatible shell, `set -euo pipefail`; 2-space indentation.
 - Names: lowercase with hyphens for scripts (e.g., `performance-check.sh`); functions `snake_case`.
-- Chezmoi: keep `desired_state/` names consistent: `dot_*`, `private_*`, `encrypted_*.age`.
+- Chezmoi: keep `home/` names consistent: `dot_*`, `private_*`, `encrypted_*.age`.
 - Formatting/Linting (recommended): `shfmt -i 2 -ci`, `shellcheck` before committing.
 
 ## Testing Guidelines
@@ -30,7 +30,7 @@ This repository manages a macOS developer environment using chezmoi-managed dotf
 
 ## Commit & Pull Request Guidelines
 - Commit style: Conventional-ish types appear in history (e.g., `FEAT:`, `FIX:`, `DOCS:`, `CHORE:`, `SECURITY:`, `MAJOR:`). Use imperative subjects and include context in the body; link issues.
-- PRs: describe intent, scope, risk, and test coverage; include logs/screenshots where helpful; call out affected paths (e.g., `desired_state/`, `setup/`).
+- PRs: describe intent, scope, risk, and test coverage; include logs/screenshots where helpful; call out affected paths (e.g., `home/`, `setup/`).
 
 ## Security & Configuration Tips
 - Keep secrets encrypted (`*.age`); never commit decrypted content.
