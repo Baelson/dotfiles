@@ -8,7 +8,7 @@ Transform a fresh macOS installation into a fully configured development environ
 
 ```bash
 # One-command setup (works on fresh macOS)
-curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap.sh | zsh
+curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
 ```
 
 **What this does:**
@@ -43,12 +43,12 @@ Run core checks locally to avoid Actions usage on private repos:
 ./scripts/ci-local.sh
 ```
 
-This runs `pre-commit run --all-files` and the full BATS suite (`scripts/test.sh --all`).
+This runs `pre-commit run --all-files` and the full BATS suite (`scripts/test/test.sh --all`).
 
-Optional shell aliases (shortcuts):
+Optional local CI shortcut:
 ```bash
-# One-time setup to add short commands (ci, t, pc) to your shell
-echo "source \"$(pwd)/scripts/dev-aliases.sh\"" >> "$HOME/.zshrc"
+# Run local CI directly
+./scripts/tools/ci-local.sh
 ```
 
 ### Homebrew Bundle (Brewfile)
@@ -66,17 +66,17 @@ brew bundle --file="$HOME/Brewfile" --no-lock
 ### Debug and Testing Modes
 ```bash
 # Preview operations without making changes
-./setup/setup.core.sh --dry-run
+./scripts/setup/setup.core.sh --dry-run
 
 # Detailed debugging with variable inspection
-./setup/setup.core.sh --debug-verbose
+./scripts/setup/setup.core.sh --debug-verbose
 
 # Control flow tracing for troubleshooting
-./setup/setup.core.sh --debug-trace
+./scripts/setup/setup.core.sh --debug-trace
 
 # Verify system is properly configured
-./setup/verify.setup.sh
-./setup/verify.macos.sh
+./scripts/setup/verify.setup.sh
+./scripts/setup/verify.macos.sh
 ```
 
 ### Configuration Management

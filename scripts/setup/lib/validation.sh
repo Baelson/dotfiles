@@ -102,8 +102,8 @@ validate_repository_structure() {
     validate_item "Repository cloned" '[ -d "$REPO_DIR/.git" ]'
     validate_item "Brewfile exists" '[ -f "$REPO_DIR/home/Brewfile" ] || [ -f "$REPO_DIR/Brewfile" ]'
     validate_item "CLAUDE.md exists" '[ -f "$REPO_DIR/CLAUDE.md" ]'
-    validate_item "Setup scripts exist" '[ -f "$REPO_DIR/setup/setup.core.sh" -a -f "$REPO_DIR/setup/setup.macos.sh" ]'
-    validate_item "Common library exists" '[ -f "$REPO_DIR/setup/lib/common.sh" ]'
+    validate_item "Setup scripts exist" '[ -f "$REPO_DIR/scripts/setup/setup.core.sh" -a -f "$REPO_DIR/scripts/setup/setup.macos.sh" ]'
+    validate_item "Common library exists" '[ -f "$REPO_DIR/scripts/setup/lib/common.sh" ]'
 
     debug_trace "← Exiting: validate_repository_structure"
 }

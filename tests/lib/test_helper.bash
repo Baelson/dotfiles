@@ -9,7 +9,7 @@
 # Test configuration
 export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
-export BOOTSTRAP_DIR="${DOTFILES_ROOT}/setup"
+export BOOTSTRAP_DIR="${DOTFILES_ROOT}/scripts/setup"
 export TESTS_DIR="${DOTFILES_ROOT}/tests"
 export DOTFILES_SOURCE_DIR="${DOTFILES_ROOT}/home"  # Chezmoi source directory
 
