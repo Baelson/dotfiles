@@ -45,7 +45,7 @@ show_help() {
     show_standard_help "macOS Core Setup Script" \
         "This script handles core macOS development environment setup.
 Installs Xcode CLI Tools and Homebrew after repository is available." \
-        "./bootstrap/setup.core.sh [OPTIONS]"
+        "./scripts/setup/setup.core.sh [OPTIONS]"
 }
 
 parse_arguments() {
@@ -109,7 +109,7 @@ main() {
     log_success "🎉 Phase 1: Core Foundation completed successfully!"
     echo ""
     log "📍 Next Steps:"
-    log "  1. Run 'cd $REPO_DIR && ./bootstrap/setup.macos.sh' to continue with macOS-specific setup"
+    log "  1. Run 'cd $REPO_DIR && ./scripts/setup/setup.macos.sh' to continue with macOS-specific setup"
     log "  2. Review the docs/PRD.md and CLAUDE.md for full project details"
     log "  3. Logs available at: $LOG_FILE"
 

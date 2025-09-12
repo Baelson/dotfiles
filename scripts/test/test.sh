@@ -32,7 +32,7 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
+DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 TESTS_DIR="$DOTFILES_ROOT/tests"
 
 # Colors for output
@@ -211,10 +211,11 @@ get_test_files() {
     local test_files=()
 
     if [[ "$QUICK_MODE" == "true" ]]; then
-        # Quick mode: run only essential tests
+        # Quick mode: run only essential tests for faster feedback
         test_files=(
-            "$TESTS_DIR/system/test_fr1_simple.bats"
-            "$TESTS_DIR/system/test_fr1_minimal.bats"
+            "$TESTS_DIR/system/test_fr1_bootstrap.bats"
+            "$TESTS_DIR/unit/test_brewfile_syntax.bats"
+            "$TESTS_DIR/unit/test_security_secrets.bats"
         )
     elif [[ "$UNIT_ONLY" == "true" ]]; then
         # Unit tests only

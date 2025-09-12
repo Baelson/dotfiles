@@ -18,7 +18,7 @@ repos:
       - id: shellcheck
         args: [--severity=warning]
         files: \.(bash)$  # Only check .bash files, skip .sh (which are zsh)
-        exclude: ^(tests/fixtures/|bootstrap/|.*\.sh$)
+        exclude: ^(tests/fixtures/|scripts/setup/|.*\.sh$)
 
   # File formatting and cleanup
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -41,7 +41,7 @@ repos:
       # BATS test execution for critical functional requirements
       - id: run-critical-tests
         name: Run Critical FR Tests
-        entry: ./scripts/run-critical-tests.sh
+        entry: ./scripts/test/run-critical-tests.sh
         language: script
         stages: [pre-commit]
         files: \.(sh|bash|bats)$
@@ -65,10 +65,10 @@ repos:
       # Performance validation (dry-run timing)
       - id: performance-check
         name: Performance Check (Dry-run < 120s)
-        entry: ./scripts/performance-check.sh
+        entry: ./scripts/tools/performance-check.sh
         language: script
         stages: [pre-commit]
-        files: bootstrap/.*\.sh$
+        files: scripts/setup/.*\.sh$
         pass_filenames: false
 
   # Documentation and markdown
