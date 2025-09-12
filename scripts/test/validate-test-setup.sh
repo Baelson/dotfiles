@@ -10,7 +10,7 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
+DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 TESTS_DIR="$DOTFILES_ROOT/tests"
 
 # Colors for output
