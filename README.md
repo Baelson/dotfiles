@@ -106,14 +106,14 @@ dotfiles/
 │   ├── setup.macos.sh             # macOS-specific setup
 │   ├── verify.setup.sh            # Core validation (16 checks)
 │   └── verify.macos.sh            # macOS validation
-├── 📦 desired_state/Brewfile           # 70+ packages (CLI tools, apps, MAS)
+├── 📦 home/Brewfile           # 70+ packages (CLI tools, apps, MAS)
 ├── 📚 docs/                        # Comprehensive documentation
 │   ├── PRD.md                     # Product requirements and use cases
 │   ├── SYSTEM_DESIGN.md           # Technical architecture
 │   ├── TESTING.md                 # Verification & validation procedures
 │   ├── DEV_STATUS.md              # Development progress and lessons
 │   └── OPEN_ISSUES.md             # Issue tracking
-└── 📁 desired_state/                   # Chezmoi managed dotfiles
+└── 📁 home/                   # Chezmoi managed dotfiles
     ├── ⚙️ dot_*/                   # Configuration files
     ├── 🔒 encrypted_*/             # Encrypted sensitive data
     ├── 🔗 .chezmoiexternal.toml    # External repositories (Oh My Zsh, etc.)

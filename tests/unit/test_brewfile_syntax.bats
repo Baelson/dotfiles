@@ -5,7 +5,7 @@
 
 load '../lib/test_helper'
 
-@test "Brewfile exists in desired_state" {
+@test "Brewfile exists in home" {
   [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]
 }
 
