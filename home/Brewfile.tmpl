@@ -1,8 +1,27 @@
 # Brewfile Template - macOS Development Environment
+# =================================================
+#
+# This template dynamically generates package lists based on your environment configuration.
+# It uses chezmoi's templating system to install different packages for different machine types.
+#
+# References:
+# - Homebrew Bundle: https://github.com/Homebrew/homebrew-bundle
+# - chezmoi templating: https://www.chezmoi.io/user-guide/templating/
+# - Package management patterns: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
+#
+# Generated Configuration:
 # Environment: {{ if .work }}work{{ else if .personal }}personal{{ else }}unknown{{ end }}
 # Hostname: {{ .hostname }}
-# Ephemeral: {{ .ephemeral }}
-# Headless: {{ .headless }}
+# Ephemeral: {{ .ephemeral }} ({{ if .ephemeral }}minimal packages, no GUI apps{{ else }}full installation{{ end }})
+# Headless: {{ .headless }} ({{ if .headless }}CLI tools only{{ else }}includes GUI applications{{ end }})
+#
+# Package Categories:
+# - Core development tools (all environments)
+# - Shell and terminal enhancements
+# - Programming languages and tools
+# - GUI Applications (non-headless only)
+# - Environment-specific packages (personal/work)
+# - Mac App Store applications (persistent, personal environments only)
 
 # Core development tools (all environments)
 brew 'chezmoi'          # Manage your dotfiles across multiple diverse machines, securely       -- https://github.com/twpayne/chezmoi

@@ -1,14 +1,40 @@
 #!/bin/zsh
 #
 # One-Line Installer for macOS Development Environment
+# ====================================================
 #
-# This script leverages chezmoi's native remote install capability
-# with fallback for curl-pipe-to-shell compatibility
+# This script provides a modern chezmoi-native bootstrap experience that automatically
+# configures a complete macOS development environment with dotfiles, packages, and applications.
 #
-# Usage:
+# Architecture:
+# This installer leverages chezmoi's native remote installation capability combined with
+# dynamic environment detection and templated configuration management.
+#
+# References:
+# - chezmoi remote install: https://www.chezmoi.io/install/#one-line-binary-install
+# - chezmoi init command: https://www.chezmoi.io/reference/commands/init/
+# - Template-driven setup: https://www.chezmoi.io/user-guide/templating/
+#
+# Usage Examples:
+#   # Standard installation (interactive prompts)
 #   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/install.sh | zsh
+#
+#   # Ephemeral environment (minimal packages, no GUI apps)
 #   EPHEMERAL=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/install.sh | zsh
+#
+#   # Headless environment (CLI tools only, no desktop apps)
+#   HEADLESS=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/install.sh | zsh
+#
+#   # Force prompts even in non-interactive environments
 #   ASK=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/install.sh | zsh
+#
+#   # Combined options
+#   EPHEMERAL=1 HEADLESS=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/install.sh | zsh
+#
+# Environment Variables:
+# - EPHEMERAL: Set to any non-empty value for temporary/borrowed machines
+# - HEADLESS: Set to any non-empty value for servers/SSH-only systems
+# - ASK: Set to any non-empty value to force interactive prompts
 #
 
 set -euo pipefail

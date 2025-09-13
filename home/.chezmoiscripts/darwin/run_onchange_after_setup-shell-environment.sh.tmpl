@@ -1,7 +1,21 @@
 #!/bin/zsh
 #
-# Setup shell environment and plugins
-# This runs when shell configuration files change
+# chezmoi Lifecycle Script: Shell Environment Setup
+# =================================================
+#
+# This script configures shell environment, plugins, and enhancements.
+# Uses chezmoi's run_onchange_after_ prefix to run when shell configs change.
+#
+# References:
+# - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - Antigen plugin manager: https://github.com/zsh-users/antigen
+# - fzf key bindings: https://github.com/junegunn/fzf#installation
+#
+# Script Behavior:
+# - Skipped in headless environments
+# - Installs Antigen plugin manager
+# - Configures fzf key bindings in persistent environments
+# - Triggered by changes to shell configuration files
 #
 # Config hash: {{ include "dot_zshrc" | sha256sum }}
 

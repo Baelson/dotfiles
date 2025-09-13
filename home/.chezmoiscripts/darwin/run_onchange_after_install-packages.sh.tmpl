@@ -1,7 +1,21 @@
 #!/bin/zsh
 #
-# Install packages using Homebrew Bundle
-# This runs whenever the Brewfile changes
+# chezmoi Lifecycle Script: Package Management
+# ============================================
+#
+# This script automatically installs packages whenever the Brewfile template changes.
+# Uses chezmoi's run_onchange_after_ prefix for change-triggered execution.
+#
+# References:
+# - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - Homebrew Bundle: https://github.com/Homebrew/homebrew-bundle
+# - chezmoi templating: https://www.chezmoi.io/user-guide/templating/
+#
+# Script Behavior:
+# - Triggered by changes to Brewfile.tmpl (detected via hash)
+# - Installs CLI tools, desktop apps, and Mac App Store applications
+# - Skips cleanup in ephemeral environments
+# - Environment-aware package selection via template variables
 #
 # Brewfile hash: {{ include "Brewfile" | sha256sum }}
 #

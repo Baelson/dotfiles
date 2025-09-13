@@ -19,7 +19,7 @@ This guide helps you diagnose and resolve common issues with the macOS System an
 ### Check System Status
 ```bash
 # Verify bootstrap scripts work
-./bootstrap/setup.core.sh --dry-run
+./setup/setup.core.sh --dry-run
 
 # Check validation
 ./bootstrap/verify.setup.sh
@@ -43,10 +43,10 @@ This guide helps you diagnose and resolve common issues with the macOS System an
 ping github.com
 
 # Verify permissions
-ls -la bootstrap/setup.core.sh
+ls -la setup/setup.core.sh
 
 # Run with debug output
-./bootstrap/setup.core.sh --debug-verbose
+./setup/setup.core.sh --debug-verbose
 
 # Check for missing dependencies
 ./scripts/health-check.sh --full
@@ -278,16 +278,16 @@ cat .pre-commit-config.yaml
 #### Bootstrap Script Debugging
 ```bash
 # Dry run (preview without executing)
-./bootstrap/setup.core.sh --dry-run
+./setup/setup.core.sh --dry-run
 
 # Trace mode (show control flow)
-./bootstrap/setup.core.sh --debug-trace
+./setup/setup.core.sh --debug-trace
 
 # Verbose mode (detailed execution)
-./bootstrap/setup.core.sh --debug-verbose
+./setup/setup.core.sh --debug-verbose
 
 # Combined modes
-./bootstrap/setup.core.sh --dry-run --debug-verbose
+./setup/setup.core.sh --dry-run --debug-verbose
 ```
 
 #### Test Debugging
@@ -370,7 +370,7 @@ rm -rf ~/Git/dotfiles
 # Fresh clone and setup
 git clone https://github.com/Baelson/dotfiles.git ~/Git/dotfiles
 cd ~/Git/dotfiles
-./bootstrap/setup.core.sh
+./setup/setup.core.sh
 ```
 
 #### Partial Recovery
@@ -417,7 +417,7 @@ chezmoi apply
 
 4. **Run setup manually**:
    ```bash
-   ./bootstrap/setup.core.sh
+   ./setup/setup.core.sh
    ./bootstrap/setup.macos.sh
    ```
 
@@ -441,7 +441,7 @@ When reporting issues, please include:
 - **Architecture**: `uname -m`
 - **Error messages**: Full error output
 - **Health check results**: `./scripts/health-check.sh --full`
-- **Debug output**: `./bootstrap/setup.core.sh --debug-verbose`
+- **Debug output**: `./setup/setup.core.sh --debug-verbose`
 - **Steps to reproduce**: What you did before the error
 
 ### Resources

@@ -1,7 +1,21 @@
 #!/bin/zsh
 #
-# Setup and configure installed applications
-# This runs when application configurations change
+# chezmoi Lifecycle Script: Application Configuration
+# ==================================================
+#
+# This script configures installed applications and development tools.
+# Uses chezmoi's run_onchange_after_ prefix to run when app configs change.
+#
+# References:
+# - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - Git configuration: https://git-scm.com/docs/git-config
+# - VS Code settings: https://code.visualstudio.com/docs/getstarted/settings
+#
+# Script Behavior:
+# - Skipped in headless environments
+# - Configures Git, VS Code, Docker, and other development tools
+# - Environment-specific application setup (personal vs work)
+# - Provides guidance for manual configuration steps
 #
 
 {{- if .headless }}

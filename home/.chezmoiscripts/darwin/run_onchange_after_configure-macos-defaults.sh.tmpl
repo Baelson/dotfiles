@@ -1,7 +1,21 @@
 #!/bin/zsh
 #
-# Configure macOS system defaults and preferences
-# This runs when this script changes or on first run
+# chezmoi Lifecycle Script: macOS System Configuration
+# ===================================================
+#
+# This script configures macOS system defaults and preferences.
+# Uses chezmoi's run_onchange_after_ prefix to run when the script changes.
+#
+# References:
+# - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - macOS defaults: https://macos-defaults.com/
+# - System preferences automation: https://github.com/mathiasbynens/dotfiles/blob/main/.macos
+#
+# Script Behavior:
+# - Skipped in headless environments (no GUI)
+# - Configures Dock, Finder, Trackpad, and Screenshot preferences
+# - Environment-specific settings (work vs personal)
+# - Restarts affected system applications
 #
 
 {{- if .headless }}

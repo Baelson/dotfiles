@@ -1,7 +1,22 @@
 #!/bin/zsh
 #
-# Install Homebrew if not already installed
-# This runs once before other package installations
+# chezmoi Lifecycle Script: Homebrew Installation
+# ===============================================
+#
+# This script runs once before other package installations to ensure Homebrew is available.
+# Uses chezmoi's run_once_before_ prefix for one-time execution.
+#
+# References:
+# - chezmoi run_once scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#install-packages-with-scripts
+# - Homebrew installation: https://docs.brew.sh/Installation
+# - chezmoi script naming: https://www.chezmoi.io/reference/special-files-and-directories/chezmoiscripts/
+#
+# Script Behavior:
+# - Runs once per machine (tracked by chezmoi)
+# - Installs Xcode CLI Tools if needed (prerequisite for Homebrew)
+# - Installs Homebrew using official installer
+# - Adds Homebrew to PATH for current session
+# - Verifies installation success
 #
 
 set -euo pipefail
