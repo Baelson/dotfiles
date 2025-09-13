@@ -1,0 +1,37 @@
+#!/bin/zsh
+#
+# Install packages using Homebrew Bundle
+# This runs whenever the Brewfile changes
+#
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+#
+
+set -euo pipefail
+
+echo "📦 Installing packages from Brewfile..."
+
+# Ensure Homebrew is available
+if ! command -v brew >/dev/null 2>&1; then
+    echo "❌ Homebrew not found. Please run the Homebrew installation script first."
+    exit 1
+fi
+
+# Install packages from Brewfile
+if [[ -f "$HOME/Brewfile" ]]; then
+    echo "🍺 Running brew bundle..."
+    cd "$HOME"
+    brew bundle --no-lock
+    echo "✅ Package installation completed"
+else
+    echo "⚠️  Brewfile not found at $HOME/Brewfile"
+    echo "💡 Make sure chezmoi has applied the Brewfile configuration"
+fi
+
+{{- if not .ephemeral }}
+# Clean up old packages and caches (not in ephemeral environments)
+echo "🧹 Cleaning up..."
+brew cleanup
+brew autoremove
+{{- end }}
+
+echo "✅ Package management completed"

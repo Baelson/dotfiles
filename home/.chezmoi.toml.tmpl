@@ -1,0 +1,40 @@
+{{- $ephemeral := false -}}
+{{- $headless := false -}}
+{{- $personal := true -}}
+{{- $work := false -}}
+
+{{- $hostname := .chezmoi.hostname -}}
+{{- if or (eq $hostname "work-laptop") (contains "corp" $hostname) -}}
+{{-   $work = true -}}
+{{-   $personal = false -}}
+{{- end -}}
+
+{{- if stdinIsATTY -}}
+{{-   if hasKey . "ephemeral" -}}
+{{-     $ephemeral = .ephemeral -}}
+{{-   else -}}
+{{-     $ephemeral = promptBool "Is this an ephemeral environment" -}}
+{{-   end -}}
+{{-   if hasKey . "headless" -}}
+{{-     $headless = .headless -}}
+{{-   else -}}
+{{-     $headless = promptBool "Is this a headless environment" -}}
+{{-   end -}}
+{{- end -}}
+
+[data]
+    ephemeral = {{ $ephemeral }}
+    headless = {{ $headless }}
+    personal = {{ $personal }}
+    work = {{ $work }}
+    hostname = {{ $hostname | quote }}
+
+# Encryption settings
+[age]
+    identity = "~/.config/age/key.txt"
+    recipient = "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
+
+# Git settings
+[git]
+    autoCommit = true
+    autoPush = false

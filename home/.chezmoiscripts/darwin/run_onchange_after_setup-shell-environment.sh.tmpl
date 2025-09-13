@@ -1,0 +1,41 @@
+#!/bin/zsh
+#
+# Setup shell environment and plugins
+# This runs when shell configuration files change
+#
+# Config hash: {{ include "dot_zshrc" | sha256sum }}
+
+{{- if .headless }}
+# Skip interactive shell setup in headless environments
+echo "⏭️  Skipping shell environment setup in headless environment"
+exit 0
+{{- end }}
+
+set -euo pipefail
+
+echo "🐚 Setting up shell environment..."
+
+# Install Antigen if not already installed
+if [[ ! -f "$HOME/.antigen/antigen.zsh" ]]; then
+    echo "📦 Installing Antigen..."
+    mkdir -p "$HOME/.antigen"
+    curl -L git.io/antigen > "$HOME/.antigen/antigen.zsh"
+    echo "✅ Antigen installed"
+else
+    echo "✅ Antigen already installed"
+fi
+
+{{- if not .ephemeral }}
+# Setup fzf key bindings and completion (persistent environments only)
+if command -v fzf >/dev/null 2>&1; then
+    echo "🔍 Setting up fzf key bindings..."
+    if [[ ! -f "$HOME/.fzf.zsh" ]]; then
+        $(brew --prefix)/opt/fzf/install --key-bindings --completion --no-update-rc
+    fi
+    echo "✅ fzf configured"
+fi
+{{- end }}
+
+# Reload shell configuration
+echo "🔄 Shell environment setup completed"
+echo "💡 Restart your terminal or run 'source ~/.zshrc' to apply changes"

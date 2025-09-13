@@ -19,45 +19,51 @@ teardown() {
     cleanup_common
 }
 
+# Helper function to render Brewfile template for testing
+get_rendered_brewfile() {
+    local brewfile_content=""
+    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
+        # Use chezmoi to render the template with default values
+        if command -v chezmoi >/dev/null 2>&1; then
+            brewfile_content="$(chezmoi cat Brewfile 2>/dev/null)" || {
+                # Fallback: basic template rendering for testing
+                brewfile_content="$(sed 's/{{.*}}/# template-placeholder/g' "$DOTFILES_SOURCE_DIR/Brewfile.tmpl")"
+            }
+        else
+            # Basic template rendering for CI environments without chezmoi
+            brewfile_content="$(sed 's/{{.*}}/# template-placeholder/g' "$DOTFILES_SOURCE_DIR/Brewfile.tmpl")"
+        fi
+    elif [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]; then
+        brewfile_content="$(cat "$DOTFILES_SOURCE_DIR/Brewfile")"
+    fi
+    echo "$brewfile_content"
+}
+
 # FR-2.1: Brewfile package installation validation
 @test "FR-2.1: Brewfile exists and contains expected packages" {
-    [[ -f "$DOTFILES_ROOT/Brewfile" || -f "$DOTFILES_SOURCE_DIR/Brewfile" || -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" || -f "$DOTFILES_ROOT/.Brewfile" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || -f "$DOTFILES_SOURCE_DIR/Brewfile" || -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]
 
-    # Find the Brewfile (could be managed by chezmoi)
-    brewfile=""
-    if [[ -f "$DOTFILES_ROOT/Brewfile" ]]; then
-        brewfile="$DOTFILES_ROOT/Brewfile"
-    elif [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]; then
-        brewfile="$DOTFILES_SOURCE_DIR/Brewfile"
-    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]; then
-        brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
-    elif [[ -f "$DOTFILES_ROOT/.Brewfile" ]]; then
-        brewfile="$DOTFILES_ROOT/.Brewfile"
-    fi
-
-    [[ -n "$brewfile" ]]
+    # Get rendered Brewfile content
+    brewfile_content="$(get_rendered_brewfile)"
+    [[ -n "$brewfile_content" ]]
 
     # Verify it contains essential packages
-    grep -q "brew " "$brewfile"
-    grep -q "cask " "$brewfile"
-    grep -q "mas " "$brewfile"
+    echo "$brewfile_content" | grep -q "brew "
+    echo "$brewfile_content" | grep -q "cask "
+    echo "$brewfile_content" | grep -q "mas "
 }
 
 @test "FR-2.2: CLI tools package categories present in Brewfile" {
-    # Find Brewfile
-    brewfile=""
-    [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -z "$brewfile" && -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/Brewfile"
-    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
-    [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
-    [[ -n "$brewfile" ]]
+    # Get rendered Brewfile content
+    brewfile_content="$(get_rendered_brewfile)"
+    [[ -n "$brewfile_content" ]]
 
     # Check for essential development CLI tools
     essential_tools=("git" "python" "uv" "gh" "neovim")
     found_tools=0
 
     for tool in "${essential_tools[@]}"; do
-        if grep -q "$tool" "$brewfile"; then
+        if echo "$brewfile_content" | grep -q "$tool"; then
             found_tools=$((found_tools + 1))
         fi
     done
@@ -67,20 +73,16 @@ teardown() {
 }
 
 @test "FR-2.3: Desktop applications (casks) present in Brewfile" {
-    # Find Brewfile
-    brewfile=""
-    [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -z "$brewfile" && -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/Brewfile"
-    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
-    [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
-    [[ -n "$brewfile" ]]
+    # Get rendered Brewfile content
+    brewfile_content="$(get_rendered_brewfile)"
+    [[ -n "$brewfile_content" ]]
 
     # Check for desktop applications
     desktop_apps=("visual-studio-code" "iterm2" "docker" "figma")
     found_apps=0
 
     for app in "${desktop_apps[@]}"; do
-        if grep -q "$app" "$brewfile"; then
+        if echo "$brewfile_content" | grep -q "$app"; then
             found_apps=$((found_apps + 1))
         fi
     done
@@ -90,20 +92,16 @@ teardown() {
 }
 
 @test "FR-2.4: Mac App Store applications (mas) present in Brewfile" {
-    # Find Brewfile
-    brewfile=""
-    [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -z "$brewfile" && -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/Brewfile"
-    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
-    [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
-    [[ -n "$brewfile" ]]
+    # Get rendered Brewfile content
+    brewfile_content="$(get_rendered_brewfile)"
+    [[ -n "$brewfile_content" ]]
 
     # Check for MAS applications
     mas_apps=("Xcode" "497799835" "1295203466")  # Xcode, Xcode (ID), Microsoft Remote Desktop
     found_mas=0
 
     for app in "${mas_apps[@]}"; do
-        if grep -q "$app" "$brewfile"; then
+        if echo "$brewfile_content" | grep -q "$app"; then
             found_mas=$((found_mas + 1))
         fi
     done
@@ -155,16 +153,12 @@ teardown() {
 
 # FR-2.9: Package count validation
 @test "FR-2.9: Brewfile contains expected package count (70+ packages)" {
-    # Find Brewfile
-    brewfile=""
-    [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-    [[ -z "$brewfile" && -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/Brewfile"
-    [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
-    [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
-    [[ -n "$brewfile" ]]
+    # Get rendered Brewfile content
+    brewfile_content="$(get_rendered_brewfile)"
+    [[ -n "$brewfile_content" ]]
 
     # Count packages (brew, cask, mas entries)
-    package_count=$(grep -E "^(brew |cask |mas )" "$brewfile" | wc -l | tr -d ' ')
+    package_count=$(echo "$brewfile_content" | grep -E "^(brew |cask |mas )" | wc -l | tr -d ' ')
 
     # Should have a reasonable number of packages (at least 20, targeting 70+)
     [[ $package_count -ge 20 ]]

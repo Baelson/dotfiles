@@ -1,0 +1,50 @@
+#!/bin/zsh
+#
+# Setup and configure installed applications
+# This runs when application configurations change
+#
+
+{{- if .headless }}
+# Skip application setup in headless environments
+echo "⏭️  Skipping application setup in headless environment"
+exit 0
+{{- end }}
+
+set -euo pipefail
+
+echo "🚀 Configuring applications..."
+
+# Setup Git configuration if not already configured
+if ! git config --global user.email >/dev/null 2>&1; then
+    echo "⚙️  Git user email not configured - please run 'git config --global user.email \"your.email@example.com\"'"
+fi
+
+if ! git config --global user.name >/dev/null 2>&1; then
+    echo "⚙️  Git user name not configured - please run 'git config --global user.name \"Your Name\"'"
+fi
+
+{{- if not .ephemeral }}
+# Configure VS Code settings sync if installed
+if command -v code >/dev/null 2>&1; then
+    echo "🔧 VS Code detected - settings will be managed by chezmoi"
+fi
+
+# Setup Docker if installed and not running
+if command -v docker >/dev/null 2>&1; then
+    if ! docker info >/dev/null 2>&1; then
+        echo "🐳 Docker detected but not running - consider starting Docker Desktop"
+    fi
+fi
+{{- end }}
+
+{{- if .personal }}
+# Personal environment application setup
+echo "🏠 Configuring personal applications..."
+
+# Setup Alfred workflows directory
+if [[ -d "/Applications/Alfred 4.app" ]] || [[ -d "/Applications/Alfred 5.app" ]]; then
+    mkdir -p "$HOME/Library/Application Support/Alfred/workflows"
+fi
+{{- end }}
+
+echo "✅ Application configuration completed"
