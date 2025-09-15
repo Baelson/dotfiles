@@ -1,0 +1,74 @@
+#!/bin/zsh
+#
+# chezmoi Lifecycle Script: macOS System Configuration
+# ===================================================
+#
+# This script configures macOS system defaults and preferences.
+# Uses chezmoi's run_onchange_after_ prefix to run when the script changes.
+#
+# References:
+# - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - macOS defaults: https://macos-defaults.com/
+# - System preferences automation: https://github.com/mathiasbynens/dotfiles/blob/main/.macos
+#
+# Script Behavior:
+# - Skipped in headless environments (no GUI)
+# - Configures Dock, Finder, Trackpad, and Screenshot preferences
+# - Environment-specific settings (work vs personal)
+# - Restarts affected system applications
+#
+
+{{- if .headless }}
+# Skip macOS defaults configuration in headless environments
+echo "⏭️  Skipping macOS defaults configuration in headless environment"
+exit 0
+{{- end }}
+
+set -euo pipefail
+
+echo "⚙️  Configuring macOS defaults..."
+
+# Dock preferences
+echo "🖥️  Configuring Dock..."
+defaults write com.apple.dock "autohide" -bool "true"
+defaults write com.apple.dock "show-recents" -bool "false"
+defaults write com.apple.dock "tilesize" -int "48"
+
+# Finder preferences
+echo "📁 Configuring Finder..."
+defaults write com.apple.finder "ShowPathbar" -bool "true"
+defaults write com.apple.finder "ShowStatusBar" -bool "true"
+defaults write com.apple.finder "FXDefaultSearchScope" -string "SCcf"
+defaults write com.apple.finder "FXPreferredViewStyle" -string "clmv"
+
+# Trackpad preferences
+echo "🖱️  Configuring Trackpad..."
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad "Clicking" -bool "true"
+defaults write com.apple.AppleMultitouchTrackpad "Clicking" -bool "true"
+
+# Screenshots preferences
+echo "📸 Configuring Screenshots..."
+defaults write com.apple.screencapture "location" -string "~/Desktop/Screenshots"
+defaults write com.apple.screencapture "type" -string "png"
+defaults write com.apple.screencapture "disable-shadow" -bool "true"
+
+# Create Screenshots directory if it doesn't exist
+mkdir -p "$HOME/Desktop/Screenshots"
+
+{{- if .work }}
+# Work-specific configurations
+echo "🏢 Applying work-specific configurations..."
+defaults write com.apple.screencapture "show-thumbnail" -bool "false"
+{{- else }}
+# Personal configurations
+echo "🏠 Applying personal configurations..."
+defaults write com.apple.screencapture "show-thumbnail" -bool "true"
+{{- end }}
+
+# Restart affected applications
+echo "🔄 Restarting affected applications..."
+killall Dock 2>/dev/null || true
+killall Finder 2>/dev/null || true
+killall SystemUIServer 2>/dev/null || true
+
+echo "✅ macOS defaults configured successfully"

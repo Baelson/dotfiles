@@ -1,0 +1,51 @@
+#!/bin/zsh
+#
+# chezmoi Lifecycle Script: Package Management
+# ============================================
+#
+# This script automatically installs packages whenever the Brewfile template changes.
+# Uses chezmoi's run_onchange_after_ prefix for change-triggered execution.
+#
+# References:
+# - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - Homebrew Bundle: https://github.com/Homebrew/homebrew-bundle
+# - chezmoi templating: https://www.chezmoi.io/user-guide/templating/
+#
+# Script Behavior:
+# - Triggered by changes to Brewfile.tmpl (detected via hash)
+# - Installs CLI tools, desktop apps, and Mac App Store applications
+# - Skips cleanup in ephemeral environments
+# - Environment-aware package selection via template variables
+#
+# Brewfile hash: {{ include "Brewfile" | sha256sum }}
+#
+
+set -euo pipefail
+
+echo "📦 Installing packages from Brewfile..."
+
+# Ensure Homebrew is available
+if ! command -v brew >/dev/null 2>&1; then
+    echo "❌ Homebrew not found. Please run the Homebrew installation script first."
+    exit 1
+fi
+
+# Install packages from Brewfile
+if [[ -f "$HOME/Brewfile" ]]; then
+    echo "🍺 Running brew bundle..."
+    cd "$HOME"
+    brew bundle --no-lock
+    echo "✅ Package installation completed"
+else
+    echo "⚠️  Brewfile not found at $HOME/Brewfile"
+    echo "💡 Make sure chezmoi has applied the Brewfile configuration"
+fi
+
+{{- if not .ephemeral }}
+# Clean up old packages and caches (not in ephemeral environments)
+echo "🧹 Cleaning up..."
+brew cleanup
+brew autoremove
+{{- end }}
+
+echo "✅ Package management completed"

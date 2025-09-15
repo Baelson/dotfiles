@@ -5,13 +5,14 @@
 
 load '../lib/test_helper'
 
-@test "Brewfile exists in home" {
-  [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]
+@test "Brewfile template exists in home" {
+  [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]
 }
 
-@test "Brewfile contains only allowed directives and comments" {
-  allowed='^(#|\s*$|brew |cask |mas |tap |vscode )'
+@test "Brewfile template contains only allowed directives and comments" {
+  allowed='^(#|\s*$|brew |cask |mas |tap |vscode |{{|\s*{{|- if|{{- end)'
   while IFS= read -r line; do
-    [[ "$line" =~ $allowed ]]
-  done < "$DOTFILES_SOURCE_DIR/Brewfile"
+    # Skip template syntax lines for now - they'll be validated by chezmoi
+    [[ "$line" =~ $allowed ]] || [[ "$line" =~ {{.*}} ]]
+  done < "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
 }

@@ -1,0 +1,78 @@
+{{/*
+chezmoi Configuration Template - Dynamic Environment Detection
+==============================================================
+
+This template configures chezmoi behavior based on your environment and preferences.
+It uses chezmoi's template syntax to detect your system type and prompt for configuration.
+
+References:
+- chezmoi Templates: https://www.chezmoi.io/user-guide/templating/
+- Template Functions: https://www.chezmoi.io/reference/templates/functions/
+- Configuration Format: https://www.chezmoi.io/reference/configuration/
+
+Environment Variables Explained:
+- ephemeral: Temporary system (CI, containers, borrowed machines)
+  * true: Installs minimal packages, skips GUI apps, no MAS apps
+  * false: Full installation with GUI apps and persistent configuration
+
+- headless: System without GUI/desktop environment (servers, SSH-only)
+  * true: CLI tools only, no desktop apps or GUI configuration
+  * false: Full GUI applications and desktop preferences
+
+- personal: Personal vs work machine differentiation
+  * true: Personal apps (gaming, social, creative tools), all MAS apps
+  * false: Work-focused apps only, minimal personal tools
+
+- work: Automatically detected based on hostname patterns
+  * true: Work-specific apps, corporate tools, limited personal apps
+  * false: Full personal setup with all applications
+
+Customization:
+To override automatic detection, run:
+  chezmoi init --data ephemeral=true
+  chezmoi init --data headless=true
+*/}}
+
+{{/* Default Environment Values */}}
+{{- $ephemeral := false -}}
+{{- $headless := false -}}
+{{- $personal := true -}}
+{{- $work := false -}}
+
+{{/* Automatic Work Environment Detection */}}
+{{- $hostname := .chezmoi.hostname -}}
+{{- if or (eq $hostname "work-laptop") (contains "corp" $hostname) -}}
+{{-   $work = true -}}
+{{-   $personal = false -}}
+{{- end -}}
+
+{{/* Interactive Prompts (only when connected to terminal) */}}
+{{- if stdinIsATTY -}}
+{{-   if hasKey . "ephemeral" -}}
+{{-     $ephemeral = .ephemeral -}}
+{{-   else -}}
+{{-     $ephemeral = promptBool "Is this an ephemeral environment" -}}
+{{-   end -}}
+{{-   if hasKey . "headless" -}}
+{{-     $headless = .headless -}}
+{{-   else -}}
+{{-     $headless = promptBool "Is this a headless environment" -}}
+{{-   end -}}
+{{- end -}}
+
+[data]
+    ephemeral = {{ $ephemeral }}
+    headless = {{ $headless }}
+    personal = {{ $personal }}
+    work = {{ $work }}
+    hostname = {{ $hostname | quote }}
+
+# Encryption settings
+[age]
+    identity = "~/.config/age/key.txt"
+    recipient = "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
+
+# Git settings
+[git]
+    autoCommit = true
+    autoPush = false

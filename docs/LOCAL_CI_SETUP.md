@@ -202,7 +202,7 @@ not ok 3 FR-1.8: Dry-run shows complete setup plan
 
 ```bash
 # Manual performance test
-time ./bootstrap/setup.core.sh --dry-run --debug-verbose
+time ./setup/setup.core.sh --dry-run --debug-verbose
 
 # Automated performance validation
 ./scripts/performance-check.sh

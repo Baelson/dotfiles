@@ -1,31 +1,68 @@
 #!/bin/zsh
 #
-# Simple Bootstrap Script for macOS Development Environment
+# One-Line Installer for macOS Development Environment
+# ====================================================
 #
-# This script handles the minimal setup needed to get the repository
-# and then hands off to the full bootstrap system.
+# This script provides a modern chezmoi-native bootstrap experience that automatically
+# configures a complete macOS development environment with dotfiles, packages, and applications.
 #
-# Usage: curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap.sh | zsh
-#        ./bootstrap.sh
+# Architecture:
+# This installer leverages chezmoi's native remote installation capability combined with
+# dynamic environment detection and templated configuration management.
+#
+# References:
+# - chezmoi remote install: https://www.chezmoi.io/install/#one-line-binary-install
+# - chezmoi init command: https://www.chezmoi.io/reference/commands/init/
+# - Template-driven setup: https://www.chezmoi.io/user-guide/templating/
+#
+# Usage Examples:
+#   # Standard installation (interactive prompts)
+#   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
+#
+#   # Ephemeral environment (minimal packages, no GUI apps)
+#   EPHEMERAL=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
+#
+#   # Headless environment (CLI tools only, no desktop apps)
+#   HEADLESS=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
+#
+#   # Force prompts even in non-interactive environments
+#   ASK=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
+#
+#   # Combined options
+#   EPHEMERAL=1 HEADLESS=1 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
+#
+# Environment Variables:
+# - EPHEMERAL: Set to any non-empty value for temporary/borrowed machines
+# - HEADLESS: Set to any non-empty value for servers/SSH-only systems
+# - ASK: Set to any non-empty value to force interactive prompts
 #
 
 set -euo pipefail
 
 # Configuration
-readonly REPO_URL="https://github.com/Baelson/dotfiles.git"
-readonly REPO_DIR="$HOME/Git/dotfiles"
+readonly REPO_OWNER="Baelson"
+readonly REPO_NAME="dotfiles"
+readonly REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
+
+# Environment variables for customization
+readonly EPHEMERAL="${EPHEMERAL:-}"
+readonly HEADLESS="${HEADLESS:-}"
+readonly ASK="${ASK:-}"
 
 main() {
-    echo "🚀 Starting macOS Development Environment Bootstrap..."
-    echo "📍 Repository: $REPO_URL"
-    echo "📍 Target Directory: $REPO_DIR"
+    echo "🚀 Starting macOS Development Environment Setup..."
+    echo "📍 Repository: ${REPO_OWNER}/${REPO_NAME}"
     echo ""
 
     check_prerequisites
-    setup_directory_structure
-    clone_repository_if_needed
-    verify_repository_structure
-    handoff_to_core_setup
+    install_chezmoi_if_needed
+    run_chezmoi_init
+
+    echo ""
+    echo "🎉 Setup completed successfully!"
+    echo "💡 Run 'chezmoi edit' to modify configurations"
+    echo "💡 Run 'chezmoi apply --dry-run' to preview changes"
+    echo "💡 Run 'chezmoi apply' to apply pending changes"
 }
 
 check_prerequisites() {
@@ -33,97 +70,80 @@ check_prerequisites() {
 
     # Check if we're on macOS
     if [[ "$OSTYPE" != "darwin"* ]]; then
-        echo "❌ Error: This script is designed for macOS only"
+        echo "❌ Error: This installer is designed for macOS only"
+        echo "💡 For other platforms, please use chezmoi directly:"
+        echo "   sh -c \"\$(curl -fsLS get.chezmoi.io)\" -- init ${REPO_OWNER} --apply"
         exit 1
     fi
 
-    # Check if git is available
+    # Check if git is available (needed for chezmoi)
     if ! command -v git &> /dev/null; then
-        echo "❌ Error: Git is not installed"
-        echo "💡 Please install Xcode Command Line Tools first:"
-        echo "   xcode-select --install"
-        exit 1
+        echo "📱 Git not found. Installing Xcode CLI Tools..."
+        xcode-select --install
+
+        # Wait for installation
+        until command -v git &> /dev/null; do
+            echo "⏳ Waiting for Xcode CLI Tools installation..."
+            sleep 5
+        done
+        echo "✅ Xcode CLI Tools installed"
     fi
 
-    echo "✅ Prerequisites check passed"
+    echo "✅ Prerequisites satisfied"
 }
 
-setup_directory_structure() {
-    echo "📁 Setting up directory structure..."
-
-    # Create Git directory if it doesn't exist
-    if [[ ! -d "$HOME/Git" ]]; then
-        mkdir -p "$HOME/Git"
-        echo "✅ Created $HOME/Git directory"
-    fi
-
-    echo "✅ Directory structure ready"
-}
-
-clone_repository_if_needed() {
-    echo "📥 Checking repository status..."
-
-    if [[ -d "$REPO_DIR/.git" ]]; then
-        echo "✅ Repository already exists at $REPO_DIR"
-
-        # Update existing repository (skip if there are conflicts)
-        echo "🔄 Updating existing repository..."
-        cd "$REPO_DIR"
-        git fetch origin main 2>/dev/null || {
-            echo "⚠️  Warning: Could not fetch updates, continuing with existing version"
-        }
+install_chezmoi_if_needed() {
+    if command -v chezmoi &> /dev/null; then
+        echo "✅ chezmoi already installed: $(chezmoi --version | head -1)"
         return 0
     fi
 
-    echo "📥 Cloning repository..."
+    echo "📦 Installing chezmoi..."
 
-    # Try SSH first, fallback to HTTPS
-    if ! git clone "$REPO_URL" "$REPO_DIR" 2>/dev/null; then
-        echo "⚠️  SSH clone failed, trying HTTPS..."
-        local https_url="${REPO_URL/git@github.com:/https://github.com/}"
-        git clone "$https_url" "$REPO_DIR" || {
-            echo "❌ Error: Failed to clone repository"
-            echo "💡 Please check your internet connection and try again"
-            exit 1
-        }
-    fi
+    # Use chezmoi's official installer
+    sh -c "$(curl -fsLS get.chezmoi.io)"
 
-    echo "✅ Repository cloned successfully"
-}
+    # Add to PATH for current session
+    export PATH="$HOME/bin:$PATH"
 
-verify_repository_structure() {
-    echo "🔍 Verifying repository structure..."
-
-    # Check if we're in the right directory
-    if [[ ! -f "$REPO_DIR/scripts/setup/setup.core.sh" ]]; then
-        echo "❌ Error: Required file scripts/setup/setup.core.sh not found"
-        echo "💡 Repository structure may be corrupted, try removing $REPO_DIR and re-running"
+    if command -v chezmoi &> /dev/null; then
+        echo "✅ chezmoi installed successfully: $(chezmoi --version | head -1)"
+    else
+        echo "❌ chezmoi installation failed"
         exit 1
     fi
+}
 
-    if [[ ! -f "$REPO_DIR/scripts/setup/lib/common.sh" ]]; then
-        echo "❌ Error: Required file scripts/setup/lib/common.sh not found"
-        echo "💡 Repository structure may be corrupted, try removing $REPO_DIR and re-running"
-        exit 1
+run_chezmoi_init() {
+    echo "🏠 Initializing dotfiles with chezmoi..."
+
+    # Build chezmoi init command with environment-specific options
+    local -a chezmoi_args=(
+        "--apply"
+        "--verbose"
+    )
+
+    # Add data for template processing
+    if [[ -n "$EPHEMERAL" ]]; then
+        chezmoi_args+=("--data" "ephemeral=true")
     fi
 
-    echo "✅ Repository structure verified"
+    if [[ -n "$HEADLESS" ]]; then
+        chezmoi_args+=("--data" "headless=true")
+    fi
+
+    # Interactive mode allows for prompts
+    if [[ -z "$ASK" ]] && [[ -t 0 ]]; then
+        echo "💬 Running in interactive mode (set ASK=1 to force prompts)"
+    fi
+
+    # Initialize chezmoi with the repository
+    echo "🔧 Running: chezmoi init ${chezmoi_args[*]} ${REPO_OWNER}"
+    chezmoi init "${chezmoi_args[@]}" "${REPO_OWNER}"
 }
 
-handoff_to_core_setup() {
-    echo ""
-    echo "🔄 Repository ready! Handing off to core setup..."
-    echo "📍 Switching to: $REPO_DIR"
-    echo ""
+# Error handling
+trap 'echo "❌ Setup interrupted"; exit 1' INT TERM
 
-    cd "$REPO_DIR"
-
-    # Execute the core setup script with any arguments passed to this script
-    exec ./scripts/setup/setup.core.sh "$@"
-}
-
-# Handle script interruption
-trap 'echo "❌ Bootstrap interrupted"; exit 1' INT TERM
-
-# Run main function with all arguments
+# Run main function
 main "$@"
