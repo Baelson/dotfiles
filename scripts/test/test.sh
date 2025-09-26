@@ -213,7 +213,7 @@ get_test_files() {
     if [[ "$QUICK_MODE" == "true" ]]; then
         # Quick mode: run only essential tests for faster feedback
         test_files=(
-            "$TESTS_DIR/system/test_fr1_bootstrap.bats"
+            "$TESTS_DIR/system/test_fr1_modern_bootstrap.bats"
             "$TESTS_DIR/unit/test_brewfile_syntax.bats"
             "$TESTS_DIR/unit/test_security_secrets.bats"
         )

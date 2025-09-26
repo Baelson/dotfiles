@@ -18,7 +18,7 @@ repos:
       - id: shellcheck
         args: [--severity=warning]
         files: \.(bash)$  # Only check .bash files, skip .sh (which are zsh)
-        exclude: ^(tests/fixtures/|scripts/setup/|.*\.sh$)
+        exclude: ^(tests/fixtures/|.*\.sh$)
 
   # File formatting and cleanup
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -68,7 +68,7 @@ repos:
         entry: ./scripts/tools/performance-check.sh
         language: script
         stages: [pre-commit]
-        files: scripts/setup/.*\.sh$
+        files: setup\.sh$
         pass_filenames: false
 
   # Documentation and markdown

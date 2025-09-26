@@ -10,8 +10,8 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
-BOOTSTRAP_DIR="$DOTFILES_ROOT/setup"
+DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+SETUP_SCRIPT="$DOTFILES_ROOT/setup.sh"
 PERFORMANCE_LIMIT=120  # 120 seconds for dry-run
 
 # Colors for output
@@ -42,8 +42,8 @@ main() {
     }
 
     # Verify setup script exists
-    if [[ ! -f "$BOOTSTRAP_DIR/setup.core.sh" ]]; then
-        log_error "Setup script not found: $BOOTSTRAP_DIR/setup.core.sh"
+    if [[ ! -f "$SETUP_SCRIPT" ]]; then
+        log_error "Setup script not found: $SETUP_SCRIPT"
         exit 1
     fi
 
@@ -53,7 +53,7 @@ main() {
     start_time=$(date +%s)
 
     # Run setup in dry-run mode with timeout
-    if timeout 180s "$BOOTSTRAP_DIR/setup.core.sh" --dry-run --debug-verbose > /dev/null 2>&1; then
+    if timeout 180s "$SETUP_SCRIPT" --dry-run --debug-verbose > /dev/null 2>&1; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
 
