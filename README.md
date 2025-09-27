@@ -66,17 +66,17 @@ brew bundle --file="$HOME/Brewfile" --no-lock
 ### Debug and Testing Modes
 ```bash
 # Preview operations without making changes
-./scripts/setup/setup.core.sh --dry-run
+./setup.sh --dry-run
 
 # Detailed debugging with variable inspection
-./scripts/setup/setup.core.sh --debug-verbose
+./setup.sh --debug-verbose
 
 # Control flow tracing for troubleshooting
-./scripts/setup/setup.core.sh --debug-trace
+./setup.sh --debug-trace
 
 # Verify system is properly configured
-./scripts/setup/verify.setup.sh
-./scripts/setup/verify.macos.sh
+chezmoi doctor
+bats tests/integration/test_chezmoi_lifecycle_scripts.bats
 ```
 
 ### Configuration Management

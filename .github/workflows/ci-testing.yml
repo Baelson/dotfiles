@@ -96,14 +96,13 @@ jobs:
       - name: Basic repository structure validation
         run: |
           # Verify essential files exist
-          test -f scripts/setup/setup.core.sh
-          test -f scripts/setup/lib/common.sh
+          test -f setup.sh
           test -f home/.chezmoiignore
           test -f home/.chezmoiexternal.toml
+          test -f home/.chezmoi.toml.tmpl
 
-          # Verify setup scripts are syntactically correct (using zsh)
-          zsh -n scripts/setup/setup.core.sh
-          zsh -n scripts/setup/lib/common.sh
+          # Verify setup script is syntactically correct (using zsh)
+          zsh -n setup.sh
 
   # Job 2: FR-7 Debug Capabilities Matrix Testing
   test-fr7-debug-matrix:
@@ -235,7 +234,7 @@ jobs:
 
           # Time the dry-run execution
           start_time=$(date +%s)
-          ./scripts/setup/setup.core.sh --dry-run --debug-verbose > performance.log 2>&1
+          ./setup.sh --dry-run --debug-verbose > performance.log 2>&1
           end_time=$(date +%s)
 
           duration=$((end_time - start_time))
@@ -284,10 +283,9 @@ jobs:
           echo "Linting bash files..."
           find . -name "*.bash" -exec shellcheck {} +
 
-          # Note: Bootstrap scripts use zsh and are syntax-checked separately
-          echo "Syntax checking zsh bootstrap scripts..."
-          zsh -n scripts/setup/setup.core.sh
-          zsh -n scripts/setup/lib/common.sh
+          # Note: Bootstrap script uses zsh and is syntax-checked separately
+          echo "Syntax checking zsh bootstrap script..."
+          zsh -n setup.sh
 
       - name: Secret scanning
         run: |

@@ -4,14 +4,14 @@ This repository manages a macOS developer environment using chezmoi-managed dotf
 
 ## Project Structure & Module Organization
 - `home/`: Source of truth for dotfiles managed by chezmoi (e.g., `dot_zshrc`, `dot_config/...`, `private_*/`, `encrypted_*.age`). Never commit decrypted secrets.
-- `scripts/setup/`: Machine setup and verification scripts (e.g., `setup.macos.sh`, `verify.macos.sh`).
+- `setup.sh`: Modern chezmoi-native bootstrap script for machine setup.
 - `scripts/test/`: Test automation (e.g., `test.sh`, `run-critical-tests.sh`, `validate-test-setup.sh`).
 - `scripts/tools/`: Helper utilities (e.g., `health-check.sh`, `performance-check.sh`, `ci-local.sh`).
 - `tests/`: Bats tests organized by `unit/`, `integration/`, `system/` (e.g., `tests/system/test_fr1_bootstrap.bats`).
 - `docs/`: Developer docs (e.g., `TESTING.md`, `CONTRIBUTING.md`, `TROUBLESHOOTING.md`).
 
 ## Build, Test, and Development Commands
-- `./setup.sh`: One-line installer that hands off to `scripts/setup/`.
+- `./setup.sh`: One-line installer using chezmoi remote init and lifecycle scripts.
 - `scripts/test/test.sh`: Runs the full Bats suite.
 - `scripts/test/run-critical-tests.sh`: Executes high-signal smoke/critical tests.
 - `scripts/tools/health-check.sh`: Quick repo health/prereq check.
@@ -31,7 +31,7 @@ This repository manages a macOS developer environment using chezmoi-managed dotf
 
 ## Commit & Pull Request Guidelines
 - Commit style: Conventional-ish types appear in history (e.g., `FEAT:`, `FIX:`, `DOCS:`, `CHORE:`, `SECURITY:`, `MAJOR:`). Use imperative subjects and include context in the body; link issues.
-- PRs: describe intent, scope, risk, and test coverage; include logs/screenshots where helpful; call out affected paths (e.g., `home/`, `scripts/setup/`).
+- PRs: describe intent, scope, risk, and test coverage; include logs/screenshots where helpful; call out affected paths (e.g., `home/`, `setup.sh`, lifecycle scripts).
 
 ## Security & Configuration Tips
 - Keep secrets encrypted (`*.age`); never commit decrypted content.
