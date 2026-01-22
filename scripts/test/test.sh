@@ -262,7 +262,7 @@ get_test_files() {
         fi
     done
 
-    echo "${existing_files[@]}"
+    printf "%s\n" "${existing_files[@]}"
 }
 
 run_tests() {
@@ -277,26 +277,24 @@ run_tests() {
     echo ""
 
     # Build BATS command
-    local bats_cmd="bats"
+    # Build BATS command args
+    local bats_args=()
 
     if [[ "$VERBOSE" == "true" ]]; then
-        bats_cmd="$bats_cmd --show-output-of-passing-tests"
+        bats_args+=("--show-output-of-passing-tests")
     fi
 
     if [[ "$DEBUG" == "true" ]]; then
-        bats_cmd="$bats_cmd --tap"
+        bats_args+=("--tap")
     fi
 
-    # Add test files
-    bats_cmd="$bats_cmd ${test_files[*]}"
-
-    log_debug "BATS command: $bats_cmd"
+    log_debug "BATS command: bats ${bats_args[*]} ${test_files[*]}"
 
     # Run tests
     local start_time
     start_time=$(date +%s)
 
-    if eval "$bats_cmd"; then
+    if bats "${bats_args[@]}" "${test_files[@]}"; then
         local end_time
         end_time=$(date +%s)
         local duration=$((end_time - start_time))

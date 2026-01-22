@@ -128,11 +128,7 @@ teardown() {
 
 @test "FR-3.9: Cross-machine update capabilities" {
     # Verify chezmoi integration in bootstrap scripts
-    if [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]; then
-        grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.macos.sh" || [ -f "$BOOTSTRAP_DIR/lib/chezmoi.sh" ]
-    else
-        grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.core.sh" || [ -f "$BOOTSTRAP_DIR/lib/chezmoi.sh" ]
-    fi
+    grep -q -i "chezmoi" "$BOOTSTRAP_DIR/setup.sh"
 }
 
 @test "FR-3.10: Configuration management dry-run support" {

@@ -11,6 +11,7 @@ export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
 export SETUP_SCRIPT="${DOTFILES_ROOT}/setup.sh"
 export TESTS_DIR="${DOTFILES_ROOT}/tests"
+export BOOTSTRAP_DIR="${DOTFILES_ROOT}"
 export DOTFILES_SOURCE_DIR="${DOTFILES_ROOT}/home"  # Chezmoi source directory
 
 # Test execution modes
@@ -266,26 +267,34 @@ run_chezmoi() {
 # Template rendering test helper
 test_template_rendering() {
     local template_file="$1"
-    shift 2  # Skip expected_env parameter (not currently used in implementation)
+    shift 2  # Skip expected_env parameter
     local template_vars=("$@")
 
-    # Create temporary template data using correct chezmoi syntax
-    local template_data=""
+    # Set up chezmoi config directory
+    local chezmoi_config_dir="$BATS_TEST_TMPDIR/chezmoi"
+    mkdir -p "$chezmoi_config_dir"
+    local config_file="$chezmoi_config_dir/chezmoi.toml"
+
+    # Start writing config file with data section
+    echo "[data]" > "$config_file"
+
+    # Add variables to data section
     for var in "${template_vars[@]}"; do
         # Parse variable assignment (e.g., "ephemeral=true")
         local var_name="${var%=*}"
         local var_value="${var#*=}"
 
-        # Use appropriate prompt flag based on value type
+        # Write to config file
         if [[ "$var_value" == "true" ]] || [[ "$var_value" == "false" ]]; then
-            template_data="$template_data --promptBool $var_name=$var_value"
+            echo "    $var_name = $var_value" >> "$config_file"
         else
-            template_data="$template_data --promptString $var_name=$var_value"
+            echo "    $var_name = \"$var_value\"" >> "$config_file"
         fi
     done
 
-    # Test template rendering with chezmoi
-    run_chezmoi execute-template --init --stdinisatty=false $template_data < "$DOTFILES_ROOT/home/$template_file"
+    # Test template rendering with chezmoi using the generated config
+    # We don't pass prompt flags anymore since data is in config
+    run_chezmoi execute-template --init --stdinisatty=false < "$DOTFILES_ROOT/home/$template_file"
 }
 
 # Environment-specific test helpers
