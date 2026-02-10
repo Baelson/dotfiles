@@ -23,6 +23,8 @@ validation_*.log
 *~
 .idea/
 .vscode/
+.claude/
+CLAUDE.local.md
 
 # Temporary files
 *.log

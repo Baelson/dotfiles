@@ -25,7 +25,7 @@ This guide helps you diagnose and resolve common issues with the macOS System an
 ./bootstrap/verify.setup.sh
 
 # Run tests
-./scripts/test.sh --quick
+./scripts/test/test.sh --quick
 ```
 
 ---
@@ -240,12 +240,12 @@ brew install bats-core
 bats --version
 
 # Run tests with verbose output
-./scripts/test.sh --all --verbose
+./scripts/test/test.sh --all --verbose
 
 # Run specific test category
-./scripts/test.sh --unit
-./scripts/test.sh --integration
-./scripts/test.sh --system
+./scripts/test/test.sh --unit
+./scripts/test/test.sh --integration
+./scripts/test/test.sh --system
 
 # Check test helper
 bash -n tests/lib/test_helper.bash
@@ -293,7 +293,7 @@ cat .pre-commit-config.yaml
 #### Test Debugging
 ```bash
 # Run tests with TAP output
-./scripts/test.sh --debug --all
+./scripts/test/test.sh --debug --all
 
 # Run specific test with verbose output
 bats --verbose tests/system/test_fr1_bootstrap.bats
@@ -448,7 +448,7 @@ When reporting issues, please include:
 
 - **Documentation**: `docs/` directory
 - **Health Check**: `./scripts/health-check.sh`
-- **Test Suite**: `./scripts/test.sh`
+- **Test Suite**: `./scripts/test/test.sh`
 - **Issue Tracking**: `docs/OPEN_ISSUES.md`
 
 ---

@@ -92,7 +92,7 @@ teardown() {
 # chezmoi Integration Tests
 @test "FR-1.6M: chezmoi configuration template renders correctly" {
     # Test that .chezmoi.toml.tmpl can be rendered
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=false --data personal=true --data work=false < "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl"
+    test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false"
     assert_chezmoi_success
 
     # Should contain configuration sections
@@ -105,24 +105,24 @@ teardown() {
 
 @test "FR-1.7M: chezmoi detects environment correctly" {
     # Test ephemeral environment template
-    run_chezmoi execute-template --init --data ephemeral=true --data headless=false --data personal=false --data work=false < "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl"
+    test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=true" "headless=false" "personal=false" "work=false"
     assert_chezmoi_success
     [[ "$output" =~ "ephemeral = true" ]]
 
     # Test headless environment template
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=true --data personal=false --data work=false < "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl"
+    test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=false" "headless=true" "personal=false" "work=false"
     assert_chezmoi_success
     [[ "$output" =~ "headless = true" ]]
 
     # Test work environment template
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=false --data personal=false --data work=true < "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl"
+    test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true"
     assert_chezmoi_success
     [[ "$output" =~ "work = true" ]]
 }
 
 @test "FR-1.8M: Brewfile template renders environment-specific packages" {
     # Test personal environment Brewfile
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=false --data personal=true --data work=false < "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "hostname=personal-mac"
     assert_chezmoi_success
 
     # Should include personal packages
@@ -130,7 +130,7 @@ teardown() {
     [[ "$output" =~ "mas.*Amphetamine" ]] || [[ "$output" =~ "mas.*Final Cut Pro" ]]
 
     # Test work environment Brewfile
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=false --data personal=false --data work=true < "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true" "hostname=work-laptop"
     assert_chezmoi_success
 
     # Should include work packages but not personal ones
@@ -140,7 +140,7 @@ teardown() {
 
 @test "FR-1.9M: Ephemeral environment renders minimal packages" {
     # Test ephemeral environment Brewfile
-    run_chezmoi execute-template --init --data ephemeral=true --data headless=false --data personal=false --data work=false < "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=true" "headless=false" "personal=false" "work=false" "hostname=ci-runner"
     assert_chezmoi_success
 
     # Should exclude ephemeral packages
@@ -156,7 +156,7 @@ teardown() {
 
 @test "FR-1.10M: Headless environment excludes GUI applications" {
     # Test headless environment Brewfile
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=true --data personal=false --data work=false < "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=true" "personal=false" "work=false" "hostname=server-01"
     assert_chezmoi_success
 
     # Should exclude GUI applications

@@ -66,13 +66,9 @@ assert_bootstrap_success() {
     # shellcheck disable=SC2154 # status is set by BATS run command
     if [[ "$status" -ne 0 ]]; then
         echo "Bootstrap script failed with exit code: $status" >&2
-        if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-            echo "Output in CI:" >&2
-            echo "$output" >&2
-            echo "Working directory: $PWD" >&2
-            echo "DOTFILES_ROOT: $DOTFILES_ROOT" >&2
-            echo "BOOTSTRAP_DIR: $BOOTSTRAP_DIR" >&2
-        fi
+        echo "Output:" >&2
+        echo "$output" >&2
+        echo "Working directory: $PWD" >&2
         return 1
     fi
     return 0
@@ -216,10 +212,17 @@ run_modern_setup() {
     done
 
     # Add test-specific environment variables
-    env_vars="$env_vars ASK=1"  # Force prompts for testing
+    # CRITICAL: Isolate home directory to prevent touching real user data
+    # Adding defaults for test stability (avoids interactive prompts and skips encryption)
+    env_vars="$env_vars EPHEMERAL='${EPHEMERAL:-true}' HEADLESS='${HEADLESS:-true}'"
+    # CRITICAL: Isolate home directory to prevent touching real user data
+    env_vars="$env_vars HOME='$BATS_TEST_TMPDIR'"
+    # CRITICAL: Use local repository for hermetic testing (no network clones)
+    env_vars="$env_vars DOTFILES_REPO_URL='$DOTFILES_ROOT'"
 
     # Build run command
-    local run_command="cd '$DOTFILES_ROOT' && $env_vars zsh '$setup_script' $script_args 2>&1"
+    # Redirect input from /dev/null to prevent interactive prompts (bypasses chezmoi hanging)
+    local run_command="cd '$DOTFILES_ROOT' && $env_vars zsh '$setup_script' $script_args < /dev/null 2>&1"
 
     if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
         # In CI, provide additional environment setup
@@ -259,7 +262,23 @@ run_chezmoi() {
         fi
     fi
 
-    local run_command="$chezmoi_cmd ${args[*]} 2>&1"
+
+    # Escape arguments safely for shell execution
+    local escaped_args=""
+    for arg in "${args[@]}"; do
+        escaped_args="$escaped_args $(printf "%q" "$arg")"
+    done
+
+    # We execute via zsh -c to capture stderr (2>&1) properly in BATS run output
+    local run_command="$chezmoi_cmd $escaped_args"
+
+    # Handle optional input redirection via environment variable
+    # This ensures input is passed to the command itself, not consumed by bats 'run'
+    if [[ -n "${CHEZMOI_INPUT_FILE:-}" ]]; then
+        run_command="$run_command < '$CHEZMOI_INPUT_FILE'"
+    fi
+
+    run_command="$run_command 2>&1"
 
     run zsh -c "$run_command"
 }
@@ -267,34 +286,34 @@ run_chezmoi() {
 # Template rendering test helper
 test_template_rendering() {
     local template_file="$1"
-    shift 2  # Skip expected_env parameter
+    shift 1  # Only skip template_file, subsequent args are vars
     local template_vars=("$@")
 
-    # Set up chezmoi config directory
-    local chezmoi_config_dir="$BATS_TEST_TMPDIR/chezmoi"
-    mkdir -p "$chezmoi_config_dir"
-    local config_file="$chezmoi_config_dir/chezmoi.toml"
+    # Construct JSON data for override-data flag
+    local json_data="{"
+    local first=true
 
-    # Start writing config file with data section
-    echo "[data]" > "$config_file"
-
-    # Add variables to data section
     for var in "${template_vars[@]}"; do
-        # Parse variable assignment (e.g., "ephemeral=true")
+        if [ "$first" = true ]; then first=false; else json_data="$json_data, "; fi
+
         local var_name="${var%=*}"
         local var_value="${var#*=}"
 
-        # Write to config file
-        if [[ "$var_value" == "true" ]] || [[ "$var_value" == "false" ]]; then
-            echo "    $var_name = $var_value" >> "$config_file"
+        # Handle boolean/integer vs string values
+        if [[ "$var_value" == "true" ]] || [[ "$var_value" == "false" ]] || [[ "$var_value" =~ ^[0-9]+$ ]]; then
+            json_data="$json_data \"$var_name\": $var_value"
         else
-            echo "    $var_name = \"$var_value\"" >> "$config_file"
+            json_data="$json_data \"$var_name\": \"$var_value\""
         fi
     done
+    json_data="$json_data }"
 
-    # Test template rendering with chezmoi using the generated config
-    # We don't pass prompt flags anymore since data is in config
-    run_chezmoi execute-template --init --stdinisatty=false < "$DOTFILES_ROOT/home/$template_file"
+    # Test template rendering with chezmoi using override-data
+    # We use --init to ensure config template functions like stdinIsATTY are available
+    # CRITICAL: Use shell redirection via env var because bats swallows stdin and --file argument is unreliable combined with --override-data
+    export CHEZMOI_INPUT_FILE="$DOTFILES_ROOT/home/$template_file"
+    run_chezmoi execute-template --init --stdinisatty=false --override-data "$json_data"
+    unset CHEZMOI_INPUT_FILE
 }
 
 # Environment-specific test helpers

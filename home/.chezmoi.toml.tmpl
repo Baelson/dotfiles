@@ -47,17 +47,25 @@ To override automatic detection, run:
 {{- end -}}
 
 {{/* Interactive Prompts (only when connected to terminal) */}}
-{{- if stdinIsATTY -}}
-{{-   if hasKey . "ephemeral" -}}
-{{-     $ephemeral = .ephemeral -}}
-{{-   else -}}
-{{-     $ephemeral = promptBool "Is this an ephemeral environment" -}}
-{{-   end -}}
-{{-   if hasKey . "headless" -}}
-{{-     $headless = .headless -}}
-{{-   else -}}
-{{-     $headless = promptBool "Is this a headless environment" -}}
-{{-   end -}}
+{{/* Logic: Check for direct data override first, then prompt if interactive, otherwise default */}}
+{{- if hasKey . "ephemeral" -}}
+{{-   $ephemeral = .ephemeral -}}
+{{- else if stdinIsATTY -}}
+{{-   $ephemeral = promptBool "Is this an ephemeral environment" -}}
+{{- end -}}
+
+{{- if hasKey . "headless" -}}
+{{-   $headless = .headless -}}
+{{- else if stdinIsATTY -}}
+{{-   $headless = promptBool "Is this a headless environment" -}}
+{{- end -}}
+
+{{- if hasKey . "personal" -}}
+{{-   $personal = .personal -}}
+{{- end -}}
+
+{{- if hasKey . "work" -}}
+{{-   $work = .work -}}
 {{- end -}}
 
 [data]

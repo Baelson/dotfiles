@@ -375,15 +375,30 @@ run_chezmoi_init() {
     fi
 
     # Add data for template processing
+    # Add data for template processing
     debug_verbose "run_chezmoi_init: processing environment variables for template data"
-    if [[ -n "$EPHEMERAL" ]]; then
-        chezmoi_args+=("--data" "ephemeral=true")
-        debug_verbose "run_chezmoi_init: added ephemeral=true template data"
+
+    local template_data=""
+
+    # Use provided values or defaults for ephemeral
+    local json_ephemeral="false"
+    if [[ -n "${EPHEMERAL:-}" ]] && [[ "$EPHEMERAL" =~ ^(true|1|yes)$ ]]; then
+         json_ephemeral="true"
     fi
 
-    if [[ -n "$HEADLESS" ]]; then
-        chezmoi_args+=("--data" "headless=true")
-        debug_verbose "run_chezmoi_init: added headless=true template data"
+    # Use provided values or defaults for headless
+    local json_headless="false"
+    if [[ -n "${HEADLESS:-}" ]] && [[ "$HEADLESS" =~ ^(true|1|yes)$ ]]; then
+        json_headless="true"
+    fi
+
+    local template_data="{\"ephemeral\": ${json_ephemeral}, \"headless\": ${json_headless}}"
+
+    # Append data arg if not empty
+    if [[ -n "$template_data" ]]; then
+        # CRITICAL: Use --override-data to inject values. --data is a boolean flag in init!
+        chezmoi_args+=("--override-data" "$template_data")
+        debug_verbose "run_chezmoi_init: added template data block"
     fi
 
     # Interactive mode allows for prompts
@@ -395,7 +410,7 @@ run_chezmoi_init() {
     fi
 
     # Initialize chezmoi with the repository
-    local cmd_display="chezmoi init ${chezmoi_args[*]} ${REPO_OWNER}"
+    local cmd_display="chezmoi init ${chezmoi_args[*]} ${DOTFILES_REPO_URL:-$REPO_OWNER}"
     echo "🔧 Running: $cmd_display"
     debug_verbose "run_chezmoi_init: executing chezmoi command with args: ${chezmoi_args[*]}"
 
@@ -405,7 +420,12 @@ run_chezmoi_init() {
         echo "🔍 [DRY RUN] Template data: ephemeral=${EPHEMERAL:-false}, headless=${HEADLESS:-false}"
     else
         debug_trace "run_chezmoi_init: executing chezmoi init command"
-        chezmoi init "${chezmoi_args[@]}" "${REPO_OWNER}"
+        # CRITICAL: Allow tests to use local repo path via DOTFILES_REPO_URL
+        if [[ -n "${DOTFILES_REPO_URL:-}" ]]; then
+            chezmoi init "${chezmoi_args[@]}" "${DOTFILES_REPO_URL}"
+        else
+            chezmoi init "${chezmoi_args[@]}" "${REPO_OWNER}"
+        fi
     fi
 
     debug_trace "run_chezmoi_init: completed successfully"

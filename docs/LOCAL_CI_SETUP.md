@@ -290,7 +290,7 @@ Run the same core checks locally without incurring Actions minutes:
 What it does:
 - Ensures `bats` and optionally `pre-commit` are installed (via Homebrew if present)
 - Runs `pre-commit run --all-files`
-- Runs the full BATS suite via `scripts/test.sh --all`
+- Runs the full BATS suite via `scripts/test/test.sh --all`
 
 Tip: Add a shell alias `ci=./scripts/ci-local.sh` for convenience.
 

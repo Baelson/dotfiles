@@ -211,7 +211,7 @@ teardown() {
 
 # Template Rendering Tests
 @test "LIFECYCLE-17: Package installation script renders correctly for ephemeral environment" {
-    skip "Test harness issue: data injection into chezmoi execute-template failing"
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
 
     # Render template for ephemeral environment
@@ -223,7 +223,7 @@ teardown() {
 }
 
 @test "LIFECYCLE-18: macOS defaults script renders correctly for headless environment" {
-    skip "Test harness issue: data injection into chezmoi execute-template failing"
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
 
     # Render template for headless environment
@@ -235,7 +235,7 @@ teardown() {
 }
 
 @test "LIFECYCLE-19: Shell environment script renders correctly for different environments" {
-    skip "Test harness issue: data injection into chezmoi execute-template failing"
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl"
 
     # Test headless environment
@@ -251,7 +251,7 @@ teardown() {
 }
 
 @test "LIFECYCLE-20: Application setup script renders correctly for personal vs work" {
-    skip "Test harness issue: data injection into chezmoi execute-template failing"
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
 
     # Test personal environment

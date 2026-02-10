@@ -23,7 +23,7 @@ brew install bats-core
 ./scripts/health-check.sh --full
 
 # Run tests to ensure everything works
-./scripts/test.sh --quick
+./scripts/test/test.sh --quick
 ```
 
 ## 📁 Project Structure
@@ -70,14 +70,14 @@ dotfiles/
 3. **Test your changes**
    ```bash
    # Run quick tests
-   ./scripts/test.sh --quick
+   ./scripts/test/test.sh --quick
 
    # Run specific functional requirement tests
-   ./scripts/test.sh fr1  # For setup changes
-   ./scripts/test.sh fr3  # For configuration changes
+   ./scripts/test/test.sh fr1  # For setup changes
+   ./scripts/test/test.sh fr3  # For configuration changes
 
    # Run all tests
-   ./scripts/test.sh --all
+   ./scripts/test/test.sh --all
    ```
 
 4. **Validate system health**
@@ -102,27 +102,27 @@ dotfiles/
 #### Running Tests
 ```bash
 # Quick test subset (fastest)
-./scripts/test.sh --quick
+./scripts/test/test.sh --quick
 
 # By category
-./scripts/test.sh --unit
-./scripts/test.sh --integration
-./scripts/test.sh --system
+./scripts/test/test.sh --unit
+./scripts/test/test.sh --integration
+./scripts/test/test.sh --system
 
 # By functional requirement
-./scripts/test.sh fr1  # Bootstrap functionality
-./scripts/test.sh fr2  # Package management
-./scripts/test.sh fr3  # Configuration management
-./scripts/test.sh fr4  # Shell environment
-./scripts/test.sh fr5  # Application preferences
-./scripts/test.sh fr6  # Environment templating
-./scripts/test.sh fr7  # Debug capabilities
+./scripts/test/test.sh fr1  # Bootstrap functionality
+./scripts/test/test.sh fr2  # Package management
+./scripts/test/test.sh fr3  # Configuration management
+./scripts/test/test.sh fr4  # Shell environment
+./scripts/test/test.sh fr5  # Application preferences
+./scripts/test/test.sh fr6  # Environment templating
+./scripts/test/test.sh fr7  # Debug capabilities
 
 # With verbose output
-./scripts/test.sh --all --verbose
+./scripts/test/test.sh --all --verbose
 
 # Install BATS if needed
-./scripts/test.sh --install-bats --quick
+./scripts/test/test.sh --install-bats --quick
 ```
 
 #### Writing New Tests
@@ -218,13 +218,13 @@ zsh -n setup/setup.core.sh
 #### Test Failures
 ```bash
 # Run specific failing test with verbose output
-./scripts/test.sh --verbose fr1
+./scripts/test/test.sh --verbose fr1
 
 # Check test helper syntax
 bash -n tests/lib/test_helper.bash
 
 # Run tests with debug output
-./scripts/test.sh --debug --all
+./scripts/test/test.sh --debug --all
 ```
 
 #### Module Loading Issues
@@ -270,7 +270,7 @@ Follow conventional commit format:
 ## 🔍 Code Review Process
 
 ### Pre-commit Checklist
-- [ ] All tests pass (`./scripts/test.sh --all`)
+- [ ] All tests pass (`./scripts/test/test.sh --all`)
 - [ ] Health check passes (`./scripts/health-check.sh --full`)
 - [ ] Code follows existing patterns and style
 - [ ] Documentation is updated if needed
@@ -305,7 +305,7 @@ Follow conventional commit format:
 ### Resources
 - **Documentation**: Check the `docs/` directory
 - **Health Check**: Run `./scripts/health-check.sh --full`
-- **Test Results**: Run `./scripts/test.sh --all --verbose`
+- **Test Results**: Run `./scripts/test/test.sh --all --verbose`
 - **Issue Tracking**: Check `docs/OPEN_ISSUES.md`
 
 ### Best Practices
@@ -319,7 +319,7 @@ Follow conventional commit format:
 Before submitting changes:
 
 - [ ] Code follows project patterns and style
-- [ ] All tests pass (`./scripts/test.sh --all`)
+- [ ] All tests pass (`./scripts/test/test.sh --all`)
 - [ ] Health check passes (`./scripts/health-check.sh --full`)
 - [ ] Documentation is updated
 - [ ] Debug logging is appropriate
