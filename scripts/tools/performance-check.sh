@@ -32,6 +32,22 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+run_with_timeout() {
+    local timeout_seconds="$1"
+    shift
+
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "${timeout_seconds}s" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "${timeout_seconds}s" "$@"
+    elif command -v perl >/dev/null 2>&1; then
+        # Keep macOS compatibility when GNU timeout is unavailable.
+        perl -e 'alarm shift; exec @ARGV' "$timeout_seconds" "$@"
+    else
+        "$@"
+    fi
+}
+
 main() {
     log_info "Running performance check (dry-run timing validation)..."
 
@@ -52,8 +68,8 @@ main() {
 
     start_time=$(date +%s)
 
-    # Run setup in dry-run mode with timeout
-    if timeout 180s "$SETUP_SCRIPT" --dry-run --debug-verbose > /dev/null 2>&1; then
+    # Run setup in dry-run mode with timeout.
+    if run_with_timeout 180 "$SETUP_SCRIPT" --dry-run --debug-verbose > /dev/null 2>&1; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
 
@@ -70,7 +86,7 @@ main() {
         fi
     else
         exit_code=$?
-        if [[ $exit_code -eq 124 ]]; then
+        if [[ $exit_code -eq 124 || $exit_code -eq 142 ]]; then
             log_error "Performance check failed: Bootstrap dry-run timed out (>180s)"
             log_error "This indicates a serious performance regression"
         else

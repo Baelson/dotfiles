@@ -119,11 +119,10 @@ get_rendered_brewfile() {
 }
 
 @test "FR-2.6: Package installation verification exists" {
-    skip "verify.setup.sh not found (pending reimplementation in setup.sh)"
-    [[ -f "$BOOTSTRAP_DIR/verify.macos.sh" ]]
+    local package_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
 
-    # Should contain package verification logic
-    grep -q -i "brew\|package\|install" "$BOOTSTRAP_DIR/verify.macos.sh"
+    [[ -f "$package_lifecycle_script" ]]
+    grep -q -i -E "brew bundle|install|package" "$package_lifecycle_script"
 }
 
 # FR-2.7: Package management dry-run capability
@@ -135,8 +134,8 @@ get_rendered_brewfile() {
         [[ "$output" =~ (brew|Brewfile|[Pp]ackage) ]]
     else
         # If setup.macos.sh doesn't exist or support dry-run, that's acceptable
-        # but setup.core.sh should reference macOS setup
-        run_bootstrap "setup.core.sh" "--dry-run"
+        # but setup.sh should reference macOS setup
+        run_bootstrap "setup.sh" "--dry-run"
         assert_bootstrap_success
         [[ "$output" =~ (macos|package|setup) ]]
     fi
@@ -144,12 +143,10 @@ get_rendered_brewfile() {
 
 # FR-2.8: Error handling for package installation failures
 @test "FR-2.8: Package installation includes error handling" {
-    if [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]; then
-        # Should contain error handling for package failures or delegate to module
-        grep -q -i "error\|fail\|exit\|return\|install_packages" "$BOOTSTRAP_DIR/setup.macos.sh"
-    else
-        skip "setup.macos.sh not found, checking setup.core.sh"
-    fi
+    local package_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
+
+    grep -q -i -E "error|fail|exit|return|not found" "$DOTFILES_ROOT/setup.sh"
+    grep -q -i -E "error|fail|exit|return|not found" "$package_lifecycle_script"
 }
 
 # FR-2.9: Package count validation
@@ -168,26 +165,12 @@ get_rendered_brewfile() {
 # FR-2.10: MAS authentication handling
 @test "FR-2.10: MAS authentication considerations present" {
     # MAS authentication is handled by 'brew bundle' which includes MAS packages
-    # Check if brew bundle is used in package management (either in main script or lib modules)
-    if [[ -f "$BOOTSTRAP_DIR/setup.macos.sh" ]]; then
-        if grep -q -i "brew bundle" "$BOOTSTRAP_DIR/setup.macos.sh"; then
-            true  # Found in main script
-        elif [[ -f "$BOOTSTRAP_DIR/lib/packages.sh" ]] && grep -q -i "brew bundle" "$BOOTSTRAP_DIR/lib/packages.sh"; then
-            true  # Found in packages module
-        else
-            false
-        fi
-    else
-        # Check if MAS packages exist in Brewfile (implies authentication handling needed)
-        brewfile=""
-        [[ -f "$DOTFILES_ROOT/Brewfile" ]] && brewfile="$DOTFILES_ROOT/Brewfile"
-        [[ -z "$brewfile" && -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/Brewfile"
-        [[ -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]] && brewfile="$DOTFILES_SOURCE_DIR/dot_Brewfile"
-        [[ -f "$DOTFILES_ROOT/.Brewfile" ]] && brewfile="$DOTFILES_ROOT/.Brewfile"
+    # Check modern package lifecycle handling.
+    local package_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
+    [[ -f "$package_lifecycle_script" ]]
+    grep -q -i "brew bundle" "$package_lifecycle_script"
 
-        if [[ -n "$brewfile" ]]; then
-            mas_count=$(grep -c "mas " "$brewfile")
-            [[ $mas_count -ge 0 ]]  # If MAS packages exist, authentication is implied
-        fi
-    fi
+    # If MAS entries exist in the Brewfile template, auth handling is implied.
+    mas_count=$(grep -c "^mas " "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || true)
+    [[ $mas_count -ge 0 ]]
 }

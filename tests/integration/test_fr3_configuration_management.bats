@@ -133,7 +133,7 @@ teardown() {
 
 @test "FR-3.10: Configuration management dry-run support" {
     # Test chezmoi dry-run capability through bootstrap
-    run_bootstrap "setup.core.sh" "--dry-run"
+    run_bootstrap "setup.sh" "--dry-run"
     assert_bootstrap_success
 
     # Should mention configuration or chezmoi operations

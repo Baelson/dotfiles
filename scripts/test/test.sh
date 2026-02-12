@@ -5,18 +5,18 @@
 # This script provides an easy way to run BATS tests with different configurations
 # and options, making testing more accessible and ergonomic.
 #
-# Usage: ./scripts/test.sh [OPTIONS] [TEST_PATTERN]
+# Usage: ./scripts/test/test.sh [OPTIONS] [TEST_PATTERN]
 #
 # Options:
-#   --quick          Run only critical tests (fast subset)
-#   --unit           Run only unit tests
-#   --integration    Run only integration tests
-#   --system         Run only system tests
-#   --all            Run all tests (default)
-#   --verbose        Show detailed test output
-#   --debug          Show debug information
-#   --install-bats   Install BATS if not available
-#   --help           Display this help message
+#   -q, --quick          Run only critical tests (fast subset)
+#   -u, --unit           Run only unit tests
+#   -i, --integration    Run only integration tests
+#   -s, --system         Run only system tests
+#   -a, --all            Run all tests (default)
+#   -v, --verbose        Show detailed test output
+#   -d, --debug          Show debug information
+#   -I, --install-bats   Install BATS if not available
+#   -h, --help           Display this help message
 #
 # Test Patterns:
 #   fr1              Run FR-1 (Bootstrap) tests
@@ -89,15 +89,15 @@ Test Runner Script for Dotfiles Testing
 Usage: $0 [OPTIONS] [TEST_PATTERN]
 
 Options:
-  --quick          Run only critical tests (fast subset)
-  --unit           Run only unit tests
-  --integration    Run only integration tests
-  --system         Run only system tests
-  --all            Run all tests (default)
-  --verbose        Show detailed test output
-  --debug          Show debug information
-  --install-bats   Install BATS if not available
-  --help           Display this help message
+  -q, --quick          Run only critical tests (fast subset)
+  -u, --unit           Run only unit tests
+  -i, --integration    Run only integration tests
+  -s, --system         Run only system tests
+  -a, --all            Run all tests (default)
+  -v, --verbose        Show detailed test output
+  -d, --debug          Show debug information
+  -I, --install-bats   Install BATS if not available
+  -h, --help           Display this help message
 
 Test Patterns:
   fr1              Run FR-1 (Bootstrap) tests
@@ -122,43 +122,43 @@ EOF
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --quick)
+            -q|--quick)
                 QUICK_MODE=true
                 ALL_TESTS=false
                 shift
                 ;;
-            --unit)
+            -u|--unit)
                 UNIT_ONLY=true
                 ALL_TESTS=false
                 shift
                 ;;
-            --integration)
+            -i|--integration)
                 INTEGRATION_ONLY=true
                 ALL_TESTS=false
                 shift
                 ;;
-            --system)
+            -s|--system)
                 SYSTEM_ONLY=true
                 ALL_TESTS=false
                 shift
                 ;;
-            --all)
+            -a|--all)
                 ALL_TESTS=true
                 shift
                 ;;
-            --verbose)
+            -v|--verbose)
                 VERBOSE=true
                 shift
                 ;;
-            --debug)
+            -d|--debug)
                 DEBUG=true
                 shift
                 ;;
-            --install-bats)
+            -I|--install-bats)
                 INSTALL_BATS=true
                 shift
                 ;;
-            --help)
+            -h|--help)
                 show_help
                 exit 0
                 ;;
@@ -214,6 +214,7 @@ get_test_files() {
         # Quick mode: run only essential tests for faster feedback
         test_files=(
             "$TESTS_DIR/system/test_fr1_modern_bootstrap.bats"
+            "$TESTS_DIR/system/test_fr7_debug_modes.bats"
             "$TESTS_DIR/unit/test_brewfile_syntax.bats"
             "$TESTS_DIR/unit/test_security_secrets.bats"
         )
@@ -288,27 +289,37 @@ run_tests() {
         bats_args+=("--tap")
     fi
 
-    log_debug "BATS command: bats ${bats_args[*]} ${test_files[*]}"
+    local bats_args_str=""
+    if [[ ${#bats_args[@]} -gt 0 ]]; then
+        bats_args_str="${bats_args[*]} "
+    fi
+    log_debug "BATS command: bats ${bats_args_str}${test_files[*]}"
 
     # Run tests
     local start_time
     start_time=$(date +%s)
 
-    if bats "${bats_args[@]}" "${test_files[@]}"; then
+    local bats_exit_code=0
+    if [[ ${#bats_args[@]} -gt 0 ]]; then
+        bats "${bats_args[@]}" "${test_files[@]}" || bats_exit_code=$?
+    else
+        bats "${test_files[@]}" || bats_exit_code=$?
+    fi
+
+    if [[ $bats_exit_code -eq 0 ]]; then
         local end_time
         end_time=$(date +%s)
         local duration=$((end_time - start_time))
 
         log_success "All tests passed! (${duration}s)"
         return 0
-    else
-        local end_time
-        end_time=$(date +%s)
-        local duration=$((end_time - start_time))
-
-        log_error "Some tests failed! (${duration}s)"
-        return 1
     fi
+
+    local end_time
+    end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+    log_error "Some tests failed! (${duration}s)"
+    return 1
 }
 
 show_test_summary() {

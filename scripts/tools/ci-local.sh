@@ -7,7 +7,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 echo "[ci-local] Repo: $ROOT_DIR"
 cd "$ROOT_DIR"
@@ -40,7 +40,7 @@ else
 fi
 
 echo "[ci-local] Running full Bats suite..."
-chmod +x "$SCRIPT_DIR/test.sh" || true
-"$SCRIPT_DIR/test.sh" --all
+chmod +x "$ROOT_DIR/scripts/test/test.sh" || true
+"$ROOT_DIR/scripts/test/test.sh" --all
 
 echo "[ci-local] ✅ All checks completed"

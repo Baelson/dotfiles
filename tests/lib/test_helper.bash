@@ -211,6 +211,14 @@ run_modern_setup() {
         fi
     done
 
+    # Default to dry-run in test mode for hermetic behavior.
+    if [[ "$DRY_RUN_TESTS" == "true" ]] \
+        && [[ ! " ${script_args} " =~ " --dry-run " ]] \
+        && [[ ! " ${script_args} " =~ " --help " ]] \
+        && [[ ! " ${script_args} " =~ " -h " ]]; then
+        script_args="$script_args --dry-run"
+    fi
+
     # Add test-specific environment variables
     # CRITICAL: Isolate home directory to prevent touching real user data
     # Adding defaults for test stability (avoids interactive prompts and skips encryption)

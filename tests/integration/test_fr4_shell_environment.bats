@@ -135,30 +135,12 @@ teardown() {
 
 # FR-4.11: Bootstrap integration for shell environment
 @test "FR-4.11: Shell environment setup integrated with bootstrap" {
-    # Check if bootstrap scripts reference shell setup
-    shell_setup_found=false
+    local shell_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl"
 
-    for script in "$BOOTSTRAP_DIR"/*.sh; do
-        if [[ -f "$script" ]]; then
-            if grep -q -i "shell\|zsh\|oh-my-zsh\|antigen" "$script"; then
-                shell_setup_found=true
-                break
-            fi
-        fi
-    done
-
-    # At minimum, chezmoi apply should handle shell configuration
-    if [[ "$shell_setup_found" == "false" ]]; then
-        # Check for chezmoi integration (which handles shell configs)
-        for script in "$BOOTSTRAP_DIR"/*.sh; do
-            if [[ -f "$script" ]] && grep -q -i "chezmoi" "$script"; then
-                shell_setup_found=true
-                break
-            fi
-        done
-    fi
-
-    [[ "$shell_setup_found" == "true" ]]
+    [[ -f "$DOTFILES_ROOT/setup.sh" ]]
+    [[ -f "$shell_lifecycle_script" ]]
+    grep -q -i -E "shell|zsh|oh-my-zsh|antigen|chezmoi" "$DOTFILES_ROOT/setup.sh"
+    grep -q -i -E "shell|zsh|oh-my-zsh|antigen" "$shell_lifecycle_script"
 }
 
 @test "FR-4.12: External repository update frequency configuration" {
@@ -183,7 +165,7 @@ teardown() {
 
 @test "FR-4.14: Shell environment dry-run compatibility" {
     # Test that shell configuration doesn't interfere with dry-run
-    run_bootstrap "setup.core.sh" "--dry-run"
+    run_bootstrap "setup.sh" "--dry-run"
     assert_bootstrap_success
 
     # Should complete without shell configuration errors
