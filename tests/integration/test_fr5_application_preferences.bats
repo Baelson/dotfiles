@@ -90,15 +90,10 @@ teardown() {
     # Check for macOS system preference handling in bootstrap
     macos_prefs_found=false
 
-    # Look for defaults write or system preference commands
-    for script in "$BOOTSTRAP_DIR"/*.sh; do
-        if [[ -f "$script" ]]; then
-            if grep -q -E "(defaults write|osascript|system_profiler)" "$script"; then
-                macos_prefs_found=true
-                break
-            fi
-        fi
-    done
+    local macos_defaults_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
+    if [[ -f "$macos_defaults_script" ]] && grep -q -E "(defaults write|osascript|system_profiler)" "$macos_defaults_script"; then
+        macos_prefs_found=true
+    fi
 
     # Alternative: Check for macOS-specific configuration files
     if find "$DOTFILES_ROOT" -name "*plist*" -o -name "private_Library" 2>/dev/null | grep -q .; then
@@ -179,21 +174,13 @@ teardown() {
     # Check if bootstrap handles application restart needs
     restart_handling_found=false
 
-    # Look for restart notifications or handling
-    for script in "$BOOTSTRAP_DIR"/*.sh; do
-        if [[ -f "$script" ]]; then
-            if grep -q -i "restart\|reload\|relaunch\|logout" "$script"; then
-                restart_handling_found=true
-                break
-            fi
-        fi
-    done
-
-    # Alternative: Check for application quit/restart in verification
-    if [[ -f "$BOOTSTRAP_DIR/verify.macos.sh" ]]; then
-        if grep -q -i "restart\|reload\|application" "$BOOTSTRAP_DIR/verify.macos.sh"; then
-            restart_handling_found=true
-        fi
+    local macos_defaults_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
+    local app_setup_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
+    if grep -q -i -E "restart|reload|relaunch|logout|killall" "$macos_defaults_script" 2>/dev/null; then
+        restart_handling_found=true
+    fi
+    if grep -q -i -E "restart|reload|relaunch|logout" "$app_setup_script" 2>/dev/null; then
+        restart_handling_found=true
     fi
 
     # Test passes regardless - restart handling is optional but recommended
@@ -282,7 +269,7 @@ teardown() {
 
 @test "FR-5.13: Preference restoration dry-run safety" {
     # Test that application preference restoration is safe in dry-run
-    run_bootstrap "setup.core.sh" "--dry-run"
+    run_bootstrap "setup.sh" "--dry-run"
     assert_bootstrap_success
 
     # Should not show errors related to application configuration
@@ -295,18 +282,8 @@ teardown() {
     # Check if configuration management considers backup/restore
     backup_consideration_found=false
 
-    # Look for backup-related patterns in scripts
-    for script in "$BOOTSTRAP_DIR"/*.sh; do
-        if [[ -f "$script" ]]; then
-            if grep -q -i "backup\|restore\|save.*config" "$script"; then
-                backup_consideration_found=true
-                break
-            fi
-        fi
-    done
-
-    # Alternative: Chezmoi inherently provides versioning (backup capability)
-    if grep -q -i "chezmoi" "$BOOTSTRAP_DIR"/*.sh 2>/dev/null; then
+    # Chezmoi + git provide built-in rollback/backup capability.
+    if [[ -e "$DOTFILES_ROOT/.git" ]] && grep -q -i "chezmoi" "$DOTFILES_ROOT/setup.sh" 2>/dev/null; then
         backup_consideration_found=true
     fi
 

@@ -62,7 +62,7 @@ main() {
     # 2. Test Structure Validation
     log_section "2. Test Structure Validation"
 
-    local required_dirs=("tests/lib" "tests/system" "tests/integration" "tests/unit" "tests/fixtures")
+    local required_dirs=("tests/lib" "tests/system" "tests/integration" "tests/unit")
     for dir in "${required_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             log_info "Directory exists: $dir"
@@ -72,13 +72,19 @@ main() {
         fi
     done
 
+    if [[ -d "tests/fixtures" ]]; then
+        log_info "Optional directory exists: tests/fixtures"
+    else
+        log_warn "Optional directory not found: tests/fixtures"
+    fi
+
     # 3. Test Files Validation
     log_section "3. Test Files Validation"
 
     local test_files=(
         "tests/lib/test_helper.bash"
-        "tests/system/test_fr1_bootstrap.bats"
-        "tests/system/test_fr7_debug_capabilities.bats"
+        "tests/system/test_fr1_modern_bootstrap.bats"
+        "tests/system/test_fr7_debug_modes.bats"
         "tests/integration/test_fr2_package_management.bats"
         "tests/integration/test_fr3_configuration_management.bats"
         "tests/integration/test_fr4_shell_environment.bats"
@@ -89,9 +95,16 @@ main() {
     for file in "${test_files[@]}"; do
         if [[ -f "$file" ]]; then
             log_info "Test file exists: $file"
-            # Validate syntax
-            if bash -n "$file" 2>/dev/null; then
-                log_info "✓ Syntax valid: $file"
+            # Validate syntax/parsing (BATS files are not valid shell scripts under bash -n).
+            if [[ "$file" == *.bats ]]; then
+                if bats --count "$file" >/dev/null 2>&1; then
+                    log_info "✓ BATS file parses: $file"
+                else
+                    log_error "✗ BATS parse error: $file"
+                    ((validation_errors++))
+                fi
+            elif bash -n "$file" 2>/dev/null; then
+                log_info "✓ Bash syntax valid: $file"
             else
                 log_error "✗ Syntax error: $file"
                 ((validation_errors++))
@@ -113,7 +126,7 @@ main() {
             if python3 -c "import yaml; yaml.safe_load(open('.github/workflows/ci-testing.yml'))" 2>/dev/null; then
                 log_info "✓ GitHub Actions YAML syntax valid"
             else
-                log_warn "⚠ GitHub Actions YAML syntax check failed"
+                log_warn "⚠ GitHub Actions YAML syntax check unavailable or failed (missing PyYAML?)"
             fi
         fi
     else
@@ -128,7 +141,11 @@ main() {
         log_info "Pre-commit configuration exists"
 
         # Check for required scripts
-        local required_scripts=("scripts/run-critical-tests.sh" "scripts/performance-check.sh")
+        local required_scripts=(
+            "scripts/test/test.sh"
+            "scripts/test/run-critical-tests.sh"
+            "scripts/tools/performance-check.sh"
+        )
         for script in "${required_scripts[@]}"; do
             if [[ -f "$script" && -x "$script" ]]; then
                 log_info "✓ Pre-commit script ready: $script"
@@ -195,7 +212,7 @@ main() {
     log_section "8. Sample Test Execution"
 
     log_info "Running quick validation test..."
-    if timeout 30s bash -n tests/lib/test_helper.bash; then
+    if bash -n tests/lib/test_helper.bash; then
         log_info "✓ Test helper syntax validation passed"
     else
         log_error "✗ Test helper syntax validation failed"
@@ -217,7 +234,7 @@ main() {
         log_info "   - Local testing: bats tests/"
         log_info "   - Pre-commit hooks: pre-commit install"
         log_info "   - GitHub Actions: Push to PR"
-        log_info "   - Performance validation: ./scripts/performance-check.sh"
+        log_info "   - Performance validation: ./scripts/tools/performance-check.sh"
         return 0
     else
         log_error "❌ Validation failed with $validation_errors errors"

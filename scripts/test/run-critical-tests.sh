@@ -12,6 +12,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 TESTS_DIR="$DOTFILES_ROOT/tests"
+FR1_TEST_FILE="$TESTS_DIR/system/test_fr1_modern_bootstrap.bats"
+FR7_TEST_FILE="$TESTS_DIR/system/test_fr7_debug_modes.bats"
+FR3_TEST_FILE="$TESTS_DIR/integration/test_fr3_configuration_management.bats"
 
 # Colors for output
 RED='\033[0;31m'
@@ -29,6 +32,30 @@ log_warn() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+run_required_bats_file() {
+    local test_file="$1"
+    local failure_message="$2"
+    shift 2
+    local bats_args=("$@")
+
+    if [[ ! -f "$test_file" ]]; then
+        log_error "Required test file missing: $test_file"
+        exit 1
+    fi
+
+    local bats_exit_code=0
+    if [[ ${#bats_args[@]} -gt 0 ]]; then
+        bats "${bats_args[@]}" "$test_file" || bats_exit_code=$?
+    else
+        bats "$test_file" || bats_exit_code=$?
+    fi
+
+    if [[ $bats_exit_code -ne 0 ]]; then
+        log_error "$failure_message"
+        exit 1
+    fi
 }
 
 main() {
@@ -59,36 +86,20 @@ main() {
 
     # Run critical tests (subset for speed)
     log_info "Running FR-1 Bootstrap tests..."
-    if [[ -f "$TESTS_DIR/system/test_fr1_bootstrap.bats" ]]; then
-        if ! bats "$TESTS_DIR/system/test_fr1_bootstrap.bats"; then
-            log_error "FR-1 Bootstrap tests failed"
-            exit 1
-        fi
-    else
-        log_warn "FR-1 test file not found, skipping..."
-    fi
+    run_required_bats_file "$FR1_TEST_FILE" "FR-1 Bootstrap tests failed"
 
     log_info "Running FR-7 Debug Capabilities tests (sample)..."
-    if [[ -f "$TESTS_DIR/system/test_fr7_debug_capabilities.bats" ]]; then
-        # Run just a few critical FR-7 tests for speed
-        if ! bats --filter "FR-7.1\|FR-7.2\|FR-7.12" "$TESTS_DIR/system/test_fr7_debug_capabilities.bats"; then
-            log_error "Critical FR-7 tests failed"
-            exit 1
-        fi
-    else
-        log_warn "FR-7 test file not found, skipping..."
-    fi
+    # Run critical FR-7 checks for speed while still proving core debug behavior.
+    run_required_bats_file \
+        "$FR7_TEST_FILE" \
+        "Critical FR-7 tests failed" \
+        --filter "^FR-7\\.(1|2|10):"
 
     log_info "Running basic configuration validation..."
-    if [[ -f "$TESTS_DIR/integration/test_fr3_configuration_management.bats" ]]; then
-        # Run just configuration existence tests for speed
-        if ! bats --filter "FR-3.1\|FR-3.2" "$TESTS_DIR/integration/test_fr3_configuration_management.bats"; then
-            log_error "Configuration validation tests failed"
-            exit 1
-        fi
-    else
-        log_warn "FR-3 test file not found, skipping..."
-    fi
+    run_required_bats_file \
+        "$FR3_TEST_FILE" \
+        "Configuration validation tests failed" \
+        --filter "^FR-3\\.(1|2):"
 
     log_info "✅ Critical tests passed successfully!"
 }

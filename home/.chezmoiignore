@@ -297,3 +297,16 @@ CHANGELOG*
 .gitignore
 .gitattributes
 .gitmodules
+
+#======================================
+# Ephemeral Environment Exclusions
+#======================================
+{{ if .ephemeral -}}
+# Ignore sensitive directories in ephemeral environments (CI, tests)
+.ssh
+.ssh/**
+.gnupg
+.gnupg/**
+.config/age
+.config/age/**
+{{- end }}

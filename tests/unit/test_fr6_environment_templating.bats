@@ -210,7 +210,7 @@ teardown() {
     template_testing_ready=false
 
     # Dry-run capability indicates safe testing
-    run_bootstrap "setup.core.sh" "--dry-run"
+    run_bootstrap "setup.sh" "--dry-run"
     if [[ "$status" -eq 0 ]]; then
         template_testing_ready=true
     fi

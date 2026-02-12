@@ -172,5 +172,3 @@ export PATH="/opt/homebrew/bin:$PATH"
 if [[ -n $SSH_CONNECTION ]] && command -v tmux &>/dev/null; then
   [[ -z $TMUX ]] && (tmux attach-session -t default || tmux new-session -s default)
 fi
-
-alias claude="/Users/baelson/.claude/local/claude"

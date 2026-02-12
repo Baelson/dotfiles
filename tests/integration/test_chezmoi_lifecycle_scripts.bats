@@ -211,10 +211,11 @@ teardown() {
 
 # Template Rendering Tests
 @test "LIFECYCLE-17: Package installation script renders correctly for ephemeral environment" {
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
 
     # Render template for ephemeral environment
-    run_chezmoi execute-template --init --data ephemeral=true --data headless=false --data personal=false --data work=false < "$script_path"
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl" "ephemeral=true" "headless=false" "personal=false" "work=false"
     assert_chezmoi_success
 
     # Should skip cleanup in ephemeral environments
@@ -222,10 +223,11 @@ teardown() {
 }
 
 @test "LIFECYCLE-18: macOS defaults script renders correctly for headless environment" {
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
 
     # Render template for headless environment
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=true --data personal=false --data work=false < "$script_path"
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl" "ephemeral=false" "headless=true" "personal=false" "work=false"
     assert_chezmoi_success
 
     # Should skip macOS defaults in headless environments
@@ -233,30 +235,32 @@ teardown() {
 }
 
 @test "LIFECYCLE-19: Shell environment script renders correctly for different environments" {
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl"
 
     # Test headless environment
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=true --data personal=false --data work=false < "$script_path"
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl" "ephemeral=false" "headless=true" "personal=false" "work=false"
     assert_chezmoi_success
     [[ "$output" =~ "Skipping.*headless" ]] || [[ "$output" =~ "exit 0" ]]
 
     # Test ephemeral environment
-    run_chezmoi execute-template --init --data ephemeral=true --data headless=false --data personal=false --data work=false < "$script_path"
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl" "ephemeral=true" "headless=false" "personal=false" "work=false"
     assert_chezmoi_success
     # Should skip fzf setup in ephemeral environments
     [[ ! "$output" =~ "fzf.*install" ]] || [[ "$output" =~ "not.*ephemeral" ]]
 }
 
 @test "LIFECYCLE-20: Application setup script renders correctly for personal vs work" {
+
     local script_path="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
 
     # Test personal environment
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=false --data personal=true --data work=false < "$script_path"
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false"
     assert_chezmoi_success
     [[ "$output" =~ "personal" ]] || [[ "$output" =~ "Alfred" ]]
 
     # Test work environment
-    run_chezmoi execute-template --init --data ephemeral=false --data headless=false --data personal=false --data work=true < "$script_path"
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true"
     assert_chezmoi_success
     # Work environment should not have personal app setup
     [[ ! "$output" =~ "Alfred.*workflows" ]] || [[ "$output" =~ "not.*personal" ]]
