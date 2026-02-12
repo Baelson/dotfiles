@@ -344,6 +344,45 @@ resolve_guest_host() {
   vm_die "Unsupported ssh_host_strategy: ${SSH_HOST_STRATEGY}"
 }
 
+run_checked_ssh() {
+  local target="$1"
+  local remote_command="$2"
+  shift 2
+  local -a ssh_args=( "$@" )
+  local ssh_output=''
+  local ssh_status=0
+
+  # single-line CLI: ssh <opts> "${target}" "${remote_command}"
+  set +e
+  ssh_output="$(ssh "${ssh_args[@]}" "$target" "$remote_command" 2>&1)"
+  ssh_status=$?
+  set -e
+
+  if [[ "$ssh_status" -eq 0 ]]; then
+    if [[ "$VERBOSE" == 'true' && -n "$ssh_output" ]]; then
+      printf '%s\n' "$ssh_output"
+    fi
+    return 0
+  fi
+
+  vm_log_error "SSH command failed with exit code ${ssh_status}."
+  vm_log_error "Command: $(vm_print_command ssh "${ssh_args[@]}" "$target" "$remote_command")"
+  if [[ -n "$ssh_output" ]]; then
+    vm_log_error "SSH output: ${ssh_output}"
+  fi
+
+  if [[ "$ssh_output" == *'Connection refused'* ]]; then
+    vm_log_error "Guest SSH is not enabled yet. Complete first-boot setup and enable Remote Login."
+    vm_log_error "Also ensure profile ssh_user '${SSH_USER}' exists in the guest VM."
+  elif [[ "$ssh_output" == *'No route to host'* ]] || [[ "$ssh_output" == *'Operation timed out'* ]]; then
+    vm_log_error "Guest network is not ready or unreachable. Verify VM is running and has a reachable IP."
+  elif [[ "$ssh_output" == *'Permission denied'* ]]; then
+    vm_log_error "SSH authentication failed. Check ssh_user and ssh_key settings for this profile."
+  fi
+
+  return "$ssh_status"
+}
+
 action_run_e2e() {
   local guest_host=''
   local setup_args='--dry-run --debug-verbose'
@@ -371,20 +410,33 @@ action_run_e2e() {
 
   vm_log_info "Running E2E for profile '${PROFILE}' against ${target}:${SSH_PORT}"
 
-  # single-line CLI: ssh <opts> "${target}" "echo vm-ready"
-  vm_run_or_echo "$DRY_RUN" ssh "${ssh_args[@]}" "$target" 'echo vm-ready'
+  if [[ "$DRY_RUN" == 'true' ]]; then
+    # single-line CLI: ssh <opts> "${target}" "echo vm-ready"
+    vm_run_or_echo "$DRY_RUN" ssh "${ssh_args[@]}" "$target" 'echo vm-ready'
 
-  # single-line CLI: ssh <opts> "${target}" "curl --fail --silent --show-error --location ${SETUP_SCRIPT_URL} | zsh -s -- ${setup_args}"
-  vm_run_or_echo "$DRY_RUN" ssh "${ssh_args[@]}" "$target" \
-    "curl --fail --silent --show-error --location ${SETUP_SCRIPT_URL} | zsh -s -- ${setup_args}"
-
-  if [[ "$APPLY_MODE" == 'true' ]]; then
-    # single-line CLI: ssh <opts> "${target}" "chezmoi doctor && test -f ~/.zshrc && test -f ~/Brewfile"
+    # single-line CLI: ssh <opts> "${target}" "curl --fail --silent --show-error --location ${SETUP_SCRIPT_URL} | zsh -s -- ${setup_args}"
     vm_run_or_echo "$DRY_RUN" ssh "${ssh_args[@]}" "$target" \
-      'chezmoi doctor && test -f ~/.zshrc && test -f ~/Brewfile'
-  else
+      "curl --fail --silent --show-error --location ${SETUP_SCRIPT_URL} | zsh -s -- ${setup_args}"
+
     vm_log_info 'Skipped filesystem assertions because run-e2e is in dry-run mode.'
     vm_log_info 'Re-run with --apply to verify persisted files inside the guest VM.'
+    return 0
+  fi
+
+  if ! run_checked_ssh "$target" 'echo vm-ready' "${ssh_args[@]}"; then
+    return 1
+  fi
+
+  if ! run_checked_ssh "$target" \
+    "curl --fail --silent --show-error --location ${SETUP_SCRIPT_URL} | zsh -s -- ${setup_args}" \
+    "${ssh_args[@]}"; then
+    return 1
+  fi
+
+  if [[ "$APPLY_MODE" == 'true' ]]; then
+    if ! run_checked_ssh "$target" 'chezmoi doctor && test -f ~/.zshrc && test -f ~/Brewfile' "${ssh_args[@]}"; then
+      return 1
+    fi
   fi
 }
 
