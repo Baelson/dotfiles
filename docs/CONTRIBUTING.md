@@ -20,7 +20,7 @@ cd dotfiles
 brew install bats-core
 
 # Run health check to verify setup
-./scripts/health-check.sh --full
+./scripts/tools/health-check.sh --full
 
 # Run tests to ensure everything works
 ./scripts/test/test.sh --quick
@@ -30,27 +30,21 @@ brew install bats-core
 
 ```
 dotfiles/
-├── setup/                     # Core setup scripts
-│   ├── lib/                  # Modular function libraries
-│   │   ├── common.sh         # Shared utilities and logging
-│   │   ├── xcode.sh          # Xcode CLI Tools management
-│   │   ├── homebrew.sh       # Homebrew installation/management
-│   │   ├── packages.sh       # Package management via Brewfile
-│   │   ├── chezmoi.sh        # Chezmoi configuration management
-│   │   ├── macos.sh          # macOS system configuration
-│   │   └── validation.sh     # System validation functions
-│   ├── setup.core.sh         # Core setup (Xcode, Homebrew)
-│   ├── setup.macos.sh        # macOS-specific setup
-│   └── verify.setup.sh       # System validation
-├── scripts/                  # Utility scripts
-│   ├── health-check.sh       # System health validation
-│   ├── test.sh              # Test runner
-│   └── run-critical-tests.sh # Pre-commit test runner
-├── tests/                    # BATS test suites
-│   ├── unit/                # Unit tests
-│   ├── integration/         # Integration tests
-│   └── system/              # System tests
-└── docs/                    # Documentation
+├── setup.sh                         # One-command bootstrap entrypoint
+├── home/                            # Chezmoi source-of-truth files
+├── scripts/
+│   ├── test/                        # Test workflows
+│   │   ├── test.sh
+│   │   ├── run-critical-tests.sh
+│   │   └── validate-test-setup.sh
+│   ├── tools/                       # Local utility workflows
+│   │   ├── health-check.sh
+│   │   ├── ci-local.sh
+│   │   └── performance-check.sh
+│   └── vm/                          # Local VM IaC workflows
+├── infrastructure/vm/               # VM matrix config
+├── tests/                           # BATS suites (unit/integration/system)
+└── docs/                            # Documentation
 ```
 
 ## 🔧 Development Workflow
@@ -82,7 +76,7 @@ dotfiles/
 
 4. **Validate system health**
    ```bash
-   ./scripts/health-check.sh --full
+   ./scripts/tools/health-check.sh --full
    ```
 
 5. **Commit and push**
@@ -123,6 +117,19 @@ dotfiles/
 
 # Install BATS if needed
 ./scripts/test/test.sh --install-bats --quick
+```
+
+#### Running Local VM End-to-End Tests
+```bash
+# Initialize local matrix (gitignored)
+./scripts/vm/init-matrix.sh
+
+# Validate host prerequisites and matrix config
+./scripts/vm/vmctl.sh --action doctor
+
+# Plan and execute current + beta workflows
+./scripts/vm/vm-matrix.sh --action plan
+./scripts/vm/vm-matrix.sh --action run-e2e --dry-run
 ```
 
 #### Writing New Tests
@@ -166,38 +173,23 @@ dotfiles/
 
 ## 🏗️ Code Architecture
 
-### Module System
-The project uses a modular architecture where functionality is organized into focused libraries:
+### Runtime Model
+- **Bootstrap entrypoint**: `setup.sh` handles one-shot setup, dry-run, and debug flows.
+- **Configuration source**: `home/` is the chezmoi source-of-truth for managed files and templates.
+- **Lifecycle execution**: `home/.chezmoiscripts/darwin/` applies package install, shell setup, and macOS defaults.
+- **Test harness**: `scripts/test/` orchestrates BATS suites in `tests/unit`, `tests/integration`, and `tests/system`.
+- **Local tooling**: `scripts/tools/` and `scripts/vm/` support health checks, local CI, and VM-based end-to-end runs.
 
-- **`lib/common.sh`**: Shared utilities, logging, error handling
-- **`lib/xcode.sh`**: Xcode CLI Tools management
-- **`lib/homebrew.sh`**: Homebrew installation and configuration
-- **`lib/packages.sh`**: Package management via Brewfile
-- **`lib/chezmoi.sh`**: Chezmoi configuration management
-- **`lib/macos.sh`**: macOS system configuration
-- **`lib/validation.sh`**: System validation functions
-
-### Adding New Functions
-1. **Choose the appropriate module** based on functionality
-2. **Follow the existing patterns**:
-   ```bash
-   # Function documentation
-   function_name() {
-       debug_trace "→ Entering: function_name"
-
-       # Function body
-
-       debug_trace "← Exiting: function_name"
-   }
-   ```
-3. **Add validation functions** if applicable
-4. **Update module documentation** at the top of the file
+### Extending the System
+1. Put behavior changes in `setup.sh` or chezmoi lifecycle templates under `home/.chezmoiscripts/darwin/`.
+2. Add/update BATS coverage in the appropriate `tests/*` suite.
+3. Keep workflow scripts executable and documented in `docs/`.
+4. Validate locally with `./scripts/test/test.sh --all` before committing.
 
 ### Error Handling
-- Use `debug_trace` for function entry/exit logging
-- Use `log_error`, `log_warning`, `log_success` for user feedback
-- Always provide actionable error messages
-- Use `return 0` for success, `return 1` for failure
+- Use explicit exit codes and actionable messages.
+- Prefer `set -euo pipefail` in shell scripts.
+- Keep dry-run paths functional for safe local verification.
 
 ## 🐛 Debugging and Troubleshooting
 
@@ -206,13 +198,13 @@ The project uses a modular architecture where functionality is organized into fo
 #### Script Execution Problems
 ```bash
 # Check script syntax
-zsh -n setup/setup.core.sh
+zsh -n setup.sh
 
 # Run with debug output
-./setup/setup.core.sh --debug-verbose
+./setup.sh --debug-verbose
 
 # Check system health
-./scripts/health-check.sh --full
+./scripts/tools/health-check.sh --full
 ```
 
 #### Test Failures
@@ -230,10 +222,10 @@ bash -n tests/lib/test_helper.bash
 #### Module Loading Issues
 ```bash
 # Check module syntax
-zsh -n setup/lib/common.sh
+zsh -n setup.sh
 
 # Test module loading
-source setup/lib/common.sh
+./setup.sh --help
 ```
 
 ### Debug Modes
@@ -271,7 +263,7 @@ Follow conventional commit format:
 
 ### Pre-commit Checklist
 - [ ] All tests pass (`./scripts/test/test.sh --all`)
-- [ ] Health check passes (`./scripts/health-check.sh --full`)
+- [ ] Health check passes (`./scripts/tools/health-check.sh --full`)
 - [ ] Code follows existing patterns and style
 - [ ] Documentation is updated if needed
 - [ ] Debug logging is appropriate
@@ -304,7 +296,7 @@ Follow conventional commit format:
 
 ### Resources
 - **Documentation**: Check the `docs/` directory
-- **Health Check**: Run `./scripts/health-check.sh --full`
+- **Health Check**: Run `./scripts/tools/health-check.sh --full`
 - **Test Results**: Run `./scripts/test/test.sh --all --verbose`
 - **Issue Tracking**: Check `docs/OPEN_ISSUES.md`
 
@@ -320,7 +312,7 @@ Before submitting changes:
 
 - [ ] Code follows project patterns and style
 - [ ] All tests pass (`./scripts/test/test.sh --all`)
-- [ ] Health check passes (`./scripts/health-check.sh --full`)
+- [ ] Health check passes (`./scripts/tools/health-check.sh --full`)
 - [ ] Documentation is updated
 - [ ] Debug logging is appropriate
 - [ ] Error handling is comprehensive

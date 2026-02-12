@@ -31,6 +31,9 @@ CLAUDE.local.md
 *.temp
 *.tmp
 
+# Local VM infrastructure overrides
+infrastructure/vm/macos-matrix.local.json
+
 # Node.js (if you use it)
 node_modules/
 npm-debug.log*

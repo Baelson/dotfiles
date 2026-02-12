@@ -40,7 +40,7 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zs
 Run core checks locally to avoid Actions usage on private repos:
 
 ```bash
-./scripts/ci-local.sh
+./scripts/tools/ci-local.sh
 ```
 
 This runs `pre-commit run --all-files` and the full BATS suite (`scripts/test/test.sh --all`).
@@ -62,6 +62,23 @@ brew bundle --file="home/Brewfile" --no-lock --help | sed -n '1,40p'
 # Apply after chezmoi has placed Brewfile in $HOME:
 brew bundle --file="$HOME/Brewfile" --no-lock
 ```
+
+### Local VM End-to-End (Current + Beta)
+Run clean-room bootstrap testing in local macOS VMs:
+
+```bash
+# Initialize local matrix (gitignored)
+scripts/vm/init-matrix.sh
+
+# Validate host + matrix
+scripts/vm/vmctl.sh --action doctor
+
+# Plan and execute current + beta workflows
+scripts/vm/vm-matrix.sh --action plan
+scripts/vm/vm-matrix.sh --action run-e2e --dry-run
+```
+
+See `docs/VM_TESTING.md` for full details.
 
 ### Debug and Testing Modes
 ```bash
@@ -101,16 +118,17 @@ chezmoi apply           # Execute
 ```
 dotfiles/
 ├── 📋 README.md                    # This file - project overview
-├── 🏗️ setup/                        # One-command setup system
-│   ├── setup.core.sh              # Core setup (Xcode, Homebrew, Git)
-│   ├── setup.macos.sh             # macOS-specific setup
-│   ├── verify.setup.sh            # Core validation (16 checks)
-│   └── verify.macos.sh            # macOS validation
-├── 📦 home/Brewfile           # 70+ packages (CLI tools, apps, MAS)
+├── 🏗️ setup.sh                      # One-command setup entrypoint
+├── 📦 home/Brewfile.tmpl            # 70+ packages (CLI tools, apps, MAS)
+├── 🧪 scripts/test/                 # Test runners
+├── 🔧 scripts/tools/                # Local utility workflows
+├── 🖥️ scripts/vm/                   # Local VM IaC and E2E workflows
+├── ⚙️ infrastructure/vm/            # VM matrix configuration
 ├── 📚 docs/                        # Comprehensive documentation
 │   ├── PRD.md                     # Product requirements and use cases
 │   ├── SYSTEM_DESIGN.md           # Technical architecture
 │   ├── TESTING.md                 # Verification & validation procedures
+│   ├── VM_TESTING.md              # Local VM current+beta workflow
 │   ├── DEV_STATUS.md              # Development progress and lessons
 │   └── OPEN_ISSUES.md             # Issue tracking
 └── 📁 home/                   # Chezmoi managed dotfiles
@@ -131,6 +149,7 @@ This project follows comprehensive documentation architecture with clear separat
 ### 🏗️ For Developers
 - **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** - Technical architecture and implementation
 - **[docs/TESTING.md](docs/TESTING.md)** - Verification, validation, and testing procedures
+- **[docs/VM_TESTING.md](docs/VM_TESTING.md)** - Local VM IaC workflow for end-to-end validation
 - **[docs/DEV_STATUS.md](docs/DEV_STATUS.md)** - Development progress and lessons learned
 - **[CLAUDE.md](CLAUDE.md)** - Engineering guidance and lessons learned
 
@@ -187,13 +206,13 @@ This system is designed for:
 ### Quick Troubleshooting
 ```bash
 # Check system status
-./bootstrap/verify.setup.sh
+./scripts/tools/health-check.sh --quick
 
 # Get debug information
-./bootstrap/setup.core.sh --help
+./setup.sh --help
 
 # View detailed execution
-./bootstrap/setup.core.sh --debug-verbose
+./setup.sh --debug-verbose
 ```
 
 ### Common Issues
