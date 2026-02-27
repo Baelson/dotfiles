@@ -389,7 +389,16 @@ action_run_e2e() {
 
   vm_require_command 'ssh' 'Install OpenSSH client tools.' || return 1
 
-  guest_host="$(resolve_guest_host)"
+  guest_host="$(resolve_guest_host 2>/dev/null)" || true
+
+  if [[ -z "$guest_host" ]]; then
+    if [[ "$DRY_RUN" == 'true' ]]; then
+      guest_host='<guest-ip>'
+      vm_log_warn "Could not resolve guest IP; using placeholder for dry-run preview."
+    else
+      vm_die "Unable to resolve VM IP via 'tart ip ${VM_NAME}'. Start the VM first."
+    fi
+  fi
 
   if [[ "$APPLY_MODE" == 'true' ]]; then
     setup_args=''
