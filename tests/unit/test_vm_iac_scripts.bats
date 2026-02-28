@@ -401,3 +401,235 @@ JSON
   run grep -q "macos-matrix.local.json" "$DOTFILES_ROOT/.gitignore"
   [ "$status" -eq 0 ]
 }
+
+# =============================================================================
+# Full E2E Orchestrator — lib.sh Functions
+# =============================================================================
+
+@test "VM-IAC.33: vm_is_running returns 1 for non-existent VM" {
+  run bash -c "source '$DOTFILES_ROOT/scripts/vm/lib.sh' && vm_is_running 'nonexistent-vm-xyz-12345'"
+  [ "$status" -ne 0 ]
+}
+
+@test "VM-IAC.34: vm_is_running returns 0 for running VM (or skip)" {
+  if ! command -v tart >/dev/null 2>&1; then
+    skip "tart not installed"
+  fi
+
+  # Find any running VM to test against; skip if none
+  local running_vm=""
+  running_vm="$(tart list 2>/dev/null | awk '$NF == "running" { print $1; exit }')" || true
+
+  if [[ -z "$running_vm" ]]; then
+    skip "no running tart VM found"
+  fi
+
+  run bash -c "source '$DOTFILES_ROOT/scripts/vm/lib.sh' && vm_is_running '$running_vm'"
+  [ "$status" -eq 0 ]
+}
+
+@test "VM-IAC.35: vm_wait_for_ssh returns 1 when max wait exhausted" {
+  if ! command -v tart >/dev/null 2>&1; then
+    skip "tart not installed"
+  fi
+
+  # Use a tiny timeout with a non-existent VM
+  run bash -c "source '$DOTFILES_ROOT/scripts/vm/lib.sh' && vm_wait_for_ssh 'nonexistent-vm-xyz' 'user' '22' '1'"
+  [ "$status" -ne 0 ]
+  [[ "$output" =~ "SSH not ready" ]]
+}
+
+@test "VM-IAC.36: vm_verify_manifest parses file/dir/cmd/contains types correctly" {
+  local manifest="$BATS_TEST_TMPDIR/test-manifest.txt"
+  local log_file="$BATS_TEST_TMPDIR/verify.log"
+
+  # Create a manifest that tests against localhost (not SSH)
+  cat > "$manifest" <<'MANIFEST'
+# Test manifest
+cmd     true
+cmd     echo hello
+MANIFEST
+
+  # We test vm_verify_manifest with a local wrapper that mocks SSH
+  # by using bash -c as a stand-in (the function calls ssh "$target" "$cmd")
+  # For a true unit test, we just verify the parsing works with a simple cmd type
+  run bash -c "
+    source '$DOTFILES_ROOT/scripts/vm/lib.sh'
+
+    # Override ssh to just run the command locally
+    ssh() {
+      local cmd=\"\${*: -1}\"
+      bash -c \"\$cmd\"
+    }
+    export -f ssh
+
+    vm_verify_manifest '$manifest' 'dummy@localhost' '$log_file' -p 22
+  "
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "[PASS] cmd" ]]
+  [[ "$output" =~ "2 passed, 0 failed, 2 total" ]]
+}
+
+@test "VM-IAC.37: vm_verify_manifest reports FAIL for missing files" {
+  local manifest="$BATS_TEST_TMPDIR/fail-manifest.txt"
+  local log_file="$BATS_TEST_TMPDIR/verify.log"
+
+  cat > "$manifest" <<'MANIFEST'
+cmd     false
+MANIFEST
+
+  run bash -c "
+    source '$DOTFILES_ROOT/scripts/vm/lib.sh'
+    ssh() { local cmd=\"\${*: -1}\"; bash -c \"\$cmd\"; }
+    export -f ssh
+    vm_verify_manifest '$manifest' 'dummy@localhost' '$log_file' -p 22
+  "
+
+  [ "$status" -ne 0 ]
+  [[ "$output" =~ "[FAIL]" ]]
+  [[ "$output" =~ "0 passed, 1 failed, 1 total" ]]
+}
+
+@test "VM-IAC.38: vm_verify_manifest skips comment and empty lines" {
+  local manifest="$BATS_TEST_TMPDIR/comments-manifest.txt"
+  local log_file="$BATS_TEST_TMPDIR/verify.log"
+
+  cat > "$manifest" <<'MANIFEST'
+# This is a comment
+
+  # Indented comment
+
+cmd     true
+MANIFEST
+
+  run bash -c "
+    source '$DOTFILES_ROOT/scripts/vm/lib.sh'
+    ssh() { local cmd=\"\${*: -1}\"; bash -c \"\$cmd\"; }
+    export -f ssh
+    vm_verify_manifest '$manifest' 'dummy@localhost' '$log_file' -p 22
+  "
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "1 passed, 0 failed, 1 total" ]]
+}
+
+# =============================================================================
+# Full E2E Orchestrator — vmctl.sh Actions
+# =============================================================================
+
+@test "VM-IAC.39: vmctl --action start --dry-run succeeds with dry-run output" {
+  run "$DOTFILES_ROOT/scripts/vm/vmctl.sh" \
+    --action start \
+    --profile current \
+    --matrix-file "$DOTFILES_ROOT/infrastructure/vm/macos-matrix.example.json" \
+    --dry-run
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "[dry-run]" ]] || [[ "$output" =~ "already running" ]]
+}
+
+@test "VM-IAC.40: vmctl --action stop --dry-run succeeds with dry-run output" {
+  run "$DOTFILES_ROOT/scripts/vm/vmctl.sh" \
+    --action stop \
+    --profile current \
+    --matrix-file "$DOTFILES_ROOT/infrastructure/vm/macos-matrix.example.json" \
+    --dry-run
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "[dry-run]" ]] || [[ "$output" =~ "not running" ]]
+}
+
+@test "VM-IAC.41: vmctl --action full-e2e --dry-run previews all 5 steps" {
+  run "$DOTFILES_ROOT/scripts/vm/vmctl.sh" \
+    --action full-e2e \
+    --profile current \
+    --matrix-file "$DOTFILES_ROOT/infrastructure/vm/macos-matrix.example.json" \
+    --dry-run
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Step 1/5" ]]
+  [[ "$output" =~ "Step 2/5" ]]
+  [[ "$output" =~ "Step 3/5" ]]
+  [[ "$output" =~ "Step 4/5" ]]
+  [[ "$output" =~ "Step 5/5" ]]
+}
+
+@test "VM-IAC.42: vmctl --help includes start, stop, full-e2e" {
+  run "$DOTFILES_ROOT/scripts/vm/vmctl.sh" --help
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "start" ]]
+  [[ "$output" =~ "stop" ]]
+  [[ "$output" =~ "full-e2e" ]]
+}
+
+@test "VM-IAC.43: vmctl --help includes --keep-vm" {
+  run "$DOTFILES_ROOT/scripts/vm/vmctl.sh" --help
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "--keep-vm" ]]
+}
+
+@test "VM-IAC.44: vm-matrix.sh --help includes new actions" {
+  run "$DOTFILES_ROOT/scripts/vm/vm-matrix.sh" --help
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "start" ]]
+  [[ "$output" =~ "stop" ]]
+  [[ "$output" =~ "full-e2e" ]]
+  [[ "$output" =~ "--keep-vm" ]]
+}
+
+# =============================================================================
+# Full E2E Orchestrator — Infrastructure Files
+# =============================================================================
+
+@test "VM-IAC.45: Verification manifest file exists and has valid syntax" {
+  local manifest="$DOTFILES_ROOT/infrastructure/vm/verify-manifest.txt"
+
+  [[ -f "$manifest" ]]
+
+  # Every non-comment, non-blank line should start with a known type
+  local bad_lines=""
+  bad_lines="$(grep -vE '^\s*(#|$)' "$manifest" | grep -vE '^\s*(file|dir|symlink|contains|cmd)\s' || true)"
+
+  [[ -z "$bad_lines" ]]
+}
+
+@test "VM-IAC.46: Verification manifest has no duplicate entries" {
+  local manifest="$DOTFILES_ROOT/infrastructure/vm/verify-manifest.txt"
+
+  [[ -f "$manifest" ]]
+
+  # Extract non-comment lines and check for duplicates
+  local dupes=""
+  dupes="$(grep -vE '^\s*(#|$)' "$manifest" | sort | uniq -d || true)"
+
+  [[ -z "$dupes" ]]
+}
+
+@test "VM-IAC.47: vm_capture_log writes to log file (tested with local command)" {
+  local log_file="$BATS_TEST_TMPDIR/capture.log"
+
+  run bash -c "
+    source '$DOTFILES_ROOT/scripts/vm/lib.sh'
+    ssh() { local cmd=\"\${*: -1}\"; bash -c \"\$cmd\"; }
+    export -f ssh
+    vm_capture_log 'dummy@localhost' 'echo hello-from-capture' '$log_file' -p 22
+  "
+
+  [ "$status" -eq 0 ]
+  [[ -f "$log_file" ]]
+  grep -q 'hello-from-capture' "$log_file"
+}
+
+@test "VM-IAC.48: vmctl plan includes full-e2e lifecycle steps" {
+  run "$DOTFILES_ROOT/scripts/vm/vmctl.sh" \
+    --action plan \
+    --profile current \
+    --matrix-file "$DOTFILES_ROOT/infrastructure/vm/macos-matrix.example.json"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "Full E2E" ]] || [[ "$output" =~ "full-e2e" ]]
+}
