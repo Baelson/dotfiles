@@ -17,6 +17,7 @@ SSH_TIMEOUT_SECONDS=15
 DRY_RUN='false'
 VERBOSE='false'
 APPLY_MODE='false'
+KEEP_VM='false'
 
 BACKEND=''
 TRACK=''
@@ -50,6 +51,21 @@ main() {
       load_profile
       action_run_e2e
       ;;
+    start)
+      ensure_profile_selected
+      load_profile
+      action_start
+      ;;
+    stop)
+      ensure_profile_selected
+      load_profile
+      action_stop
+      ;;
+    full-e2e)
+      ensure_profile_selected
+      load_profile
+      action_full_e2e
+      ;;
     *)
       vm_die "Unsupported action: ${ACTION}"
       ;;
@@ -64,7 +80,7 @@ Usage:
   scripts/vm/vmctl.sh [options]
 
 Options:
-  -a, --action ACTION        Action: doctor | plan | create | run-e2e
+  -a, --action ACTION        Action: doctor | plan | create | run-e2e | start | stop | full-e2e
   -p, --profile NAME         Matrix profile name (current | beta)
   -m, --matrix-file FILE     Matrix JSON file
   -s, --state-dir DIR        State directory for downloads and logs
@@ -73,6 +89,7 @@ Options:
   -t, --timeout SECONDS      SSH connect timeout in seconds
   -n, --dry-run              Print commands without executing them
   -A, --apply                For run-e2e: run full apply (not --dry-run)
+  -K, --keep-vm              For full-e2e: do not stop VM after test
   -v, --verbose              Print verbose diagnostic output
   -h, --help                 Show help output
 
@@ -82,6 +99,10 @@ Examples:
   scripts/vm/vmctl.sh --action create --profile beta
   scripts/vm/vmctl.sh --action run-e2e --profile current --dry-run
   scripts/vm/vmctl.sh --action run-e2e --profile current --apply
+  scripts/vm/vmctl.sh --action start --profile current
+  scripts/vm/vmctl.sh --action stop --profile current
+  scripts/vm/vmctl.sh --action full-e2e --profile current --apply
+  scripts/vm/vmctl.sh --action full-e2e --profile current --apply --keep-vm
 EOF_HELP
 }
 
@@ -122,6 +143,10 @@ parse_arguments() {
         ;;
       -A|--apply)
         APPLY_MODE='true'
+        shift
+        ;;
+      -K|--keep-vm)
+        KEEP_VM='true'
         shift
         ;;
       -v|--verbose)
@@ -276,6 +301,10 @@ Plan for profile '${PROFILE}':
    chezmoi doctor
    test -f ~/.zshrc
    test -f ~/Brewfile
+
+7) Full E2E orchestration (automated lifecycle)
+   scripts/vm/vmctl.sh --action full-e2e --profile ${PROFILE} --apply
+   Steps: start VM → wait for SSH → run bootstrap → verify manifest → stop VM
 EOF_PLAN
 }
 
@@ -447,6 +476,146 @@ action_run_e2e() {
       return 1
     fi
   fi
+}
+
+action_start() {
+  [[ "$BACKEND" == 'tart' ]] || vm_die "Start currently supports only backend=tart"
+  vm_require_command 'tart' 'Install tart before starting VMs.' || return 1
+
+  if vm_is_running "$VM_NAME"; then
+    vm_log_info "VM '${VM_NAME}' is already running."
+    return 0
+  fi
+
+  vm_log_info "Starting VM '${VM_NAME}' (headless)..."
+  # single-line CLI: tart run --no-graphics "$VM_NAME" &
+  vm_run_or_echo "$DRY_RUN" tart run \
+    --no-graphics \
+    "$VM_NAME" &
+
+  if [[ "$DRY_RUN" != 'true' ]]; then
+    local guest_ip=""
+    guest_ip="$(vm_wait_for_ssh "$VM_NAME" "$SSH_USER" "$SSH_PORT" 120 "$SSH_KEY_PATH")"
+    vm_log_info "VM '${VM_NAME}' is running at ${guest_ip}"
+  fi
+}
+
+action_stop() {
+  [[ "$BACKEND" == 'tart' ]] || vm_die "Stop currently supports only backend=tart"
+  vm_require_command 'tart' 'Install tart before stopping VMs.' || return 1
+
+  if ! vm_is_running "$VM_NAME"; then
+    vm_log_info "VM '${VM_NAME}' is not running."
+    return 0
+  fi
+
+  vm_log_info "Stopping VM '${VM_NAME}'..."
+  # single-line CLI: tart stop --timeout 30 "$VM_NAME"
+  vm_run_or_echo "$DRY_RUN" tart stop \
+    --timeout 30 \
+    "$VM_NAME"
+}
+
+action_full_e2e() {
+  [[ "$BACKEND" == 'tart' ]] || vm_die "full-e2e currently supports only backend=tart"
+  vm_require_command 'tart' 'Install tart before full-e2e.' || return 1
+  vm_require_command 'ssh' 'Install OpenSSH client tools.' || return 1
+
+  local repo_root=""
+  repo_root="$(vm_repo_root)"
+  local manifest_file="${repo_root}/infrastructure/vm/verify-manifest.txt"
+  local vm_was_already_running='false'
+  local timestamp=""
+  timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
+  local log_dir="${STATE_DIR}/logs/${VM_NAME}/${timestamp}"
+  local guest_ip=""
+
+  mkdir -p "$log_dir"
+
+  # Detect if VM was already running (so we don't stop it at the end)
+  if vm_is_running "$VM_NAME"; then
+    vm_was_already_running='true'
+  fi
+
+  # Cleanup trap: only stop if we started it ourselves
+  if [[ "$vm_was_already_running" == 'false' && "$KEEP_VM" != 'true' && "$DRY_RUN" != 'true' ]]; then
+    trap 'tart stop "$VM_NAME" 2>/dev/null || true' EXIT
+  fi
+
+  # --- Step 1/5: Start VM ---
+  vm_log_info "Step 1/5: Start VM"
+  if [[ "$vm_was_already_running" == 'true' ]]; then
+    vm_log_info "VM '${VM_NAME}' is already running — skipping start."
+  else
+    vm_log_info "Starting VM '${VM_NAME}' (headless)..."
+    vm_run_or_echo "$DRY_RUN" tart run --no-graphics "$VM_NAME" &
+  fi
+
+  # --- Step 2/5: Wait for SSH ---
+  vm_log_info "Step 2/5: Wait for SSH readiness"
+  if [[ "$DRY_RUN" == 'true' ]]; then
+    guest_ip='<guest-ip>'
+    vm_log_info "[dry-run] Would wait for SSH on VM '${VM_NAME}'"
+  else
+    guest_ip="$(vm_wait_for_ssh "$VM_NAME" "$SSH_USER" "$SSH_PORT" 120 "$SSH_KEY_PATH")"
+  fi
+
+  local target="${SSH_USER}@${guest_ip}"
+  local -a ssh_args=(
+    -o "BatchMode=yes"
+    -o "StrictHostKeyChecking=accept-new"
+    -o "ConnectTimeout=${SSH_TIMEOUT_SECONDS}"
+    -p "$SSH_PORT"
+  )
+  if [[ -n "$SSH_KEY_PATH" ]]; then
+    ssh_args+=( -i "$SSH_KEY_PATH" )
+  fi
+
+  # --- Step 3/5: Run bootstrap ---
+  vm_log_info "Step 3/5: Run bootstrap via SSH"
+  local setup_args='--dry-run --debug-verbose'
+  if [[ "$APPLY_MODE" == 'true' ]]; then
+    setup_args=''
+  fi
+
+  local bootstrap_cmd="curl --fail --silent --show-error --location ${SETUP_SCRIPT_URL} | zsh -s -- ${setup_args}"
+
+  if [[ "$DRY_RUN" == 'true' ]]; then
+    vm_run_or_echo "$DRY_RUN" ssh "${ssh_args[@]}" "$target" "$bootstrap_cmd"
+  else
+    vm_capture_log "$target" "$bootstrap_cmd" "${log_dir}/bootstrap.log" "${ssh_args[@]}"
+  fi
+
+  # --- Step 4/5: Verify file layout ---
+  vm_log_info "Step 4/5: Verify file layout via manifest"
+  if [[ "$APPLY_MODE" != 'true' ]]; then
+    vm_log_info "Skipping verification — bootstrap ran in dry-run mode."
+  elif [[ "$DRY_RUN" == 'true' ]]; then
+    vm_log_info "[dry-run] Would verify manifest: ${manifest_file}"
+  else
+    if [[ ! -f "$manifest_file" ]]; then
+      vm_log_warn "Manifest file not found: ${manifest_file} — skipping verification."
+    else
+      vm_verify_manifest "$manifest_file" "$target" "${log_dir}/verify.log" "${ssh_args[@]}"
+    fi
+  fi
+
+  # --- Step 5/5: Stop VM ---
+  vm_log_info "Step 5/5: Stop VM"
+  if [[ "$vm_was_already_running" == 'true' ]]; then
+    vm_log_info "VM was already running before full-e2e — leaving it running."
+  elif [[ "$KEEP_VM" == 'true' ]]; then
+    vm_log_info "Keeping VM running (--keep-vm)."
+  elif [[ "$DRY_RUN" == 'true' ]]; then
+    vm_run_or_echo "$DRY_RUN" tart stop --timeout 30 "$VM_NAME"
+  else
+    vm_log_info "Stopping VM '${VM_NAME}'..."
+    # Clear the trap since we're stopping explicitly
+    trap - EXIT
+    tart stop --timeout 30 "$VM_NAME"
+  fi
+
+  vm_log_info "Full E2E complete. Logs: ${log_dir}"
 }
 
 main "$@"

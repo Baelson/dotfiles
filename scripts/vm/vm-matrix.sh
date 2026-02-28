@@ -13,6 +13,7 @@ PROFILE_FILTER=''
 INCLUDE_DISABLED='false'
 DRY_RUN='false'
 APPLY_MODE='false'
+KEEP_VM='false'
 VERBOSE='false'
 
 main() {
@@ -35,12 +36,13 @@ Usage:
   scripts/vm/vm-matrix.sh [options]
 
 Options:
-  -a, --action ACTION        Action: doctor | plan | create | run-e2e
+  -a, --action ACTION        Action: doctor | plan | create | run-e2e | start | stop | full-e2e
   -m, --matrix-file FILE     Matrix JSON file
   -p, --profiles CSV         Comma-separated profile names
   -e, --include-disabled     Include disabled profiles
   -n, --dry-run              Print commands without executing them
   -A, --apply                For run-e2e: run full apply (not --dry-run)
+  -K, --keep-vm              For full-e2e: do not stop VM after test
   -v, --verbose              Verbose output
   -h, --help                 Show help output
 
@@ -48,6 +50,7 @@ Examples:
   scripts/vm/vm-matrix.sh --action plan
   scripts/vm/vm-matrix.sh --action create --profiles current,beta
   scripts/vm/vm-matrix.sh --action run-e2e --profiles current --apply
+  scripts/vm/vm-matrix.sh --action full-e2e --profiles current --apply --keep-vm
 EOF_HELP
 }
 
@@ -76,6 +79,10 @@ parse_arguments() {
         ;;
       -A|--apply)
         APPLY_MODE='true'
+        shift
+        ;;
+      -K|--keep-vm)
+        KEEP_VM='true'
         shift
         ;;
       -v|--verbose)
@@ -163,6 +170,10 @@ run_matrix_action() {
 
     if [[ "$APPLY_MODE" == 'true' ]]; then
       cmd+=( --apply )
+    fi
+
+    if [[ "$KEEP_VM" == 'true' ]]; then
+      cmd+=( --keep-vm )
     fi
 
     if ! vm_run_or_echo "$DRY_RUN" "${cmd[@]}"; then

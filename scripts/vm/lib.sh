@@ -218,3 +218,163 @@ print("")
 sys.exit(1)
 PY
 }
+
+vm_is_running() {
+  local vm_name="$1"
+  # Parse tart list for VM name and check if State column shows running
+  if tart list 2>/dev/null | awk -v name="$vm_name" '$1 == name { found=1; for(i=1;i<=NF;i++) if($i=="running") print "running" } END { if(!found) exit 1 }' | grep -q 'running'; then
+    return 0
+  fi
+  return 1
+}
+
+vm_wait_for_ssh() {
+  local vm_name="$1"
+  local ssh_user="$2"
+  local ssh_port="$3"
+  local max_wait="${4:-120}"
+  local ssh_key_path="${5:-}"
+
+  local elapsed=0
+  local interval=5
+  local guest_ip=""
+
+  vm_log_info "Waiting up to ${max_wait}s for SSH on VM '${vm_name}'..."
+
+  while [[ "$elapsed" -lt "$max_wait" ]]; do
+    guest_ip="$(tart ip "$vm_name" 2>/dev/null || true)"
+
+    if [[ -n "$guest_ip" ]]; then
+      local -a ssh_args=(
+        -o "BatchMode=yes"
+        -o "StrictHostKeyChecking=accept-new"
+        -o "ConnectTimeout=5"
+        -p "$ssh_port"
+      )
+      if [[ -n "$ssh_key_path" ]]; then
+        ssh_args+=( -i "$ssh_key_path" )
+      fi
+
+      if ssh "${ssh_args[@]}" "${ssh_user}@${guest_ip}" 'echo vm-ready' >/dev/null 2>&1; then
+        vm_log_info "SSH ready at ${guest_ip} after ${elapsed}s"
+        printf '%s\n' "$guest_ip"
+        return 0
+      fi
+    fi
+
+    sleep "$interval"
+    elapsed=$((elapsed + interval))
+    # Exponential backoff capped at 30s
+    if [[ "$interval" -lt 30 ]]; then
+      interval=$((interval + 5))
+    fi
+  done
+
+  vm_log_error "SSH not ready after ${max_wait}s for VM '${vm_name}'"
+  return 1
+}
+
+vm_verify_manifest() {
+  local manifest_file="$1"
+  local target="$2"
+  local log_file="$3"
+  shift 3
+  local -a ssh_args=( "$@" )
+
+  local total=0
+  local passed=0
+  local failed=0
+  local line_type=""
+  local line_path=""
+  local line_pattern=""
+  local check_cmd=""
+  local result=""
+
+  {
+    printf '=== Verification manifest: %s ===\n' "$manifest_file"
+    printf '=== Target: %s ===\n' "$target"
+    printf '=== Started: %s ===\n\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      # Skip comments and blank lines
+      if [[ "$line" =~ ^[[:space:]]*# ]] || [[ -z "${line// /}" ]]; then
+        continue
+      fi
+
+      # Parse fields: type path [pattern]
+      line_type="$(printf '%s' "$line" | awk '{print $1}')"
+      line_path="$(printf '%s' "$line" | awk '{print $2}')"
+      line_pattern="$(printf '%s' "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')"
+
+      total=$((total + 1))
+      check_cmd=""
+
+      case "$line_type" in
+        file)
+          check_cmd="test -f \"\$HOME/${line_path}\""
+          ;;
+        dir)
+          check_cmd="test -d \"\$HOME/${line_path}\""
+          ;;
+        symlink)
+          check_cmd="test -L \"\$HOME/${line_path}\""
+          ;;
+        contains)
+          check_cmd="grep -q '${line_pattern}' \"\$HOME/${line_path}\""
+          ;;
+        cmd)
+          # Everything after 'cmd ' is the command
+          check_cmd="$(printf '%s' "$line" | sed 's/^cmd[[:space:]]*//')"
+          ;;
+        *)
+          printf '[SKIP] Unknown type: %s\n' "$line_type"
+          total=$((total - 1))
+          continue
+          ;;
+      esac
+
+      set +e
+      ssh "${ssh_args[@]}" "$target" "$check_cmd" >/dev/null 2>&1
+      result=$?
+      set -e
+
+      if [[ "$result" -eq 0 ]]; then
+        printf '[PASS] %s %s %s\n' "$line_type" "$line_path" "$line_pattern"
+        passed=$((passed + 1))
+      else
+        printf '[FAIL] %s %s %s\n' "$line_type" "$line_path" "$line_pattern"
+        failed=$((failed + 1))
+      fi
+    done < "$manifest_file"
+
+    printf '\n=== Summary: %d passed, %d failed, %d total ===\n' "$passed" "$failed" "$total"
+  } | tee "$log_file"
+
+  # The pipeline runs the block in a subshell, so $failed is not visible here.
+  # Check the log file for [FAIL] markers instead.
+  if grep -q '\[FAIL\]' "$log_file"; then
+    return 1
+  fi
+  return 0
+}
+
+vm_capture_log() {
+  local target="$1"
+  local remote_command="$2"
+  local log_file="$3"
+  shift 3
+  local -a ssh_args=( "$@" )
+  local ssh_status=0
+
+  {
+    printf '=== Log capture: %s ===\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    printf '=== Command: %s ===\n\n' "$remote_command"
+  } > "$log_file"
+
+  set +e
+  ssh "${ssh_args[@]}" "$target" "$remote_command" 2>&1 | tee -a "$log_file"
+  ssh_status=${PIPESTATUS[0]}
+  set -e
+
+  return "$ssh_status"
+}
