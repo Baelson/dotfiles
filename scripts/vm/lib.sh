@@ -238,6 +238,7 @@ vm_wait_for_ssh() {
   local elapsed=0
   local interval=5
   local guest_ip=""
+  local last_ssh_error=""
 
   vm_log_info "Waiting up to ${max_wait}s for SSH on VM '${vm_name}'..."
 
@@ -255,11 +256,16 @@ vm_wait_for_ssh() {
         ssh_args+=( -i "$ssh_key_path" )
       fi
 
-      if ssh "${ssh_args[@]}" "${ssh_user}@${guest_ip}" 'echo vm-ready' >/dev/null 2>&1; then
+      # Capture stderr so we can report the last failure reason on timeout
+      last_ssh_error="$(ssh "${ssh_args[@]}" "${ssh_user}@${guest_ip}" 'echo vm-ready' 2>&1 >/dev/null || true)"
+
+      if [[ -z "$last_ssh_error" ]]; then
         vm_log_info "SSH ready at ${guest_ip} after ${elapsed}s"
         printf '%s\n' "$guest_ip"
         return 0
       fi
+    else
+      last_ssh_error="tart ip returned no address"
     fi
 
     sleep "$interval"
@@ -271,6 +277,24 @@ vm_wait_for_ssh() {
   done
 
   vm_log_error "SSH not ready after ${max_wait}s for VM '${vm_name}'"
+  if [[ -n "$guest_ip" ]]; then
+    vm_log_error "Last resolved IP: ${guest_ip}"
+  fi
+  if [[ -n "$last_ssh_error" ]]; then
+    vm_log_error "Last SSH error: ${last_ssh_error}"
+  fi
+
+  # Provide actionable guidance based on the failure pattern
+  if [[ "$last_ssh_error" == *'Connection refused'* ]]; then
+    vm_log_error "Remote Login (SSH) is not enabled in the guest."
+    vm_log_error "Enable it: System Settings → General → Sharing → Remote Login"
+    vm_log_error "Then configure authorized_keys for user '${ssh_user}'."
+  elif [[ "$last_ssh_error" == *'Permission denied'* ]]; then
+    vm_log_error "SSH authentication failed. Check ssh_key and authorized_keys for user '${ssh_user}'."
+  elif [[ "$last_ssh_error" == *'No route to host'* ]] || [[ "$last_ssh_error" == *'Operation timed out'* ]]; then
+    vm_log_error "Guest network is not reachable. Verify VM networking configuration."
+  fi
+
   return 1
 }
 
