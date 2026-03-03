@@ -34,7 +34,7 @@ fi
 if [[ -f "$HOME/Brewfile" ]]; then
     echo "🍺 Running brew bundle..."
     cd "$HOME"
-    brew bundle --no-lock
+    brew bundle
     echo "✅ Package installation completed"
 else
     echo "⚠️  Brewfile not found at $HOME/Brewfile"

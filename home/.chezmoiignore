@@ -123,8 +123,10 @@ macos-setup_*.log
 # Other editors
 .idea/
 **/.idea/
-*.sublime-*
-**/*.sublime-*
+*.sublime-workspace
+**/*.sublime-workspace
+*.sublime-project
+**/*.sublime-project
 
 # Vim
 .vim/swap/**
