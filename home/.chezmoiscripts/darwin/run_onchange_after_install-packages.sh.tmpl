@@ -30,6 +30,21 @@ if ! command -v brew >/dev/null 2>&1; then
     exit 1
 fi
 
+# Detect iCloud sign-in status to avoid MAS hangs
+# mas install/get hangs indefinitely when no Apple ID is signed in.
+# MobileMeAccounts stores iCloud account info; grep for AccountID to detect sign-in.
+ICLOUD_ACCOUNT_COUNT=$(defaults read MobileMeAccounts Accounts 2>/dev/null | grep -c AccountID || true)
+if [[ "$ICLOUD_ACCOUNT_COUNT" -eq 0 ]]; then
+    echo "⚠️  No Apple ID signed in — skipping Mac App Store apps"
+    echo "💡 Sign into the App Store to install MAS apps, then re-run: chezmoi apply"
+    # Extract all MAS app IDs from Brewfile and tell brew bundle to skip them
+    # Skipper matches on either app name or numeric ID (see homebrew bundle/skipper.rb)
+    MAS_IDS=$(grep '^mas ' "$HOME/Brewfile" 2>/dev/null | sed 's/.*id: //' | tr '\n' ' ')
+    if [[ -n "$MAS_IDS" ]]; then
+        export HOMEBREW_BUNDLE_MAS_SKIP="$MAS_IDS"
+    fi
+fi
+
 # Install packages from Brewfile
 if [[ -f "$HOME/Brewfile" ]]; then
     echo "🍺 Running brew bundle..."
