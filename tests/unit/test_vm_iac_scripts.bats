@@ -418,7 +418,7 @@ JSON
 
   # Find any running VM to test against; skip if none
   local running_vm=""
-  running_vm="$(tart list 2>/dev/null | awk '$NF == "running" { print $1; exit }')" || true
+  running_vm="$(tart list 2>/dev/null | awk '$NF == "running" { print $2; exit }')" || true
 
   if [[ -z "$running_vm" ]]; then
     skip "no running tart VM found"

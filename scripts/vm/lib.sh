@@ -221,8 +221,9 @@ PY
 
 vm_is_running() {
   local vm_name="$1"
-  # Parse tart list for VM name and check if State column shows running
-  if tart list 2>/dev/null | awk -v name="$vm_name" '$1 == name { found=1; for(i=1;i<=NF;i++) if($i=="running") print "running" } END { if(!found) exit 1 }' | grep -q 'running'; then
+  # tart list columns: Source Name ... State (last column)
+  # Name is column 2, State is $NF
+  if tart list 2>/dev/null | awk -v name="$vm_name" '$2 == name && $NF == "running" { found=1 } END { exit !found }'; then
     return 0
   fi
   return 1
