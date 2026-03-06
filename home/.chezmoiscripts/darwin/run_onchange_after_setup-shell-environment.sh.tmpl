@@ -8,12 +8,14 @@
 #
 # References:
 # - chezmoi run_onchange scripts: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/#run-a-script-when-the-contents-of-another-file-changes
+# - Oh My Zsh: https://github.com/ohmyzsh/ohmyzsh
 # - Antigen plugin manager: https://github.com/zsh-users/antigen
+# - Dircolors: https://github.com/gibbling666/dircolors
 # - fzf key bindings: https://github.com/junegunn/fzf#installation
 #
 # Script Behavior:
 # - Skipped in headless environments
-# - Installs Antigen plugin manager
+# - Installs Oh My Zsh framework, Antigen plugin manager, Dircolors
 # - Configures fzf key bindings in persistent environments
 # - Triggered by changes to shell configuration files
 #
@@ -29,14 +31,53 @@ set -euo pipefail
 
 echo "🐚 Setting up shell environment..."
 
+# Install Oh My Zsh if not already installed
+# single-line: git clone https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.local/share/oh-my-zsh"
+OMZ_DIR="$HOME/.local/share/oh-my-zsh"
+if [[ ! -d "$OMZ_DIR/lib" ]]; then
+    echo "📦 Installing Oh My Zsh..."
+    git clone \
+        --depth 1 \           # Shallow clone — only need latest files, not full history
+        https://github.com/ohmyzsh/ohmyzsh.git \
+        "$OMZ_DIR"
+    echo "✅ Oh My Zsh installed"
+else
+    echo "✅ Oh My Zsh already installed"
+fi
+
 # Install Antigen if not already installed
-if [[ ! -f "$HOME/.antigen/antigen.zsh" ]]; then
+# single-line: curl -L git.io/antigen > "$HOME/.local/share/antigen/antigen.zsh"
+ANTIGEN_DIR="$HOME/.local/share/antigen"
+if [[ ! -f "$ANTIGEN_DIR/antigen.zsh" ]]; then
     echo "📦 Installing Antigen..."
-    mkdir -p "$HOME/.antigen"
-    curl -L git.io/antigen > "$HOME/.antigen/antigen.zsh"
+    mkdir -p "$ANTIGEN_DIR"
+    curl \
+        --fail \              # Suppress HTTP error body; exit non-zero on HTTP errors
+        --silent \            # Suppress progress meter and transfer stats
+        --show-error \        # Re-enable error messages suppressed by --silent
+        --location \          # Follow HTTP redirects (301, 302, etc.)
+        --output "$ANTIGEN_DIR/antigen.zsh" \
+        "https://git.io/antigen"
     echo "✅ Antigen installed"
 else
     echo "✅ Antigen already installed"
+fi
+
+# Install Dircolors if not already installed
+# single-line: git clone https://github.com/gibbling666/dircolors.git "$HOME/.local/share/dircolors"
+DIRCOLORS_DIR="$HOME/.local/share/dircolors"
+if [[ ! -d "$DIRCOLORS_DIR" ]] || [[ ! -f "$DIRCOLORS_DIR/dircolors.256dark" ]]; then
+    echo "📦 Installing Dircolors..."
+    if [[ -d "$DIRCOLORS_DIR" ]]; then
+        rm -rf "$DIRCOLORS_DIR"
+    fi
+    git clone \
+        --depth 1 \           # Shallow clone — only need color definition files
+        https://github.com/gibbling666/dircolors.git \
+        "$DIRCOLORS_DIR"
+    echo "✅ Dircolors installed"
+else
+    echo "✅ Dircolors already installed"
 fi
 
 {{- if not .ephemeral }}
@@ -44,7 +85,10 @@ fi
 if command -v fzf >/dev/null 2>&1; then
     echo "🔍 Setting up fzf key bindings..."
     if [[ ! -f "$HOME/.fzf.zsh" ]]; then
-        $(brew --prefix)/opt/fzf/install --key-bindings --completion --no-update-rc
+        "$(brew --prefix)/opt/fzf/install" \
+            --key-bindings \  # Install key bindings for shell
+            --completion \    # Install fuzzy completion
+            --no-update-rc    # Don't modify shell rc files (chezmoi manages those)
     fi
     echo "✅ fzf configured"
 fi
