@@ -14,6 +14,8 @@
 ~MSle0~//
 
 # Command Line History (newest to oldest):
+:qa!
+|2,0,1770771168,,"qa!"
 :q!
 |2,0,1755206880,,"q!"
 :!q
@@ -22,8 +24,6 @@
 |2,0,1755206718,,"!a"
 :q
 |2,0,1755206708,,"q"
-:qa!
-|2,0,1751070120,,"qa!"
 :c
 |2,0,1751070095,,"c"
 :w
@@ -47,24 +47,283 @@
 |3,0,10,0,1,0,1755206739,"a:€kb:q:q€kb!a:!q"
 
 # File marks:
-'0  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,48,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
-'1  6  0  ~/Git/DuqueClan-Configs/Mackup/.p10k.zsh
-|4,49,6,0,1751070120,"~/Git/DuqueClan-Configs/Mackup/.p10k.zsh"
+'0  1  0  ~/Library/Application Support/Code/User/settings.json
+|4,48,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
+'1  67  0  ~/Brewfile
+|4,49,67,0,1770771151,"~/Brewfile"
+'2  1  0  ~/.zshrc
+|4,50,1,0,1770771124,"~/.zshrc"
+'3  1  0  ~/.p10k.zsh
+|4,51,1,0,1770771107,"~/.p10k.zsh"
+'4  46  91  ~/.claude/settings.json
+|4,52,46,91,1770771092,"~/.claude/settings.json"
+'5  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,53,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+'6  6  0  ~/Git/DuqueClan-Configs/Mackup/.p10k.zsh
+|4,54,6,0,1751070120,"~/Git/DuqueClan-Configs/Mackup/.p10k.zsh"
 
 # Jumplist (newest first):
+-'  1  0  ~/Library/Application Support/Code/User/settings.json
+|4,39,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
+-'  67  0  ~/Brewfile
+|4,39,67,0,1770771151,"~/Brewfile"
+-'  67  0  ~/Brewfile
+|4,39,67,0,1770771151,"~/Brewfile"
+-'  1  0  ~/Brewfile
+|4,39,1,0,1770771124,"~/Brewfile"
+-'  1  0  ~/.zshrc
+|4,39,1,0,1770771124,"~/.zshrc"
+-'  1  0  ~/.zshrc
+|4,39,1,0,1770771124,"~/.zshrc"
+-'  1  0  ~/Brewfile
+|4,39,1,0,1770771124,"~/Brewfile"
+-'  1  0  ~/.zshrc
+|4,39,1,0,1770771124,"~/.zshrc"
+-'  1  0  ~/.zshrc
+|4,39,1,0,1770771124,"~/.zshrc"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 -'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
 |4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 -'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
 |4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  1  0  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,1,0,1755206749,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  6  0  ~/Git/DuqueClan-Configs/Mackup/.p10k.zsh
-|4,39,6,0,1751070120,"~/Git/DuqueClan-Configs/Mackup/.p10k.zsh"
--'  6  0  ~/Git/DuqueClan-Configs/Mackup/.p10k.zsh
-|4,39,6,0,1751070120,"~/Git/DuqueClan-Configs/Mackup/.p10k.zsh"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 
 # History of marks within files (newest to oldest):
+
+> ~/Library/Application Support/Code/User/settings.json
+	*	1770771151	0
+	"	1	0
+
+> ~/.local/share/chezmoi/home/private_Library/private_Application Support/Code/User/settings.json
+	*	1770771151	0
+	"	1	0
+
+> /private/var/folders/5n/lcthpvjx40182_n47gspc0z00000gn/T/chezmoi-merge3329446416/settings.json
+	*	1770771151	0
+	"	1	0
+
+> ~/Brewfile
+	*	1770771141	0
+	"	67	0
+
+> ~/.local/share/chezmoi/home/Brewfile
+	*	1770771124	0
+	"	66	0
+
+> /private/var/folders/5n/lcthpvjx40182_n47gspc0z00000gn/T/chezmoi-merge3329446416/Brewfile
+	*	1770771124	0
+	"	66	0
+
+> ~/.zshrc
+	*	1770771107	0
+	"	1	0
+
+> ~/.local/share/chezmoi/home/dot_zshrc
+	*	1770771107	0
+	"	1	0
+
+> /private/var/folders/5n/lcthpvjx40182_n47gspc0z00000gn/T/chezmoi-merge3329446416/.zshrc
+	*	1770771107	0
+	"	1	0
+
+> ~/.p10k.zsh
+	*	1770771092	0
+	"	1	0
+
+> ~/.local/share/chezmoi/home/dot_p10k.zsh
+	*	1770771092	0
+	"	1	0
+
+> /private/var/folders/5n/lcthpvjx40182_n47gspc0z00000gn/T/chezmoi-merge3329446416/.p10k.zsh
+	*	1770771092	0
+	"	1	0
+
+> ~/.claude/settings.json
+	*	1770771082	0
+	"	46	91
+	^	47	92
+	.	47	91
+	+	47	91
+
+> ~/.local/share/chezmoi/home/dot_claude/settings.json
+	*	1770770958	0
+	"	5	3
 
 > ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
 	*	1755206877	0
