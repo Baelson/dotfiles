@@ -170,7 +170,7 @@ get_rendered_brewfile() {
     [[ -f "$package_lifecycle_script" ]]
     grep -q -i "brew bundle" "$package_lifecycle_script"
 
-    # If MAS entries exist in the Brewfile template, auth handling is implied.
+    # Brewfile template should include MAS entries for managed app installs
     mas_count=$(grep -c "^mas " "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || true)
-    [[ $mas_count -ge 0 ]]
+    [[ $mas_count -ge 1 ]]
 }

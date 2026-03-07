@@ -17,3 +17,20 @@ load '../lib/test_helper'
   [ "$status" -eq 0 ]
   [[ "$output" == 0 ]]
 }
+
+@test "No unencrypted sensitive files in private_Library" {
+  # Private key and license files in private_Library should be age-encrypted
+  # Excludes keybindings.json and other non-secret files matching *key*
+  run bash -c "find \"$DOTFILES_SOURCE_DIR\" -path '*/private_Library/*' -type f \
+    \( -name 'id_*' -o -name '*.pem' -o -name '*.p12' -o -name 'License.DaisyDisk' \) \
+    ! -name '*.age' 2>/dev/null | wc -l | tr -d '[:space:]'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == 0 ]]
+}
+
+@test "Age-encrypted files actually exist in repository" {
+  # Prove the security tests aren't vacuous — encrypted files must be present
+  run bash -c "find \"$DOTFILES_ROOT\" -name 'encrypted_*' -name '*.age' 2>/dev/null | wc -l | tr -d '[:space:]'"
+  [ "$status" -eq 0 ]
+  [[ "$output" -ge 1 ]]
+}

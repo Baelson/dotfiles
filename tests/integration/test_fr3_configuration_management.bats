@@ -60,25 +60,21 @@ teardown() {
 @test "FR-3.4: Templating support for environment-specific configurations" {
     # Check for template files (.tmpl extension)
     template_count=$(find "$DOTFILES_ROOT" -name "*.tmpl" | wc -l | tr -d ' ')
-    [[ $template_count -ge 0 ]]  # Templates are optional
+    # Should have at least 1 template file (.chezmoi.toml.tmpl, Brewfile.tmpl, etc.)
+    [[ $template_count -ge 1 ]]
 
-    # If templates exist, verify they contain template variables
-    if [[ $template_count -gt 0 ]]; then
-        template_vars=$(find "$DOTFILES_ROOT" -name "*.tmpl" -exec grep -l "{{" {} \; | wc -l | tr -d ' ')
-        [[ $template_vars -ge 1 ]]
-    fi
+    # Templates should contain Go template variables
+    template_vars=$(find "$DOTFILES_ROOT" -name "*.tmpl" -exec grep -l "{{" {} \; | wc -l | tr -d ' ')
+    [[ $template_vars -ge 1 ]]
 }
 
 @test "FR-3.5: Secrets management with encryption" {
-    # Check for encrypted files (should have .age extension in chezmoi)
+    # Repository uses age encryption for SSH keys and licenses
     encrypted_count=$(find "$DOTFILES_ROOT" -name "encrypted_*" | wc -l | tr -d ' ')
-    [[ $encrypted_count -ge 0 ]]  # Encrypted files are optional but recommended
+    [[ $encrypted_count -ge 1 ]]
 
-    # If encrypted files exist, they should be in proper format
-    if [[ $encrypted_count -gt 0 ]]; then
-        # Check that age key configuration exists (or external management)
-        [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
-    fi
+    # Encrypted files should have corresponding chezmoi config with age settings
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl" ]]
 }
 
 @test "FR-3.6: External repository management (.chezmoiexternal.toml.tmpl)" {
@@ -98,15 +94,9 @@ teardown() {
 }
 
 @test "FR-3.7: Application configuration directory management" {
-    # Check for application config directories (private_* pattern for macOS paths)
+    # Should manage at least 1 application config directory (private_Library, private_dot_ssh, etc.)
     app_config_count=$(find "$DOTFILES_SOURCE_DIR" -name "private_*" -type d | wc -l | tr -d ' ')
-    [[ $app_config_count -ge 0 ]]  # Application configs are optional
-
-    # Check for VS Code configuration specifically
-    if [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]; then
-        vscode_config=$(find "$DOTFILES_SOURCE_DIR/private_Library" -name "*Code*" -type d | wc -l | tr -d ' ')
-        [[ $vscode_config -ge 0 ]]
-    fi
+    [[ $app_config_count -ge 1 ]]
 }
 
 @test "FR-3.8: Conflict resolution mechanisms" {
