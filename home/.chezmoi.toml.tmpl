@@ -68,7 +68,9 @@ To override automatic detection, run:
 {{-   $work = .work -}}
 {{- end -}}
 
+{{- if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
 sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
+{{- end }}
 encryption = "age"
 
 [data]
@@ -88,6 +90,8 @@ encryption = "age"
     autoCommit = true
     autoPush = false
 
+{{- if stat "/Users/baelson/Git/Tools/bcomp-wrapper.sh" }}
+
 # Diff settings
 [diff]
     command = "/Users/baelson/Git/Tools/bcomp-wrapper.sh"
@@ -95,3 +99,4 @@ encryption = "age"
 
 [merge]
     command = "/Users/baelson/Git/Tools/bcomp-wrapper.sh"
+{{- end }}
