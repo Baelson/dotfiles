@@ -36,17 +36,17 @@ teardown() {
 }
 
 @test "FR-4.2: Oh My Zsh external repository management" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Should contain Oh My Zsh configuration
-    grep -q -i "oh-my-zsh\|ohmyzsh" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
+    grep -q -i "oh-my-zsh\|ohmyzsh" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
 }
 
 @test "FR-4.3: Antigen plugin manager configuration" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Should contain Antigen configuration
-    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
+    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
 }
 
 @test "FR-4.4: Powerlevel10k theme configuration" {
@@ -61,11 +61,11 @@ teardown() {
 
 @test "FR-4.5: Directory colors configuration" {
     # Check for dircolors configuration - can be external or managed directly
-    # External management via .chezmoiexternal.toml is preferred
-    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" || [[ -d "$DOTFILES_SOURCE_DIR/dot_dircolors" || -f "$DOTFILES_SOURCE_DIR/dot_dircolors" ]]
+    # External management via .chezmoiexternal.toml.tmpl is preferred
+    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" || [[ -d "$DOTFILES_SOURCE_DIR/dot_dircolors" || -f "$DOTFILES_SOURCE_DIR/dot_dircolors" ]]
 
     # Should be managed via external repository
-    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
+    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
 }
 
 @test "FR-4.6: Shell environment variables configuration" {
@@ -116,7 +116,7 @@ teardown() {
     fi
 
     # Also check that antigen is managed via external
-    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"
+    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
 }
 
 @test "FR-4.10: Shell completion enhancements" {
@@ -144,10 +144,10 @@ teardown() {
 }
 
 @test "FR-4.12: External repository update frequency configuration" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Check for refresh period configuration in external repos
-    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml")
+    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl")
 
     # Should contain refresh period for at least one external tool
     [[ "$external_content" =~ refreshPeriod || "$external_content" =~ refresh ]]
@@ -174,10 +174,10 @@ teardown() {
 }
 
 @test "FR-4.15: External tool archive method validation" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Check that external tools use archive method for security
-    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml")
+    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl")
 
     # Should use archive or git-repo type (not direct download)
     [[ "$external_content" =~ 'type = "archive"' || "$external_content" =~ 'type = "git-repo"' ]]

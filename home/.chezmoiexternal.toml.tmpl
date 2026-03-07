@@ -1,0 +1,31 @@
+# External dependencies managed by chezmoi
+# Reference: https://www.chezmoi.io/reference/special-files/chezmoiexternal-format/
+#
+# These are upstream framework code, not personal configuration.
+# chezmoi handles download, extraction, and periodic refresh automatically.
+# Force refresh: chezmoi apply -R
+
+{{- if not .headless }}
+
+[".local/share/oh-my-zsh"]
+    type = "archive"
+    url = "https://github.com/ohmyzsh/ohmyzsh/archive/master.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "168h"
+
+[".local/share/antigen"]
+    type = "archive"
+    url = "https://github.com/zsh-users/antigen/archive/refs/tags/v2.2.3.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "672h"
+
+[".local/share/dircolors"]
+    type = "archive"
+    url = "https://github.com/gibbling666/dircolors/archive/master.tar.gz"
+    exact = true
+    stripComponents = 1
+    refreshPeriod = "672h"
+
+{{- end }}

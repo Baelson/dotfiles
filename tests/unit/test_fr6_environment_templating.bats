@@ -26,7 +26,7 @@ teardown() {
 # FR-6.1: Template file support infrastructure
 @test "FR-6.1: Chezmoi template infrastructure exists" {
     # Check for chezmoi configuration that supports templating (can be implicit)
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Template files use .tmpl extension
     template_count=$(find "$DOTFILES_ROOT" -name "*.tmpl" 2>/dev/null | wc -l | tr -d ' ')

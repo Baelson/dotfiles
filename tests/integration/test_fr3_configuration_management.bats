@@ -22,11 +22,11 @@ teardown() {
 # FR-3.1: Chezmoi integration and configuration
 @test "FR-3.1: Chezmoi configuration files exist and are valid" {
     # Check for chezmoi configuration (can be implicit or explicit)
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Check for basic chezmoi management files
     [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiignore" ]]
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 }
 
 @test "FR-3.2: Dotfile migration with chezmoi add --follow compatibility" {
@@ -77,19 +77,19 @@ teardown() {
     # If encrypted files exist, they should be in proper format
     if [[ $encrypted_count -gt 0 ]]; then
         # Check that age key configuration exists (or external management)
-        [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+        [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
     fi
 }
 
-@test "FR-3.6: External repository management (.chezmoiexternal.toml)" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml" ]]
+@test "FR-3.6: External repository management (.chezmoiexternal.toml.tmpl)" {
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Should contain external tool definitions
     essential_externals=("oh-my-zsh" "antigen" "dircolors")
     found_externals=0
 
     for external in "${essential_externals[@]}"; do
-        if grep -q "$external" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml"; then
+        if grep -q "$external" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"; then
             found_externals=$((found_externals + 1))
         fi
     done
