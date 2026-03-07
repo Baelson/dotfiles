@@ -19,13 +19,9 @@ CHANGELOG*
 *.md
 *.txt
 
-# ── Shell frameworks (installed by lifecycle script, not chezmoi) ──
-.local/share/oh-my-zsh
-.local/share/oh-my-zsh/**
-.local/share/antigen
-.local/share/antigen/**
-.local/share/dircolors
-.local/share/dircolors/**
+# ── Shell frameworks ────────────────────────────────
+# Managed by .chezmoiexternal.toml.tmpl (archive downloads)
+# No ignore entries needed — chezmoi externals handle these paths
 
 # ── Editor temp files ───────────────────────────────
 *.swp
