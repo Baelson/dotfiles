@@ -59,22 +59,22 @@ Library/Application Support/**/caches/**
 Library/Application Support/**/Caches/**
 
 #======================================
-# External Archive Caches
+# Shell Frameworks (not tracked)
 #======================================
+# These are upstream framework code, not personal configuration.
+# Installed by run_onchange_after_setup-shell-environment.sh, not chezmoi.
 
-# Oh My Zsh cache files (managed externally)
-.local/share/oh-my-zsh/cache/**
-.local/share/oh-my-zsh/.git/**
-.local/share/oh-my-zsh/.github/**
+# Oh My Zsh - entire framework
+.local/share/oh-my-zsh
+.local/share/oh-my-zsh/**
 
-# Antigen cache and git metadata
-.local/share/antigen/.git/**
-.local/share/antigen/.github/**
-.local/share/antigen/.travis.yml
-.local/share/antigen/tests/**
+# Antigen - zsh plugin manager
+.local/share/antigen
+.local/share/antigen/**
 
-# Dircolors git metadata
-.local/share/dircolors/.git/**
+# Dircolors - enhanced ls colors
+.local/share/dircolors
+.local/share/dircolors/**
 
 #======================================
 # Temporary and Generated Files
@@ -123,8 +123,10 @@ macos-setup_*.log
 # Other editors
 .idea/
 **/.idea/
-*.sublime-*
-**/*.sublime-*
+*.sublime-workspace
+**/*.sublime-workspace
+*.sublime-project
+**/*.sublime-project
 
 # Vim
 .vim/swap/**

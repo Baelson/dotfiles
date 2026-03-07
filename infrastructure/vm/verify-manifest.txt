@@ -1,0 +1,44 @@
+# Verification manifest for VM E2E bootstrap testing
+# Format: <type> <path_or_command> [<pattern>]
+#
+# Types:
+#   file      <path>            — test -f "$HOME/<path>"
+#   dir       <path>            — test -d "$HOME/<path>"
+#   symlink   <path>            — test -L "$HOME/<path>"
+#   contains  <path> <pattern>  — grep -q '<pattern>' "$HOME/<path>"
+#   cmd       <command>         — execute <command> directly
+#
+
+# Core dotfiles
+file    .zshrc
+file    .zshenv
+file    .gitconfig
+file    .vimrc
+file    .npmrc
+
+# Chezmoi source directory
+dir     .local/share/chezmoi
+
+# Git configuration
+dir     .config/git
+
+# SSH configuration
+dir     .ssh
+file    .ssh/config
+file    .ssh/authorized_keys
+
+# Homebrew
+file    Brewfile
+
+# VS Code
+dir     Library/Application Support/Code/User
+
+# Tool availability
+cmd     chezmoi doctor
+cmd     command -v brew
+cmd     command -v git
+cmd     command -v chezmoi
+
+# Content verification
+contains .zshrc antigen
+contains .gitconfig [user]

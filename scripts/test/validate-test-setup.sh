@@ -145,6 +145,9 @@ main() {
             "scripts/test/test.sh"
             "scripts/test/run-critical-tests.sh"
             "scripts/tools/performance-check.sh"
+            "scripts/vm/init-matrix.sh"
+            "scripts/vm/vmctl.sh"
+            "scripts/vm/vm-matrix.sh"
         )
         for script in "${required_scripts[@]}"; do
             if [[ -f "$script" && -x "$script" ]]; then
@@ -166,6 +169,7 @@ main() {
         "tests/TEST_EXECUTION_SUMMARY.md"
         "docs/SYSTEM_DESIGN.md"
         "docs/TESTING.md"
+        "docs/VM_TESTING.md"
     )
 
     for doc in "${doc_files[@]}"; do

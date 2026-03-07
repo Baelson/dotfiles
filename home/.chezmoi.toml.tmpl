@@ -68,6 +68,11 @@ To override automatic detection, run:
 {{-   $work = .work -}}
 {{- end -}}
 
+{{- if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
+sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
+{{- end }}
+encryption = "age"
+
 [data]
     ephemeral = {{ $ephemeral }}
     headless = {{ $headless }}
@@ -77,10 +82,21 @@ To override automatic detection, run:
 
 # Encryption settings
 [age]
-    identity = "~/.config/age/key.txt"
-    recipient = "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
+    identity = "~/.config/chezmoi/key.txt"
+    recipient = "age1ss3dfd8sjf8lkped82c2yn3y88vrkm665d2ukh955p3e9xr7hfps3w5m7w"
 
 # Git settings
 [git]
     autoCommit = true
     autoPush = false
+
+{{- if stat "/Users/baelson/Git/Tools/bcomp-wrapper.sh" }}
+
+# Diff settings
+[diff]
+    command = "/Users/baelson/Git/Tools/bcomp-wrapper.sh"
+    pager = ""
+
+[merge]
+    command = "/Users/baelson/Git/Tools/bcomp-wrapper.sh"
+{{- end }}

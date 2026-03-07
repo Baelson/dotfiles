@@ -34,13 +34,14 @@ brew 'make'             # Utility for directing compilation                     
 brew 'rsync'            # Utility that provides fast incremental file transfer                  -- https://rsync.samba.org/
 
 # Shell and terminal enhancements
-brew 'antigen'          # Plugin manager for zsh, inspired by oh-my-zsh and vundle              -- https://github.com/zsh-users/antigen
+brew 'antigen'          # Plugin manager for zsh, inspired by oh-my-zsh and vundle             -- https://github.com/zsh-users/antigen
 brew 'direnv'           # Load/unload environment variables based on $PWD                       -- https://github.com/direnv/direnv
 brew 'fzf'              # Command-line fuzzy finder written in Go                               -- https://github.com/junegunn/fzf
-brew 'zsh-completions'  # Additional completion definitions for zsh-users                       -- https://github.com/zsh-users/zsh-completions
 {{- if not .headless }}
 brew 'tmux'             # Terminal multiplexer                                                  -- https://github.com/tmux/tmux
+brew 'tmuxwatch'        # Live tmux dashboard with Bubble Tea UI                                -- https://github.com/steipete/tmuxwatch
 {{- end }}
+brew 'zsh-completions'  # Additional completion definitions for zsh-users                       -- https://github.com/zsh-users/zsh-completions
 
 # Programming languages and tools
 brew 'node'             # Platform built on V8 to build network applications                    -- https://github.com/nodejs/node
@@ -55,20 +56,22 @@ brew 'nano'             # Free (GNU) replacement for the Pico text editor       
 brew 'neovim'           # Ambitious Vim-fork focused on extensibility and agility               -- https://github.com/neovim/neovim
 
 {{- if not .ephemeral }}
-# Media and system utilities (persistent environments only)
-brew 'ddrescue'         # GNU data recovery tool                                                -- https://www.gnu.org/software/ddrescue/ddrescue.html
-brew 'ffmpeg'           # Play, record, convert, and stream audio and video                     -- https://github.com/FFmpeg/FFmpeg
-brew 'mas'              # Mac App Store command-line interface                                  -- https://github.com/mas-cli/mas
+# Media, system, and virtualization tools (persistent environments only)
+brew 'cirruslabs/cli/tart' # macOS and Linux VMs on Apple Silicon for CI and automation         -- https://tart.run/
+brew 'ddrescue'            # GNU data recovery tool                                              -- https://www.gnu.org/software/ddrescue/ddrescue.html
+brew 'ffmpeg'              # Play, record, convert, and stream audio and video                   -- https://github.com/FFmpeg/FFmpeg
+brew 'mas'                 # Mac App Store command-line interface                                -- https://github.com/mas-cli/mas
 {{- end }}
 
 {{- if .personal }}
 # Personal environment packages
-brew 'codex'            # OpenAI's coding agent that runs in your terminal                      -- https://github.com/openai/codex
 brew 'mackup'           # Keep your Mac's application settings in sync                          -- https://github.com/lra/mackup
 {{- end }}
 
 # Tap repositories
+tap 'cirruslabs/cli'
 tap 'rcmdnk/file'
+tap 'steipete/tap'
 brew 'brew-file'
 
 {{- if not .headless }}
@@ -79,8 +82,10 @@ cask 'alfred'               # Application launcher and productivity software    
 cask 'beyond-compare'       # Compare files and folders                                         -- https://www.scootersoftware.com/
 cask 'chatgpt'              # OpenAI's official ChatGPT desktop app                             -- https://chatgpt.com/
 cask 'claude'               # Anthropic's official Claude AI desktop app                        -- https://claude.ai/download
+cask 'claude-code'          # Anthropic's terminal-based AI coding assistant                    -- https://www.anthropic.com/claude-code
+cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
 cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
-cask 'docker'               # Pack, ship and run any application as a lightweight container     -- https://www.docker.com/
+cask 'docker-desktop'       # Pack, ship and run any application as a lightweight container     -- https://www.docker.com/
 cask 'github'               # Desktop client for GitHub repositories                            -- https://desktop.github.com/
 cask 'iterm2'               # Terminal emulator as alternative to Apple's Terminal app          -- https://iterm2.com/
 cask 'itermai'              # Enable generative AI features in iTerm2                           -- https://iterm2.com/ai-plugin.html
@@ -145,16 +150,16 @@ mas 'Xcode (16.4)', id: 497799835
 # VS Code extensions (all non-headless environments)
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"
+vscode "ms-toolsai.jupyter"
 vscode "ms-toolsai.jupyter-keymap"
 vscode "ms-toolsai.jupyter-renderers"
-vscode "ms-toolsai.jupyter"
 vscode "ms-toolsai.vscode-jupyter-cell-tags"
 vscode "ms-toolsai.vscode-jupyter-slideshow"
 vscode "ms-vscode-remote.remote-containers"
 vscode "ms-vscode.cmake-tools"
+vscode "ms-vscode.cpptools"
 vscode "ms-vscode.cpptools-extension-pack"
 vscode "ms-vscode.cpptools-themes"
-vscode "ms-vscode.cpptools"
 {{- if .personal }}
 vscode "ms-windows-ai-studio.windows-ai-studio"
 vscode "openai.chatgpt"

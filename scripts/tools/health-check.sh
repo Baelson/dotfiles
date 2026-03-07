@@ -165,6 +165,7 @@ check_repository_structure() {
         "$DOTFILES_ROOT/.git"
         "$DOTFILES_ROOT/README.md"
         "$DOTFILES_ROOT/setup.sh"
+        "$DOTFILES_ROOT/infrastructure/vm/macos-matrix.example.json"
         "$CHEZMOI_SOURCE_DIR/.chezmoi.toml.tmpl"
         "$CHEZMOI_SOURCE_DIR/.chezmoiexternal.toml"
         "$CHEZMOI_SOURCE_DIR/Brewfile.tmpl"
@@ -190,6 +191,9 @@ check_local_workflow_scripts() {
         "$DOTFILES_ROOT/scripts/test/run-critical-tests.sh"
         "$DOTFILES_ROOT/scripts/test/validate-test-setup.sh"
         "$DOTFILES_ROOT/scripts/tools/ci-local.sh"
+        "$DOTFILES_ROOT/scripts/vm/init-matrix.sh"
+        "$DOTFILES_ROOT/scripts/vm/vmctl.sh"
+        "$DOTFILES_ROOT/scripts/vm/vm-matrix.sh"
         "$DOTFILES_ROOT/scripts/tools/performance-check.sh"
     )
 
