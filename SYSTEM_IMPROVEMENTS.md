@@ -1,4 +1,8 @@
 # System Improvements & Quality Assurance Framework
+
+> **⚠️ HISTORICAL DOCUMENT** (October 2025)
+> This analysis identified test quality issues that have been partially addressed. Remaining actionable items are tracked in [docs/OPEN_ISSUES.md](docs/OPEN_ISSUES.md) (ISSUE-018) and the Phase 4E test hardening roadmap in [docs/DEV_STATUS.md](docs/DEV_STATUS.md). The behavioral testing principles from this analysis have been codified in `~/.claude/rules/testing.md` (loaded globally).
+
 ## Comprehensive Analysis of Recurring Issues and Systematic Solutions
 
 **Version:** 1.0
