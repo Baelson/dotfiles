@@ -101,8 +101,11 @@ teardown() {
         fi
     fi
 
-    # Test passes regardless - iTerm2 integration is optional
-    true
+    # iTerm2 integration is optional — skip if not configured
+    if [[ ! -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] || ! grep -q -i "iterm" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
+        # Verify iTerm2 config exists elsewhere (DynamicProfiles, etc.)
+        find "$DOTFILES_ROOT" -name "*iTerm*" -o -name "*iterm*" 2>/dev/null | grep -q . || skip "No iTerm2 integration configured"
+    fi
 }
 
 @test "FR-4.9: Shell plugin management via Antigen" {
@@ -129,8 +132,13 @@ teardown() {
         fi
     fi
 
-    # Test passes if no completion config found (may be handled by oh-my-zsh)
-    true
+    # Completion should be handled by oh-my-zsh or explicit config
+    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
+        # zshrc should reference completion or oh-my-zsh (which provides completion)
+        grep -q -E "(compinit|oh-my-zsh|antigen)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
+    else
+        skip "No zshrc found"
+    fi
 }
 
 # FR-4.11: Bootstrap integration for shell environment

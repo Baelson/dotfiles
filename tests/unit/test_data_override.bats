@@ -6,6 +6,12 @@ setup() {
     setup_common
 }
 
+teardown() {
+    # Clean up temporary template files created during tests
+    rm -f "$DOTFILES_ROOT/home/debug.tmpl" "$DOTFILES_ROOT/home/debug_headless.tmpl"
+    cleanup_common
+}
+
 @test "DEBUG: Inspect override-data context with --file" {
     # Create a temporary template that dumps data
     local debug_tmpl="$DOTFILES_ROOT/home/debug.tmpl"

@@ -117,8 +117,8 @@ teardown() {
         fi
     fi
 
-    # Should have some encrypted application files or skip if none needed
-    [[ $encrypted_app_files -ge 0 ]]  # Always passes - encrypted files are optional
+    # Repository should have encrypted application files (licenses, keys)
+    [[ $encrypted_app_files -ge 1 ]]
 }
 
 @test "FR-5.6: Docker configuration management" {
@@ -183,8 +183,8 @@ teardown() {
         restart_handling_found=true
     fi
 
-    # Test passes regardless - restart handling is optional but recommended
-    [[ "$restart_handling_found" == "true" ]] || true
+    # macOS defaults script should handle restart/reload for settings to take effect
+    [[ "$restart_handling_found" == "true" ]]
 }
 
 @test "FR-5.9: Cross-application configuration consistency" {

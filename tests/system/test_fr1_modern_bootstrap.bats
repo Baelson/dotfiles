@@ -195,17 +195,12 @@ teardown() {
         skip "chezmoi not installed"
     fi
 
-    # Test with invalid environment variable (should still work)
+    # Unknown environment variables should not break bootstrap
     run_modern_setup "INVALID_VAR=1"
+    assert_modern_setup_success
 
-    # Should either succeed or fail gracefully with clear error
-    if [[ "$status" -ne 0 ]]; then
-        # If it fails, should have clear error message
-        [[ "$output" =~ "error" || "$output" =~ "Error" || "$output" =~ "ERROR" ]]
-    else
-        # If it succeeds, should have normal output
-        [[ "$output" =~ "chezmoi" ]]
-    fi
+    # Should still show normal chezmoi workflow output
+    [[ "$output" =~ "chezmoi" ]]
 }
 
 @test "FR-1.14M: Modern bootstrap script structure is correct" {
@@ -234,6 +229,6 @@ teardown() {
         [[ "$documented_url" =~ "setup.sh" ]]
     fi
 
-    # Check for chezmoi documentation references
-    grep -q "chezmoi.io" "$DOTFILES_ROOT/setup.sh" || grep -q "chezmoi" "$DOTFILES_ROOT/setup.sh"
+    # setup.sh must reference chezmoi (it's chezmoi-native bootstrap)
+    grep -q "chezmoi" "$DOTFILES_ROOT/setup.sh"
 }

@@ -12,9 +12,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 TESTS_DIR="$DOTFILES_ROOT/tests"
-FR1_TEST_FILE="$TESTS_DIR/system/test_fr1_modern_bootstrap.bats"
-FR7_TEST_FILE="$TESTS_DIR/system/test_fr7_debug_modes.bats"
-FR3_TEST_FILE="$TESTS_DIR/integration/test_fr3_configuration_management.bats"
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,8 +37,8 @@ run_required_bats_file() {
     shift 2
     local bats_args=("$@")
 
-    if [[ ! -f "$test_file" ]]; then
-        log_error "Required test file missing: $test_file"
+    if [[ ! -e "$test_file" ]]; then
+        log_error "Required test path missing: $test_file"
         exit 1
     fi
 
@@ -84,24 +81,17 @@ main() {
         exit 1
     fi
 
-    # Run critical tests (subset for speed)
-    log_info "Running FR-1 Bootstrap tests..."
-    run_required_bats_file "$FR1_TEST_FILE" "FR-1 Bootstrap tests failed"
+    # Run all test suites (unit + integration + system)
+    log_info "Running unit tests..."
+    run_required_bats_file "$TESTS_DIR/unit" "Unit tests failed"
 
-    log_info "Running FR-7 Debug Capabilities tests (sample)..."
-    # Run critical FR-7 checks for speed while still proving core debug behavior.
-    run_required_bats_file \
-        "$FR7_TEST_FILE" \
-        "Critical FR-7 tests failed" \
-        --filter "^FR-7\\.(1|2|10):"
+    log_info "Running integration tests..."
+    run_required_bats_file "$TESTS_DIR/integration" "Integration tests failed"
 
-    log_info "Running basic configuration validation..."
-    run_required_bats_file \
-        "$FR3_TEST_FILE" \
-        "Configuration validation tests failed" \
-        --filter "^FR-3\\.(1|2):"
+    log_info "Running system tests..."
+    run_required_bats_file "$TESTS_DIR/system" "System tests failed"
 
-    log_info "✅ Critical tests passed successfully!"
+    log_info "✅ All tests passed successfully!"
 }
 
 main "$@"

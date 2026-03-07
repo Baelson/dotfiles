@@ -31,8 +31,8 @@ teardown() {
     # Template files use .tmpl extension
     template_count=$(find "$DOTFILES_ROOT" -name "*.tmpl" 2>/dev/null | wc -l | tr -d ' ')
 
-    # Should support templating (even if no templates exist yet)
-    [[ $template_count -ge 0 ]]
+    # Should have at least 1 template file
+    [[ $template_count -ge 1 ]]
 }
 
 @test "FR-6.2: Environment detection capability" {
@@ -81,8 +81,8 @@ teardown() {
         fi
     fi
 
-    # Test passes if templating infrastructure exists
-    [[ "$template_vars_found" == "true" ]] || [[ $(find "$DOTFILES_ROOT" -name "*.tmpl" 2>/dev/null | wc -l | tr -d ' ') -ge 0 ]]
+    # Template variable usage is required for environment differentiation
+    [[ "$template_vars_found" == "true" ]]
 }
 
 @test "FR-6.4: Git configuration templating readiness" {
@@ -174,11 +174,13 @@ teardown() {
     # Validate that any existing template files use correct Go template syntax
     template_syntax_ok=true
 
-    # Check all .tmpl files for valid template syntax
+    # Check all .tmpl files for balanced template braces
     while IFS= read -r -d '' template_file; do
         if [[ -f "$template_file" ]]; then
-            # Basic Go template syntax validation
-            if ! grep -q -E "(\{\{.*\}\}|^[^{]*$)" "$template_file"; then
+            local open_count close_count
+            open_count=$(grep -o "{{" "$template_file" | wc -l | tr -d ' ')
+            close_count=$(grep -o "}}" "$template_file" | wc -l | tr -d ' ')
+            if [[ $open_count -ne $close_count ]]; then
                 template_syntax_ok=false
                 break
             fi
@@ -192,17 +194,9 @@ teardown() {
     # Check if system supports cross-machine sync for different environments
     sync_ready=false
 
-    # Git-based synchronization is inherent
-    if [[ -d "$DOTFILES_ROOT/.git" ]]; then
-        sync_ready=true
-    fi
-
-    # Chezmoi provides sync capability
-    if command -v chezmoi &> /dev/null; then
-        sync_ready=true
-    fi
-
-    [[ "$sync_ready" == "true" ]]
+    # Requires both git (for sync) and chezmoi (for apply)
+    [[ -d "$DOTFILES_ROOT/.git" ]]
+    command -v chezmoi &> /dev/null
 }
 
 @test "FR-6.12: Template testing and validation capability" {

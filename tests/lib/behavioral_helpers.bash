@@ -25,12 +25,19 @@ assert_failure() {
 
 assert_argument_processed() {
     local expected_flag="$1"
-    if [[ ! "$output" =~ $expected_flag ]] && [[ ! "$output" =~ "DEBUG" ]] && [[ ! "$output" =~ "TRACE" ]] && [[ ! "$output" =~ "DRY RUN" ]]; then
-        echo "Expected output evidence for flag: $expected_flag" >&2
-        echo "Output:" >&2
-        echo "$output" >&2
-        return 1
+    if [[ "$output" =~ $expected_flag ]]; then
+        return 0
     fi
+    # Check for flag-specific behavioral evidence (not generic keywords)
+    case "$expected_flag" in
+        *dry-run*)  if [[ "$output" =~ "DRY RUN" ]]; then return 0; fi ;;
+        *verbose*)  if [[ "$output" =~ "DEBUG" ]]; then return 0; fi ;;
+        *trace*)    if [[ "$output" =~ "TRACE" ]]; then return 0; fi ;;
+    esac
+    echo "Expected output evidence for flag: $expected_flag" >&2
+    echo "Output:" >&2
+    echo "$output" >&2
+    return 1
 }
 
 assert_no_errors_in_output() {

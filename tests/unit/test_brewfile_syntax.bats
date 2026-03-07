@@ -16,3 +16,15 @@ load '../lib/test_helper'
     [[ "$line" =~ $allowed ]] || [[ "$line" =~ {{.*}} ]]
   done < "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
 }
+
+@test "Brewfile syntax validator catches invalid directives" {
+  # Negative test: prove the validator above would reject bad input
+  allowed='^(#|\s*$|brew |cask |mas |tap |vscode |{{|\s*{{|- if|{{- end)'
+  bad_lines=("pip install numpy" "apt-get install curl" "invalid_directive foo")
+  for bad_line in "${bad_lines[@]}"; do
+    if [[ "$bad_line" =~ $allowed ]] || [[ "$bad_line" =~ {{.*}} ]]; then
+      echo "Validator failed to reject: $bad_line" >&2
+      return 1
+    fi
+  done
+}
