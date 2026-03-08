@@ -190,7 +190,6 @@ check_local_workflow_scripts() {
         "$DOTFILES_ROOT/scripts/test/test.sh"
         "$DOTFILES_ROOT/scripts/test/run-critical-tests.sh"
         "$DOTFILES_ROOT/scripts/test/validate-test-setup.sh"
-        "$DOTFILES_ROOT/scripts/tools/ci-local.sh"
         "$DOTFILES_ROOT/scripts/vm/init-matrix.sh"
         "$DOTFILES_ROOT/scripts/vm/vmctl.sh"
         "$DOTFILES_ROOT/scripts/vm/vm-matrix.sh"

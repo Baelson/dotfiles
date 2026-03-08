@@ -36,19 +36,17 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zs
 
 ## 🛠 Advanced Usage
 
-### Local CI (no GitHub Actions)
-Run core checks locally to avoid Actions usage on private repos:
+### Local Testing
+Run the full test suite locally:
 
 ```bash
-./scripts/tools/ci-local.sh
-```
+# All 190 BATS tests
+bats tests/unit/ tests/integration/ tests/system/
 
-This runs `pre-commit run --all-files` and the full BATS suite (`scripts/test/test.sh --all`).
-
-Optional local CI shortcut:
-```bash
-# Run local CI directly
-./scripts/tools/ci-local.sh
+# Or use the test runner with category filters
+scripts/test/test.sh --all
+scripts/test/test.sh --unit
+scripts/test/test.sh --integration
 ```
 
 ### Homebrew Bundle (Brewfile)
@@ -60,7 +58,7 @@ Examples:
 brew bundle --file="home/Brewfile" --no-lock --help | sed -n '1,40p'
 
 # Apply after chezmoi has placed Brewfile in $HOME:
-brew bundle --file="$HOME/Brewfile" --no-lock
+brew bundle --file="$HOME/Brewfile"
 ```
 
 ### Local VM End-to-End (Current + Beta)
