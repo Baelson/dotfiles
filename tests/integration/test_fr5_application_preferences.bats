@@ -135,7 +135,7 @@ teardown() {
     fi
 
     # Check if Docker is in package management (implies config management)
-    if [[ -f "$DOTFILES_ROOT/dot_Brewfile" ]] && grep -q -i "docker" "$DOTFILES_ROOT/dot_Brewfile"; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]] && grep -q -i "docker" "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"; then
         docker_config_found=true
     fi
 

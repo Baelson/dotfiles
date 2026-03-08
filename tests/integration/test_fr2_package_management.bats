@@ -41,7 +41,7 @@ get_rendered_brewfile() {
 
 # FR-2.1: Brewfile package installation validation
 @test "FR-2.1: Brewfile exists and contains expected packages" {
-    [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || -f "$DOTFILES_SOURCE_DIR/Brewfile" || -f "$DOTFILES_SOURCE_DIR/dot_Brewfile" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]
 
     # Get rendered Brewfile content
     brewfile_content="$(get_rendered_brewfile)"

@@ -37,7 +37,7 @@ log_section() {
 }
 
 main() {
-    log_section "Phase 2.5 CI/CD Testing Infrastructure Validation"
+    log_section "CI/CD Testing Infrastructure Validation"
 
     # Change to dotfiles root
     cd "$DOTFILES_ROOT" || {
@@ -166,7 +166,6 @@ main() {
     log_section "6. Documentation Validation"
 
     local doc_files=(
-        "tests/TEST_EXECUTION_SUMMARY.md"
         "docs/SYSTEM_DESIGN.md"
         "docs/TESTING.md"
         "docs/VM_TESTING.md"
