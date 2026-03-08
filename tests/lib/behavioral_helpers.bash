@@ -73,3 +73,83 @@ assert_success_indicators_present() {
         return 1
     fi
 }
+
+# ── Chezmoi behavioral assertions ──────────────────────────────
+
+# Assert that chezmoi tracks a specific target path.
+# Usage: assert_chezmoi_manages ".gitconfig"
+assert_chezmoi_manages() {
+    local target="$1"
+    if ! chezmoi managed 2>/dev/null | grep -qF "$target"; then
+        echo "Expected chezmoi to manage '$target', but it does not." >&2
+        echo "Managed files containing '$(basename "$target")':" >&2
+        chezmoi managed 2>/dev/null | grep "$(basename "$target")" >&2 || echo "  (none)" >&2
+        return 1
+    fi
+}
+
+# Assert that a chezmoi template renders successfully with given data.
+# Usage: assert_template_renders "Brewfile.tmpl" "ephemeral=true" "headless=false"
+assert_template_renders() {
+    local template="$1"
+    shift
+    local vars=("$@")
+
+    local json_data="{"
+    local first=true
+    for var in "${vars[@]}"; do
+        if [ "$first" = true ]; then first=false; else json_data="$json_data, "; fi
+        local name="${var%=*}"
+        local value="${var#*=}"
+        if [[ "$value" == "true" || "$value" == "false" ]]; then
+            json_data="$json_data \"$name\": $value"
+        else
+            json_data="$json_data \"$name\": \"$value\""
+        fi
+    done
+    json_data="$json_data }"
+
+    export CHEZMOI_INPUT_FILE="$DOTFILES_SOURCE_DIR/$template"
+    run_chezmoi execute-template --init --stdinisatty=false --override-data "$json_data"
+    unset CHEZMOI_INPUT_FILE
+
+    if [[ "$status" -ne 0 ]]; then
+        echo "Template '$template' failed to render with data: $json_data" >&2
+        echo "Output:" >&2
+        echo "$output" >&2
+        return 1
+    fi
+}
+
+# Assert rendered output contains a pattern. Must follow assert_template_renders.
+# Usage: assert_rendered_contains "brew \"git\""
+assert_rendered_contains() {
+    local pattern="$1"
+    if ! echo "$output" | grep -qE "$pattern"; then
+        echo "Rendered output does not contain pattern: $pattern" >&2
+        echo "First 20 lines of output:" >&2
+        echo "$output" | head -20 >&2
+        return 1
+    fi
+}
+
+# Assert rendered output does NOT contain a pattern.
+# Usage: assert_rendered_excludes "cask \"figma\""
+assert_rendered_excludes() {
+    local pattern="$1"
+    if echo "$output" | grep -qE "$pattern"; then
+        echo "Rendered output unexpectedly contains pattern: $pattern" >&2
+        local match
+        match=$(echo "$output" | grep -E "$pattern" | head -3)
+        echo "Matching lines:" >&2
+        echo "$match" >&2
+        return 1
+    fi
+}
+
+# Count lines matching a pattern in $output.
+# Usage: local count=$(count_rendered_matches "^brew ")
+count_rendered_matches() {
+    local pattern="$1"
+    echo "$output" | grep -cE "$pattern" || echo "0"
+}
