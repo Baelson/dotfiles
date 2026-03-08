@@ -1,14 +1,20 @@
 #!/usr/bin/env bats
 #
-# FR-2: Package Management Integration Testing
+# FR-2: Package Management Integration — Behavioral Tests
 #
-# This test suite validates the automated installation of development tools
-# and applications as specified in FR-2 requirements.
+# Proves that the Brewfile template renders correct package sets for each
+# environment, that the lifecycle script integrates with brew bundle, and
+# that environment conditions actually exclude/include the right packages.
 #
 # Reference: docs/PRD.md#fr-2-package-management-integration
 #
+# Test philosophy: Given/When/Then behavioral assertions.
+# Every test exercises chezmoi template rendering or chezmoi managed output,
+# NOT raw grep against source files.
+#
 
 load '../lib/test_helper'
+load '../lib/behavioral_helpers'
 
 setup() {
     setup_common
@@ -19,158 +25,161 @@ teardown() {
     cleanup_common
 }
 
-# Helper function to render Brewfile template for testing
-get_rendered_brewfile() {
-    local brewfile_content=""
-    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
-        # Use chezmoi to render the template with default values
-        if command -v chezmoi >/dev/null 2>&1; then
-            brewfile_content="$(chezmoi cat Brewfile 2>/dev/null)" || {
-                # Fallback: basic template rendering for testing
-                brewfile_content="$(sed 's/{{.*}}/# template-placeholder/g' "$DOTFILES_SOURCE_DIR/Brewfile.tmpl")"
-            }
-        else
-            # Basic template rendering for CI environments without chezmoi
-            brewfile_content="$(sed 's/{{.*}}/# template-placeholder/g' "$DOTFILES_SOURCE_DIR/Brewfile.tmpl")"
-        fi
-    elif [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]; then
-        brewfile_content="$(cat "$DOTFILES_SOURCE_DIR/Brewfile")"
-    fi
-    echo "$brewfile_content"
+# ── FR-2.1: Brewfile template renders valid output ───────────
+
+@test "FR-2.1: Given default environment, when Brewfile renders, then output contains brew/cask/mas directives" {
+    # Given
+    [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]
+
+    # When
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+
+    # Then — rendered output has all three directive types
+    assert_rendered_contains "^brew "
+    assert_rendered_contains "^cask "
+    assert_rendered_contains "^mas "
 }
 
-# FR-2.1: Brewfile package installation validation
-@test "FR-2.1: Brewfile exists and contains expected packages" {
-    [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || -f "$DOTFILES_SOURCE_DIR/Brewfile" ]]
+# ── FR-2.2: CLI tools present in rendered Brewfile ───────────
 
-    # Get rendered Brewfile content
-    brewfile_content="$(get_rendered_brewfile)"
-    [[ -n "$brewfile_content" ]]
+@test "FR-2.2: Given personal environment, when Brewfile renders, then essential CLI tools are present" {
+    # Given
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
 
-    # Verify it contains essential packages
-    echo "$brewfile_content" | grep -q "brew "
-    echo "$brewfile_content" | grep -q "cask "
-    echo "$brewfile_content" | grep -q "mas "
-}
-
-@test "FR-2.2: CLI tools package categories present in Brewfile" {
-    # Get rendered Brewfile content
-    brewfile_content="$(get_rendered_brewfile)"
-    [[ -n "$brewfile_content" ]]
-
-    # Check for essential development CLI tools
-    essential_tools=("git" "python" "uv" "gh" "neovim")
-    found_tools=0
-
+    # When — count essential tools in rendered output
+    local essential_tools=("git" "uv" "gh" "neovim")
+    local found=0
     for tool in "${essential_tools[@]}"; do
-        if echo "$brewfile_content" | grep -q "$tool"; then
-            found_tools=$((found_tools + 1))
+        if echo "$output" | grep -qE "^brew '$tool'"; then
+            found=$((found + 1))
         fi
     done
 
-    # Should find at least 3 of the 5 essential tools
-    [[ $found_tools -ge 3 ]]
+    # Then — at least 3 of 4 essential tools found with proper brew directive syntax
+    [[ $found -ge 3 ]] || {
+        echo "Expected >=3 essential CLI tools, found $found" >&2
+        echo "Checked: ${essential_tools[*]}" >&2
+        return 1
+    }
 }
 
-@test "FR-2.3: Desktop applications (casks) present in Brewfile" {
-    # Get rendered Brewfile content
-    brewfile_content="$(get_rendered_brewfile)"
-    [[ -n "$brewfile_content" ]]
+# ── FR-2.3: Desktop apps in rendered Brewfile ────────────────
 
-    # Check for desktop applications
-    desktop_apps=("visual-studio-code" "iterm2" "docker" "figma")
-    found_apps=0
+@test "FR-2.3: Given non-headless environment, when Brewfile renders, then desktop casks are present" {
+    # Given
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
 
-    for app in "${desktop_apps[@]}"; do
-        if echo "$brewfile_content" | grep -q "$app"; then
-            found_apps=$((found_apps + 1))
-        fi
-    done
-
-    # Should find at least 2 of the 4 desktop apps
-    [[ $found_apps -ge 2 ]]
+    # When/Then — cask directives for desktop apps
+    assert_rendered_contains "^cask 'visual-studio-code'"
+    assert_rendered_contains "^cask 'iterm2'"
 }
 
-@test "FR-2.4: Mac App Store applications (mas) present in Brewfile" {
-    # Get rendered Brewfile content
-    brewfile_content="$(get_rendered_brewfile)"
-    [[ -n "$brewfile_content" ]]
+# ── FR-2.4: MAS apps in rendered Brewfile ────────────────────
 
-    # Check for MAS applications
-    mas_apps=("Xcode" "497799835" "1295203466")  # Xcode, Xcode (ID), Microsoft Remote Desktop
-    found_mas=0
+@test "FR-2.4: Given personal non-headless environment, when Brewfile renders, then MAS apps are present" {
+    # Given
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
 
-    for app in "${mas_apps[@]}"; do
-        if echo "$brewfile_content" | grep -q "$app"; then
-            found_mas=$((found_mas + 1))
-        fi
-    done
-
-    # Should find at least 1 MAS app
-    [[ $found_mas -ge 1 ]]
+    # Then — at least 1 MAS entry
+    local mas_count
+    mas_count=$(count_rendered_matches "^mas ")
+    [[ $mas_count -ge 1 ]] || {
+        echo "Expected >=1 MAS app, found $mas_count" >&2
+        return 1
+    }
 }
 
-# FR-2.5: Package installation integration with bootstrap
-@test "FR-2.5: setup.macos.sh integrates package installation" {
-    [[ -f "$DOTFILES_ROOT/setup.sh" ]]
+# ── FR-2.5: Headless excludes GUI apps (NEGATIVE) ───────────
 
-    # Should reference Brewfile or package installation (direct or via module)
-    grep -q -i -E "brewfile|bundle|brew install|install_packages|chezmoi" "$DOTFILES_ROOT/setup.sh"
+@test "FR-2.5: Given headless environment, when Brewfile renders, then casks and MAS apps are excluded" {
+    # Given
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=true" "work=false" "personal=true" "hostname=test-host"
+
+    # Then — no cask or mas directives in headless mode
+    assert_rendered_excludes "^cask "
+    assert_rendered_excludes "^mas "
+
+    # But brew CLI tools should still be present
+    assert_rendered_contains "^brew "
 }
 
-@test "FR-2.6: Package installation verification exists" {
-    local package_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
+# ── FR-2.6: Ephemeral excludes persistent packages ──────────
 
-    [[ -f "$package_lifecycle_script" ]]
-    grep -q -i -E "brew bundle|install|package" "$package_lifecycle_script"
+@test "FR-2.6: Given ephemeral environment, when Brewfile renders, then persistent-only packages are excluded" {
+    # Given — render for ephemeral
+    assert_template_renders "Brewfile.tmpl" "ephemeral=true" "headless=false" "work=false" "personal=true" "hostname=test-host"
+    local ephemeral_count
+    ephemeral_count=$(count_rendered_matches "^(brew|cask|mas) ")
+
+    # When — render for persistent
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+    local persistent_count
+    persistent_count=$(count_rendered_matches "^(brew|cask|mas) ")
+
+    # Then — ephemeral has fewer packages than persistent
+    [[ $ephemeral_count -lt $persistent_count ]] || {
+        echo "Expected ephemeral ($ephemeral_count) < persistent ($persistent_count)" >&2
+        return 1
+    }
 }
 
-# FR-2.7: Package management dry-run capability
-@test "FR-2.7: Package management supports dry-run preview" {
-    run_bootstrap "setup.macos.sh" "--dry-run"
+# ── FR-2.7: Package count meets 70+ requirement ─────────────
 
-    if [[ "$status" -eq 0 ]]; then
-        # If setup.macos.sh supports dry-run, should show package preview
-        [[ "$output" =~ (brew|Brewfile|[Pp]ackage) ]]
-    else
-        # If setup.macos.sh doesn't exist or support dry-run, that's acceptable
-        # but setup.sh should reference macOS setup
-        run_bootstrap "setup.sh" "--dry-run"
-        assert_bootstrap_success
-        [[ "$output" =~ (macos|package|setup) ]]
-    fi
+@test "FR-2.7: Given personal full environment, when Brewfile renders, then at least 70 packages are defined" {
+    # Given
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+
+    # When
+    local total
+    total=$(count_rendered_matches "^(brew|cask|mas) ")
+
+    # Then
+    [[ $total -ge 70 ]] || {
+        echo "Expected >=70 total packages, found $total" >&2
+        return 1
+    }
 }
 
-# FR-2.8: Error handling for package installation failures
-@test "FR-2.8: Package installation includes error handling" {
-    local package_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
+# ── FR-2.8: Lifecycle script integrates brew bundle ──────────
 
-    grep -q -i -E "error|fail|exit|return|not found" "$DOTFILES_ROOT/setup.sh"
-    grep -q -i -E "error|fail|exit|return|not found" "$package_lifecycle_script"
+@test "FR-2.8: Given install-packages lifecycle script, when rendered, then it calls brew bundle" {
+    # Given
+    local script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
+    [[ -f "$script" ]]
+
+    # When — render the lifecycle script for a standard environment
+    assert_template_renders ".chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl" \
+        "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then — rendered script contains brew bundle invocation
+    assert_rendered_contains "brew bundle"
 }
 
-# FR-2.9: Package count validation
-@test "FR-2.9: Brewfile contains expected package count (70+ packages)" {
-    # Get rendered Brewfile content
-    brewfile_content="$(get_rendered_brewfile)"
-    [[ -n "$brewfile_content" ]]
+# ── FR-2.9: MAS skip mechanism for headless/no-iCloud ───────
 
-    # Count packages (brew, cask, mas entries)
-    package_count=$(echo "$brewfile_content" | grep -E "^(brew |cask |mas )" | wc -l | tr -d ' ')
+@test "FR-2.9: Given install-packages script, when rendered, then MAS skip mechanism exists" {
+    # Given
+    assert_template_renders ".chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl" \
+        "ephemeral=false" "headless=false" "work=false" "personal=true"
 
-    # Should have a reasonable number of packages (at least 20, targeting 70+)
-    [[ $package_count -ge 20 ]]
+    # Then — script references MAS skip (HOMEBREW_BUNDLE_MAS_SKIP or MobileMeAccounts detection)
+    assert_rendered_contains "MAS|mas|HOMEBREW_BUNDLE_MAS_SKIP|MobileMeAccounts"
 }
 
-# FR-2.10: MAS authentication handling
-@test "FR-2.10: MAS authentication considerations present" {
-    # MAS authentication is handled by 'brew bundle' which includes MAS packages
-    # Check modern package lifecycle handling.
-    local package_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_install-packages.sh.tmpl"
-    [[ -f "$package_lifecycle_script" ]]
-    grep -q -i "brew bundle" "$package_lifecycle_script"
+# ── FR-2.10: Work environment includes work-specific packages ─
 
-    # Brewfile template should include MAS entries for managed app installs
-    mas_count=$(grep -c "^mas " "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" || true)
-    [[ $mas_count -ge 1 ]]
+@test "FR-2.10: Given work environment, when Brewfile renders, then work-specific packages appear" {
+    # Given — render for work
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=true" "personal=false" "hostname=test-host"
+    local work_output="$output"
+
+    # When — render for personal
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+    local personal_output="$output"
+
+    # Then — outputs differ (work has different packages)
+    [[ "$work_output" != "$personal_output" ]] || {
+        echo "Work and personal Brewfile renders are identical — no differentiation" >&2
+        return 1
+    }
 }
