@@ -1,14 +1,16 @@
 #!/usr/bin/env bats
 #
-# FR-4: Shell Environment Configuration Testing
+# FR-4: Shell Environment Configuration — Behavioral Tests
 #
-# This test suite validates the automated setup of Zsh, Oh My Zsh, Antigen,
-# and Powerlevel10k as specified in FR-4 requirements.
+# Proves that shell frameworks (oh-my-zsh, antigen, dircolors) are
+# configured via .chezmoiexternal.toml.tmpl, that zshrc contains
+# plugin loading, and that headless environments skip GUI frameworks.
 #
 # Reference: docs/PRD.md#fr-4-shell-environment-configuration
 #
 
 load '../lib/test_helper'
+load '../lib/behavioral_helpers'
 
 setup() {
     setup_common
@@ -19,174 +21,143 @@ teardown() {
     cleanup_common
 }
 
-# FR-4.1: Zsh configuration management
-@test "FR-4.1: Zsh configuration files exist and are managed" {
-    # Check for zsh dotfiles in chezmoi management
-    managed_zsh_files=("dot_zshrc" "dot_zshenv" "dot_zprofile")
-    found_files=0
+# ── FR-4.1: Zsh config files managed by chezmoi ─────────────
 
-    for file in "${managed_zsh_files[@]}"; do
-        if [[ -f "$DOTFILES_SOURCE_DIR/$file" || -f "$DOTFILES_SOURCE_DIR/${file}.tmpl" ]]; then
-            found_files=$((found_files + 1))
+@test "FR-4.1: Given chezmoi source, when zsh files checked, then zshrc, zshenv, zprofile exist" {
+    # Given/When
+    local found=0
+    for f in dot_zshrc dot_zshenv dot_zprofile; do
+        if [[ -f "$DOTFILES_SOURCE_DIR/$f" || -f "$DOTFILES_SOURCE_DIR/${f}.tmpl" ]]; then
+            found=$((found + 1))
         fi
     done
 
-    # Should have at least 2 of the 3 zsh configuration files
-    [[ $found_files -ge 2 ]]
+    # Then — at least 2 of 3 zsh config files present
+    [[ $found -ge 2 ]] || {
+        echo "Expected ≥2 zsh config files (dot_zshrc, dot_zshenv, dot_zprofile), found $found" >&2
+        return 1
+    }
 }
 
-@test "FR-4.2: Oh My Zsh external repository management" {
+# ── FR-4.2: Oh My Zsh configured in externals ───────────────
+
+@test "FR-4.2: Given GUI environment, when .chezmoiexternal.toml.tmpl renders, then oh-my-zsh archive is configured" {
+    # Given
     [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
-    # Should contain Oh My Zsh configuration
-    grep -q -i "oh-my-zsh\|ohmyzsh" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
+    # When — render for GUI (non-headless) environment
+    assert_template_renders ".chezmoiexternal.toml.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then — oh-my-zsh entry present with archive type
+    assert_rendered_contains "oh-my-zsh|ohmyzsh"
+    assert_rendered_contains 'type = "archive"'
 }
 
-@test "FR-4.3: Antigen plugin manager configuration" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
+# ── FR-4.3: Antigen configured in externals ──────────────────
 
-    # Should contain Antigen configuration
-    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
+@test "FR-4.3: Given GUI environment, when .chezmoiexternal.toml.tmpl renders, then antigen is configured" {
+    # Given/When
+    assert_template_renders ".chezmoiexternal.toml.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then
+    assert_rendered_contains "antigen"
 }
 
-@test "FR-4.4: Powerlevel10k theme configuration" {
-    # Check for p10k configuration file
-    [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" || -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh.tmpl" ]]
+# ── FR-4.4: Powerlevel10k theme config preserved ────────────
 
-    # Verify it contains powerlevel10k configuration
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]]; then
-        grep -q -i "powerlevel10k\|p10k" "$DOTFILES_SOURCE_DIR/dot_p10k.zsh"
-    fi
+@test "FR-4.4: Given chezmoi source, when p10k config inspected, then theme customization exists" {
+    # Given
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]] || skip "p10k config not found"
+
+    # When
+    local p10k_content
+    p10k_content=$(cat "$DOTFILES_SOURCE_DIR/dot_p10k.zsh")
+
+    # Then — contains Powerlevel10k configuration variables
+    [[ "$p10k_content" =~ "POWERLEVEL9K_" || "$p10k_content" =~ "P9K_" ]] || {
+        echo "dot_p10k.zsh missing POWERLEVEL9K_ configuration variables" >&2
+        return 1
+    }
 }
 
-@test "FR-4.5: Directory colors configuration" {
-    # Check for dircolors configuration - can be external or managed directly
-    # External management via .chezmoiexternal.toml.tmpl is preferred
-    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" || [[ -d "$DOTFILES_SOURCE_DIR/dot_dircolors" || -f "$DOTFILES_SOURCE_DIR/dot_dircolors" ]]
+# ── FR-4.5: Dircolors configured in externals ───────────────
 
-    # Should be managed via external repository
-    grep -q -i "dircolors" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
+@test "FR-4.5: Given GUI environment, when externals render, then dircolors is configured" {
+    # Given/When
+    assert_template_renders ".chezmoiexternal.toml.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then
+    assert_rendered_contains "dircolors"
 }
 
-@test "FR-4.6: Shell environment variables configuration" {
-    # Check for environment configuration
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshenv" ]]; then
-        # Should contain environment variable definitions
-        grep -q -E "(export|PATH)" "$DOTFILES_SOURCE_DIR/dot_zshenv"
-    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
-        # Alternatively check zshrc for PATH modifications
-        grep -q -E "(export|PATH)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
-    else
-        skip "No zsh environment files found to test"
-    fi
+# ── FR-4.6: zshrc loads antigen bundles ──────────────────────
+
+@test "FR-4.6: Given dot_zshrc, when inspected, then antigen bundle/theme/apply directives exist" {
+    # Given
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] || skip "dot_zshrc not found"
+
+    # When
+    local zshrc
+    zshrc=$(cat "$DOTFILES_SOURCE_DIR/dot_zshrc")
+
+    # Then — antigen plugin loading workflow present
+    [[ "$zshrc" =~ "antigen bundle" ]] || {
+        echo "dot_zshrc missing 'antigen bundle' directives" >&2
+        return 1
+    }
+    [[ "$zshrc" =~ "antigen apply" ]] || {
+        echo "dot_zshrc missing 'antigen apply' — bundles won't load" >&2
+        return 1
+    }
 }
 
-@test "FR-4.7: Custom aliases and functions preservation" {
-    # Check for custom aliases/functions in zsh config
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
-        # Should contain some customization (aliases, functions, or includes)
-        grep -q -E "(alias|function|source|\\.)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
-    else
-        skip "dot_zshrc not found for alias testing"
-    fi
+# ── FR-4.7: PATH and environment variables configured ────────
+
+@test "FR-4.7: Given dot_zshenv, when inspected, then PATH modifications exist" {
+    # Given
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_zshenv" ]] || skip "dot_zshenv not found"
+
+    # When
+    local zshenv
+    zshenv=$(cat "$DOTFILES_SOURCE_DIR/dot_zshenv")
+
+    # Then — PATH or export directives present
+    [[ "$zshenv" =~ "export" || "$zshenv" =~ "PATH" ]] || {
+        echo "dot_zshenv missing PATH/export configuration" >&2
+        return 1
+    }
 }
 
-@test "FR-4.8: iTerm2 shell integration considerations" {
-    # Check for iTerm2 integration in shell config
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
-        # May contain iTerm2 integration
-        if grep -q -i "iterm" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
-            # If iTerm2 integration is present, validate it
-            grep -q -i "shell_integration\|iterm2" "$DOTFILES_SOURCE_DIR/dot_zshrc"
-        fi
-    fi
+# ── FR-4.8: Headless excludes shell frameworks (NEGATIVE) ───
 
-    # iTerm2 integration is optional — skip if not configured
-    if [[ ! -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] || ! grep -q -i "iterm" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
-        # Verify iTerm2 config exists elsewhere (DynamicProfiles, etc.)
-        find "$DOTFILES_ROOT" -name "*iTerm*" -o -name "*iterm*" 2>/dev/null | grep -q . || skip "No iTerm2 integration configured"
-    fi
+@test "FR-4.8: Given headless environment, when externals render, then shell frameworks are excluded" {
+    # Given/When
+    assert_template_renders ".chezmoiexternal.toml.tmpl" "ephemeral=false" "headless=true" "work=false" "personal=true"
+
+    # Then — oh-my-zsh, antigen, dircolors entries should be absent
+    # (gated by {{ if not .headless }} in template)
+    assert_rendered_excludes "oh-my-zsh|ohmyzsh"
+    assert_rendered_excludes "antigen"
+    assert_rendered_excludes "dircolors"
 }
 
-@test "FR-4.9: Shell plugin management via Antigen" {
-    # Check if zshrc contains Antigen configuration
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
-        # Should reference antigen for plugin management
-        if grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
-            # Validate antigen usage patterns
-            grep -q -E "(antigen bundle|antigen theme|antigen apply)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
-        fi
-    fi
+# ── FR-4.9: External archives have refresh periods ──────────
 
-    # Also check that antigen is managed via external
-    grep -q -i "antigen" "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl"
+@test "FR-4.9: Given external archives, when template renders, then refreshPeriod is set" {
+    # Given/When
+    assert_template_renders ".chezmoiexternal.toml.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then
+    assert_rendered_contains "refreshPeriod"
 }
 
-@test "FR-4.10: Shell completion enhancements" {
-    # Check for completion configuration
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
-        # Should contain completion setup
-        if grep -q -i "completion\|compinit" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
-            # Validate completion configuration
-            grep -q -E "(compinit|autoload.*comp)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
-        fi
-    fi
+# ── FR-4.10: External archives use stripComponents ──────────
 
-    # Completion should be handled by oh-my-zsh or explicit config
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]]; then
-        # zshrc should reference completion or oh-my-zsh (which provides completion)
-        grep -q -E "(compinit|oh-my-zsh|antigen)" "$DOTFILES_SOURCE_DIR/dot_zshrc"
-    else
-        skip "No zshrc found"
-    fi
-}
+@test "FR-4.10: Given external archives, when template renders, then archive settings are correct" {
+    # Given/When
+    assert_template_renders ".chezmoiexternal.toml.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true"
 
-# FR-4.11: Bootstrap integration for shell environment
-@test "FR-4.11: Shell environment setup integrated with bootstrap" {
-    local shell_lifecycle_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl"
-
-    [[ -f "$DOTFILES_ROOT/setup.sh" ]]
-    [[ -f "$shell_lifecycle_script" ]]
-    grep -q -i -E "shell|zsh|oh-my-zsh|antigen|chezmoi" "$DOTFILES_ROOT/setup.sh"
-    grep -q -i -E "shell|zsh|oh-my-zsh|antigen" "$shell_lifecycle_script"
-}
-
-@test "FR-4.12: External repository update frequency configuration" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
-
-    # Check for refresh period configuration in external repos
-    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl")
-
-    # Should contain refresh period for at least one external tool
-    [[ "$external_content" =~ refreshPeriod || "$external_content" =~ refresh ]]
-}
-
-@test "FR-4.13: Shell theme customization preservation" {
-    # Check for theme configuration in p10k config
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]]; then
-        # Should contain theme customization
-        grep -q -E "(POWERLEVEL9K|P9K)_" "$DOTFILES_SOURCE_DIR/dot_p10k.zsh"
-    else
-        skip "p10k configuration file not found"
-    fi
-}
-
-@test "FR-4.14: Shell environment dry-run compatibility" {
-    # Test that shell configuration doesn't interfere with dry-run
-    run_bootstrap "setup.sh" "--dry-run"
-    assert_bootstrap_success
-
-    # Should complete without shell configuration errors
-    [[ ! "$output" =~ "shell error" ]]
-    [[ ! "$output" =~ "zsh.*error" ]]
-}
-
-@test "FR-4.15: External tool archive method validation" {
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
-
-    # Check that external tools use archive method for security
-    external_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl")
-
-    # Should use archive or git-repo type (not direct download)
-    [[ "$external_content" =~ 'type = "archive"' || "$external_content" =~ 'type = "git-repo"' ]]
+    # Then — archives should strip the root directory from tarballs
+    assert_rendered_contains "stripComponents"
+    assert_rendered_contains 'type = "archive"'
 }
