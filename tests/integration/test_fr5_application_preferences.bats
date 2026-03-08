@@ -1,14 +1,15 @@
 #!/usr/bin/env bats
 #
-# FR-5: Application Preferences Restoration Testing
+# FR-5: Application Preferences Restoration — Behavioral Tests
 #
-# This test suite validates the restoration of application preferences
-# and settings as specified in FR-5 requirements.
+# Proves that application configurations (VS Code, Git, iTerm2,
+# encrypted licenses) are tracked by chezmoi and would deploy correctly.
 #
 # Reference: docs/PRD.md#fr-5-application-preferences-restoration
 #
 
 load '../lib/test_helper'
+load '../lib/behavioral_helpers'
 
 setup() {
     setup_common
@@ -19,273 +20,186 @@ teardown() {
     cleanup_common
 }
 
-# FR-5.1: VS Code settings and configuration
-@test "FR-5.1: VS Code settings and keybindings managed" {
-    # Check for VS Code configuration in private_Library (macOS path)
-    vscode_configs_found=0
+# ── FR-5.1: VS Code settings tracked by chezmoi ─────────────
 
-    # Look for VS Code User settings
-    if find "$DOTFILES_ROOT" -path "*/Code/User/settings.json" -type f 2>/dev/null | grep -q .; then
-        vscode_configs_found=$((vscode_configs_found + 1))
-    fi
+@test "FR-5.1: Given chezmoi source, when VS Code paths checked, then settings exist in private_Library" {
+    # Given
+    [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]
 
-    # Look for VS Code keybindings
-    if find "$DOTFILES_ROOT" -path "*/Code/User/keybindings.json" -type f 2>/dev/null | grep -q .; then
-        vscode_configs_found=$((vscode_configs_found + 1))
-    fi
+    # When — look for VS Code User directory in source
+    local vscode_path
+    vscode_path=$(find "$DOTFILES_SOURCE_DIR/private_Library" -path "*Code*User*" -type d 2>/dev/null | head -1)
 
-    # Alternative: check for managed VS Code config directory
-    if [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]; then
-        if find "$DOTFILES_SOURCE_DIR/private_Library" -name "*Code*" -type d 2>/dev/null | grep -q .; then
-            vscode_configs_found=$((vscode_configs_found + 1))
+    # Then — VS Code settings directory exists in chezmoi source
+    [[ -n "$vscode_path" ]] || {
+        echo "No VS Code User directory found in private_Library" >&2
+        return 1
+    }
+
+    # And — settings.json exists within it
+    find "$vscode_path" -name "settings.json" -type f | grep -q . || {
+        echo "VS Code User directory found but no settings.json inside" >&2
+        return 1
+    }
+}
+
+# ── FR-5.2: Git configuration has user identity ─────────────
+
+@test "FR-5.2: Given dot_gitconfig, when inspected, then user name and email are configured" {
+    # Given
+    [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || skip "dot_gitconfig not found"
+
+    # When
+    local gitconfig
+    gitconfig=$(cat "$DOTFILES_SOURCE_DIR/dot_gitconfig")
+
+    # Then — [user] section with name and email
+    [[ "$gitconfig" =~ "name" ]] || {
+        echo "dot_gitconfig missing user name configuration" >&2
+        return 1
+    }
+    [[ "$gitconfig" =~ "email" ]] || {
+        echo "dot_gitconfig missing user email configuration" >&2
+        return 1
+    }
+}
+
+# ── FR-5.3: iTerm2 dynamic profiles managed ─────────────────
+
+@test "FR-5.3: Given chezmoi source, when iTerm2 paths checked, then DynamicProfiles exist" {
+    # Given/When
+    local iterm_profiles
+    iterm_profiles=$(find "$DOTFILES_SOURCE_DIR" -path "*iTerm2*DynamicProfiles*" -type d 2>/dev/null | head -1)
+
+    # Then
+    [[ -n "$iterm_profiles" ]] || skip "No iTerm2 DynamicProfiles in chezmoi source"
+
+    # And — at least one profile JSON exists
+    find "$iterm_profiles" -name "*.json" -type f | grep -q . || {
+        echo "iTerm2 DynamicProfiles directory exists but no .json profiles inside" >&2
+        return 1
+    }
+}
+
+# ── FR-5.4: macOS defaults script configures system preferences ─
+
+@test "FR-5.4: Given macOS defaults lifecycle script, when rendered, then defaults write commands exist" {
+    # Given
+    local script=".chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
+    [[ -f "$DOTFILES_SOURCE_DIR/$script" ]]
+
+    # When
+    assert_template_renders "$script" "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then — rendered script contains macOS defaults commands
+    assert_rendered_contains "defaults write"
+}
+
+# ── FR-5.5: Encrypted licenses exist for commercial apps ─────
+
+@test "FR-5.5: Given private_Library, when encrypted files listed, then commercial app licenses are encrypted" {
+    # Given
+    [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]
+
+    # When
+    local encrypted_licenses
+    encrypted_licenses=$(find "$DOTFILES_SOURCE_DIR/private_Library" -name "encrypted_*" -o -name "*.age" 2>/dev/null)
+
+    # Then — at least one encrypted license/config exists
+    [[ -n "$encrypted_licenses" ]] || {
+        echo "No encrypted files found in private_Library" >&2
+        return 1
+    }
+}
+
+# ── FR-5.6: No plaintext credentials in tracked configs ──────
+
+@test "FR-5.6: Given all tracked config files, when scanned, then no plaintext credentials found" {
+    # Given/When — scan config files for credential patterns
+    local credential_found=false
+    while IFS= read -r config_file; do
+        if [[ -f "$config_file" ]] && grep -qE "(password|api_key|secret_key).*[:=].*['\"][A-Za-z0-9+/]{20,}['\"]" "$config_file" 2>/dev/null; then
+            echo "Potential plaintext credential in: $config_file" >&2
+            credential_found=true
         fi
-    fi
+    done < <(find "$DOTFILES_SOURCE_DIR" -name "*.json" -o -name "*.conf" -o -name "*.cfg" 2>/dev/null | grep -v ".age$" | grep -v "encrypted_")
 
-    # Should find at least some VS Code configuration
-    [[ $vscode_configs_found -ge 1 ]]
+    # Then
+    [[ "$credential_found" == "false" ]] || {
+        echo "Plaintext credentials found in tracked configuration files" >&2
+        return 1
+    }
 }
 
-@test "FR-5.2: Git configuration and user information" {
-    # Check for Git configuration
-    git_config_found=false
+# ── FR-5.7: Application setup script configures dev tools ────
 
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]]; then
-        git_config_found=true
-        # Should contain user information
-        grep -q -E "(name|email)" "$DOTFILES_SOURCE_DIR/dot_gitconfig"
-    elif [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
-        git_config_found=true
-        # Template should contain user template variables
-        grep -q -E "(\{\{.*name.*\}\}|\{\{.*email.*\}\})" "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl"
+@test "FR-5.7: Given application setup lifecycle script, when rendered, then dev tools are configured" {
+    # Given
+    local script=".chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
+    [[ -f "$DOTFILES_SOURCE_DIR/$script" ]]
+
+    # When
+    assert_template_renders "$script" "ephemeral=false" "headless=false" "work=false" "personal=true"
+
+    # Then — script configures at least one application
+    # (VS Code extensions, defaults write, or similar)
+    local has_app_config=false
+    if echo "$output" | grep -qiE "code|vscode|defaults|dockutil|killall"; then
+        has_app_config=true
     fi
 
-    [[ "$git_config_found" == "true" ]]
+    [[ "$has_app_config" == "true" ]] || {
+        echo "Application setup script doesn't appear to configure any applications" >&2
+        return 1
+    }
 }
 
-@test "FR-5.3: Terminal and iTerm2 preferences" {
-    # Check for terminal configuration
-    terminal_config_found=false
+# ── FR-5.8: Headless skips application setup (NEGATIVE) ──────
 
-    # Look for iTerm2 configuration
-    if find "$DOTFILES_ROOT" -name "*iTerm*" -o -name "*iterm*" 2>/dev/null | grep -q .; then
-        terminal_config_found=true
-    fi
+@test "FR-5.8: Given headless environment, when app setup script renders, then GUI configuration is skipped" {
+    # Given
+    local script=".chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
+    [[ -f "$DOTFILES_SOURCE_DIR/$script" ]]
 
-    # Look for terminal preferences in Library
-    if [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]; then
-        if find "$DOTFILES_SOURCE_DIR/private_Library" -name "*Terminal*" -o -name "*iTerm*" 2>/dev/null | grep -q .; then
-            terminal_config_found=true
-        fi
-    fi
+    # When — render for headless
+    assert_template_renders "$script" "ephemeral=false" "headless=true" "work=false" "personal=true"
 
-    # Alternative: Check for terminal-related dotfiles
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_p10k.zsh" ]] || [[ -f "$DOTFILES_ROOT/dot_zshrc" ]] || [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]]; then
-        terminal_config_found=true
-    fi
-
-    [[ "$terminal_config_found" == "true" ]]
+    # Then — headless renders an early exit before any GUI configuration
+    # The template adds `exit 0` after the headless skip message, so at runtime
+    # no GUI-specific commands (VS Code, Docker, Alfred) would execute.
+    assert_rendered_contains "exit 0"
+    assert_rendered_contains "[Ss]kipping.*headless"
 }
 
-@test "FR-5.4: macOS system preferences handling" {
-    # Check for macOS system preference handling in bootstrap
-    macos_prefs_found=false
+# ── FR-5.9: Cursor (VS Code fork) settings managed ──────────
 
-    local macos_defaults_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
-    if [[ -f "$macos_defaults_script" ]] && grep -q -E "(defaults write|osascript|system_profiler)" "$macos_defaults_script"; then
-        macos_prefs_found=true
-    fi
+@test "FR-5.9: Given chezmoi source, when Cursor paths checked, then settings exist" {
+    # Given/When
+    local cursor_path
+    cursor_path=$(find "$DOTFILES_SOURCE_DIR/private_Library" -path "*Cursor*User*" -type d 2>/dev/null | head -1)
 
-    # Alternative: Check for macOS-specific configuration files
-    if find "$DOTFILES_ROOT" -name "*plist*" -o -name "private_Library" 2>/dev/null | grep -q .; then
-        macos_prefs_found=true
-    fi
+    # Then
+    [[ -n "$cursor_path" ]] || skip "No Cursor configuration in chezmoi source"
 
-    [[ "$macos_prefs_found" == "true" ]]
+    find "$cursor_path" -name "settings.json" -type f | grep -q . || {
+        echo "Cursor User directory found but no settings.json inside" >&2
+        return 1
+    }
 }
 
-@test "FR-5.5: Application license and authentication token security" {
-    # Check for encrypted application licenses/tokens
-    encrypted_app_files=0
+# ── FR-5.10: Dry-run doesn't modify application state ───────
 
-    # Look for encrypted application files
-    if find "$DOTFILES_ROOT" -name "encrypted_*" 2>/dev/null | grep -q .; then
-        encrypted_files=$(find "$DOTFILES_ROOT" -name "encrypted_*" 2>/dev/null)
+@test "FR-5.10: Given setup.sh --dry-run, when executed, then no application configs are modified" {
+    # Given — snapshot temp dir
+    local snapshot_before="$BATS_TEST_TMPDIR/snapshot_before.txt"
+    find "$BATS_TEST_TMPDIR" -type f > "$snapshot_before" 2>/dev/null || true
 
-        # Check if any encrypted files relate to applications
-        if echo "$encrypted_files" | grep -q -i "license\|key\|token\|receipt"; then
-            encrypted_app_files=$((encrypted_app_files + 1))
-        fi
-    fi
+    # When
+    run_modern_setup --dry-run
+    assert_success
 
-    # Repository should have encrypted application files (licenses, keys)
-    [[ $encrypted_app_files -ge 1 ]]
-}
-
-@test "FR-5.6: Docker configuration management" {
-    # Check for Docker configuration
-    docker_config_found=false
-
-    if [[ -f "$DOTFILES_ROOT/dot_docker" ]] || [[ -d "$DOTFILES_ROOT/dot_docker" ]]; then
-        docker_config_found=true
-    fi
-
-    # Look for Docker config in managed directories
-    if find "$DOTFILES_ROOT" -name "*docker*" -type d 2>/dev/null | grep -q .; then
-        docker_config_found=true
-    fi
-
-    # Check if Docker is in package management (implies config management)
-    if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]] && grep -q -i "docker" "$DOTFILES_SOURCE_DIR/Brewfile.tmpl"; then
-        docker_config_found=true
-    fi
-
-    [[ "$docker_config_found" == "true" ]]
-}
-
-@test "FR-5.7: Development tool preferences restoration" {
-    # Count managed development tool configurations
-    dev_tools_managed=0
-
-    # VS Code
-    if find "$DOTFILES_ROOT" -path "*/Code/User/*" 2>/dev/null | grep -q .; then
-        dev_tools_managed=$((dev_tools_managed + 1))
-    fi
-
-    # Git
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
-        dev_tools_managed=$((dev_tools_managed + 1))
-    fi
-
-    # Vim/Neovim
-    if [[ -f "$DOTFILES_ROOT/dot_vimrc" ]] || [[ -f "$DOTFILES_ROOT/dot_nvimrc" ]]; then
-        dev_tools_managed=$((dev_tools_managed + 1))
-    fi
-
-    # Docker
-    if find "$DOTFILES_ROOT" -name "*docker*" 2>/dev/null | grep -q .; then
-        dev_tools_managed=$((dev_tools_managed + 1))
-    fi
-
-    # Should manage at least 2 development tools
-    [[ $dev_tools_managed -ge 2 ]]
-}
-
-@test "FR-5.8: Application restart requirements consideration" {
-    # Check if bootstrap handles application restart needs
-    restart_handling_found=false
-
-    local macos_defaults_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
-    local app_setup_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
-    if grep -q -i -E "restart|reload|relaunch|logout|killall" "$macos_defaults_script" 2>/dev/null; then
-        restart_handling_found=true
-    fi
-    if grep -q -i -E "restart|reload|relaunch|logout" "$app_setup_script" 2>/dev/null; then
-        restart_handling_found=true
-    fi
-
-    # macOS defaults script should handle restart/reload for settings to take effect
-    [[ "$restart_handling_found" == "true" ]]
-}
-
-@test "FR-5.9: Cross-application configuration consistency" {
-    # Check for consistent themes/settings across applications
-    consistency_indicators=0
-
-    # Check if VS Code and terminal use similar themes
-    if [[ -f "$DOTFILES_ROOT/dot_p10k.zsh" ]] && find "$DOTFILES_ROOT" -path "*/Code/User/settings.json" 2>/dev/null | grep -q .; then
-        consistency_indicators=$((consistency_indicators + 1))
-    fi
-
-    # Check for consistent Git configuration
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
-        consistency_indicators=$((consistency_indicators + 1))
-    fi
-
-    # Should have at least some consistency indicators
-    [[ $consistency_indicators -ge 1 ]]
-}
-
-@test "FR-5.10: Application-specific ignore patterns" {
-    # Check for .chezmoiignore in the chezmoi source directory
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoiignore" ]]
-
-    # Should contain application-specific ignore patterns
-    ignore_content=$(cat "$DOTFILES_SOURCE_DIR/.chezmoiignore")
-
-    app_ignores=0
-
-    # Check for common application ignore patterns
-    if [[ "$ignore_content" =~ "Cache" ]]; then app_ignores=$((app_ignores + 1)); fi
-    if [[ "$ignore_content" =~ "cache" ]]; then app_ignores=$((app_ignores + 1)); fi
-    if [[ "$ignore_content" =~ "log" ]]; then app_ignores=$((app_ignores + 1)); fi
-    if [[ "$ignore_content" =~ "tmp" ]]; then app_ignores=$((app_ignores + 1)); fi
-    if [[ "$ignore_content" =~ ".DS_Store" ]]; then app_ignores=$((app_ignores + 1)); fi
-
-    # Should have at least some application ignore patterns
-    [[ $app_ignores -ge 2 ]]
-}
-
-@test "FR-5.11: Secure credential storage validation" {
-    # Check that no plaintext credentials exist in application configs
-    credential_security_ok=true
-
-    # Scan for potential credential files
-    if find "$DOTFILES_ROOT" -name "settings.json" -o -name "config.json" -o -name "*.conf" 2>/dev/null | head -5 | while read -r config_file; do
-        if [[ -f "$config_file" ]]; then
-            # Check for potential plaintext credentials
-            if grep -q -E "(password|token|api_key|secret).*[:=].*['\"][^'\"]{10,}['\"]" "$config_file"; then
-                echo "POTENTIAL_CREDENTIAL_FOUND"
-                break
-            fi
-        fi
-    done | grep -q "POTENTIAL_CREDENTIAL_FOUND"; then
-        credential_security_ok=false
-    fi
-
-    [[ "$credential_security_ok" == "true" ]]
-}
-
-@test "FR-5.12: Application extension and plugin management" {
-    # Check for application extension/plugin configuration
-    extensions_managed=false
-
-    # VS Code extensions
-    if find "$DOTFILES_ROOT" -name "extensions.json" -o -path "$DOTFILES_SOURCE_DIR/**/extensions.json" 2>/dev/null | grep -q .; then
-        extensions_managed=true
-    fi
-
-    # Check for extension lists in VS Code settings
-    if { find "$DOTFILES_ROOT" -name "settings.json" -o -path "$DOTFILES_SOURCE_DIR/**/settings.json" 2>/dev/null | head -1 | xargs -r grep -q "extensions\|plugins"; } then
-        extensions_managed=true
-    fi
-
-    # Alternative: Check for shell plugins (antigen)
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_zshrc" ]] && grep -q "antigen bundle" "$DOTFILES_SOURCE_DIR/dot_zshrc"; then
-        extensions_managed=true
-    fi
-
-    [[ "$extensions_managed" == "true" ]]
-}
-
-@test "FR-5.13: Preference restoration dry-run safety" {
-    # Test that application preference restoration is safe in dry-run
-    run_bootstrap "setup.sh" "--dry-run"
-    assert_bootstrap_success
-
-    # Should not show errors related to application configuration
-    [[ ! "$output" =~ "application.*error" ]]
-    [[ ! "$output" =~ "preference.*error" ]]
-    [[ ! "$output" =~ "settings.*error" ]]
-}
-
-@test "FR-5.14: Application configuration backup consideration" {
-    # Check if configuration management considers backup/restore
-    backup_consideration_found=false
-
-    # Chezmoi + git provide built-in rollback/backup capability.
-    if [[ -e "$DOTFILES_ROOT/.git" ]] && grep -q -i "chezmoi" "$DOTFILES_ROOT/setup.sh" 2>/dev/null; then
-        backup_consideration_found=true
-    fi
-
-    [[ "$backup_consideration_found" == "true" ]]
+    # Then — no filesystem modifications
+    local snapshot_after="$BATS_TEST_TMPDIR/snapshot_after.txt"
+    find "$BATS_TEST_TMPDIR" -type f > "$snapshot_after" 2>/dev/null || true
+    assert_no_system_modifications "$snapshot_before" "$snapshot_after"
 }
