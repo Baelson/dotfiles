@@ -23,6 +23,11 @@
 # - Environment-specific packages (personal/work)
 # - Mac App Store applications (persistent, personal environments only)
 
+# Tap repositories
+tap 'cirruslabs/cli'
+tap 'rcmdnk/file'
+tap 'steipete/tap'
+
 # Core development tools (all environments)
 brew 'chezmoi'          # Manage your dotfiles across multiple diverse machines, securely       -- https://github.com/twpayne/chezmoi
 brew 'coreutils'        # GNU File, Shell, and Text utilities                                   -- https://git.savannah.gnu.org/git/coreutils
@@ -65,13 +70,10 @@ brew 'mas'                 # Mac App Store command-line interface               
 
 {{- if .personal }}
 # Personal environment packages
-brew 'mackup'           # Keep your Mac's application settings in sync                          -- https://github.com/lra/mackup
+# brew 'mackup'           # Keep your Mac's application settings in sync                          -- https://github.com/lra/mackup
 {{- end }}
 
-# Tap repositories
-tap 'cirruslabs/cli'
-tap 'rcmdnk/file'
-tap 'steipete/tap'
+
 brew 'brew-file'
 
 {{- if not .headless }}
@@ -82,10 +84,10 @@ cask 'alfred'               # Application launcher and productivity software    
 cask 'beyond-compare'       # Compare files and folders                                         -- https://www.scootersoftware.com/
 cask 'chatgpt'              # OpenAI's official ChatGPT desktop app                             -- https://chatgpt.com/
 cask 'claude'               # Anthropic's official Claude AI desktop app                        -- https://claude.ai/download
-cask 'claude-code'          # Anthropic's terminal-based AI coding assistant                    -- https://www.anthropic.com/claude-code
 cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
 cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
 cask 'docker-desktop'       # Pack, ship and run any application as a lightweight container     -- https://www.docker.com/
+cask 'orbstack'             # Fast, lightweight Docker & Linux on macOS (primary runtime)       -- https://orbstack.dev/
 cask 'github'               # Desktop client for GitHub repositories                            -- https://desktop.github.com/
 cask 'iterm2'               # Terminal emulator as alternative to Apple's Terminal app          -- https://iterm2.com/
 cask 'itermai'              # Enable generative AI features in iTerm2                           -- https://iterm2.com/ai-plugin.html
