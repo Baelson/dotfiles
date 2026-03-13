@@ -12,8 +12,19 @@ fi
 ############################################
 ###            shell options             ###
 ############################################
+# zsh options - https://zsh.sourceforge.io/Doc/Release/Options.html
+unsetopt autopushd
 setopt autocd
-setopt NO_CASE_GLOB
+setopt nocaseglob
+setopt extendedglob
+setopt globdots
+setopt markdirs
+setopt rmstarwait
+setopt cdablevars
+setopt histignorealldups
+setopt pushdtohome
+setopt badpattern
+setopt globstarshort
 
 autoload -Uz compinit
 compinit
