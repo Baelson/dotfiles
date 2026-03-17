@@ -71,7 +71,9 @@ To override automatic detection, run:
 {{- if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
 sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
 {{- end }}
+{{- if stat (joinPath .chezmoi.homeDir ".config/chezmoi/key.txt") }}
 encryption = "age"
+{{- end }}
 
 [data]
     ephemeral = {{ $ephemeral }}
@@ -80,10 +82,12 @@ encryption = "age"
     work = {{ $work }}
     hostname = {{ $hostname | quote }}
 
-# Encryption settings
+# Encryption settings (only active when age key is provisioned)
+{{- if stat (joinPath .chezmoi.homeDir ".config/chezmoi/key.txt") }}
 [age]
     identity = "~/.config/chezmoi/key.txt"
     recipient = "age1ss3dfd8sjf8lkped82c2yn3y88vrkm665d2ukh955p3e9xr7hfps3w5m7w"
+{{- end }}
 
 # Git settings
 [git]

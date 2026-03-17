@@ -44,7 +44,7 @@ brew 'direnv'           # Load/unload environment variables based on $PWD       
 brew 'fzf'              # Command-line fuzzy finder written in Go                               -- https://github.com/junegunn/fzf
 {{- if not .headless }}
 brew 'tmux'             # Terminal multiplexer                                                  -- https://github.com/tmux/tmux
-brew 'tmuxwatch'        # Live tmux dashboard with Bubble Tea UI                                -- https://github.com/steipete/tmuxwatch
+brew 'steipete/tap/tmuxwatch'  # Live tmux dashboard with Bubble Tea UI                          -- https://github.com/steipete/tmuxwatch
 {{- end }}
 brew 'zsh-completions'  # Additional completion definitions for zsh-users                       -- https://github.com/zsh-users/zsh-completions
 
@@ -74,7 +74,7 @@ brew 'mas'                 # Mac App Store command-line interface               
 {{- end }}
 
 
-brew 'brew-file'
+brew 'rcmdnk/file/brew-file'  # Brewfile manager for Homebrew                                    -- https://github.com/rcmdnk/homebrew-file
 
 {{- if not .headless }}
 # GUI Applications (non-headless environments)

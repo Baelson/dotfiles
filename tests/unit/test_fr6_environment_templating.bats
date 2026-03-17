@@ -107,7 +107,7 @@ teardown() {
     ssh_templating_ready=false
 
     # Look for SSH template or encrypted SSH configs
-    if [[ -f "$DOTFILES_SOURCE_DIR/dot_ssh/config.tmpl" ]] || find "$DOTFILES_ROOT" -name "encrypted_dot_ssh" -type d 2>/dev/null | grep -q .; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/private_dot_ssh/config.tmpl" ]] || find "$DOTFILES_ROOT" -name "encrypted_dot_ssh" -type d 2>/dev/null | grep -q .; then
         ssh_templating_ready=true
     fi
 
