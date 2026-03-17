@@ -14,10 +14,12 @@
 ~MSle0~//
 
 # Command Line History (newest to oldest):
+:q!
+|2,0,1773765578,,"q!"
+:q1
+|2,0,1773765572,,"q1"
 :qa!
 |2,0,1770771168,,"qa!"
-:q!
-|2,0,1755206880,,"q!"
 :!q
 |2,0,1755206747,,"!q"
 :!a
@@ -42,33 +44,52 @@
 # Debug Line History (newest to oldest):
 
 # Registers:
+""0	CHAR	0
+	u
+|3,1,0,0,1,0,1773765553,"u"
 "a	CHAR	0
 	a:€kb:q:q€kb!a:!q
 |3,0,10,0,1,0,1755206739,"a:€kb:q:q€kb!a:!q"
 
 # File marks:
-'0  1  0  ~/Library/Application Support/Code/User/settings.json
-|4,48,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
-'1  67  0  ~/Brewfile
-|4,49,67,0,1770771151,"~/Brewfile"
-'2  1  0  ~/.zshrc
-|4,50,1,0,1770771124,"~/.zshrc"
-'3  1  0  ~/.p10k.zsh
-|4,51,1,0,1770771107,"~/.p10k.zsh"
-'4  46  91  ~/.claude/settings.json
-|4,52,46,91,1770771092,"~/.claude/settings.json"
-'5  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,53,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
-'6  6  0  ~/Git/DuqueClan-Configs/Mackup/.p10k.zsh
-|4,54,6,0,1751070120,"~/Git/DuqueClan-Configs/Mackup/.p10k.zsh"
+'0  35  2  /private/var/folders/zw/mdb7vmqs6mg3tz9sm53kp50m0000gq/T/chezmoi-merge1117997179/known_hosts
+|4,48,35,2,1773765578,"/private/var/folders/zw/mdb7vmqs6mg3tz9sm53kp50m0000gq/T/chezmoi-merge1117997179/known_hosts"
+'1  1  0  ~/Library/Application Support/Code/User/settings.json
+|4,49,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
+'2  1  0  ~/Library/Application Support/Code/User/settings.json
+|4,50,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
+'3  67  0  ~/Brewfile
+|4,51,67,0,1770771151,"~/Brewfile"
+'4  67  0  ~/Brewfile
+|4,52,67,0,1770771151,"~/Brewfile"
+'5  1  0  ~/.zshrc
+|4,53,1,0,1770771124,"~/.zshrc"
+'6  1  0  ~/.zshrc
+|4,54,1,0,1770771124,"~/.zshrc"
+'7  1  0  ~/.p10k.zsh
+|4,55,1,0,1770771107,"~/.p10k.zsh"
+'8  1  0  ~/.p10k.zsh
+|4,56,1,0,1770771107,"~/.p10k.zsh"
+'9  46  91  ~/.claude/settings.json
+|4,57,46,91,1770771092,"~/.claude/settings.json"
 
 # Jumplist (newest first):
+-'  35  2  /private/var/folders/zw/mdb7vmqs6mg3tz9sm53kp50m0000gq/T/chezmoi-merge1117997179/known_hosts
+|4,39,35,2,1773765578,"/private/var/folders/zw/mdb7vmqs6mg3tz9sm53kp50m0000gq/T/chezmoi-merge1117997179/known_hosts"
+-'  1  0  ~/Library/Application Support/Code/User/settings.json
+|4,39,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
 -'  1  0  ~/Library/Application Support/Code/User/settings.json
 |4,39,1,0,1770771168,"~/Library/Application Support/Code/User/settings.json"
 -'  67  0  ~/Brewfile
 |4,39,67,0,1770771151,"~/Brewfile"
 -'  67  0  ~/Brewfile
 |4,39,67,0,1770771151,"~/Brewfile"
+-'  67  0  ~/Brewfile
+|4,39,67,0,1770771151,"~/Brewfile"
+-'  1  0  ~/Brewfile
+|4,39,1,0,1770771124,"~/Brewfile"
+-'  1  0  ~/.zshrc
+|4,39,1,0,1770771124,"~/.zshrc"
 -'  1  0  ~/Brewfile
 |4,39,1,0,1770771124,"~/Brewfile"
 -'  1  0  ~/.zshrc
@@ -97,6 +118,10 @@
 |4,39,1,0,1770771107,"~/.p10k.zsh"
 -'  1  0  ~/.p10k.zsh
 |4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  1  0  ~/.p10k.zsh
+|4,39,1,0,1770771107,"~/.p10k.zsh"
+-'  46  91  ~/.claude/settings.json
+|4,39,46,91,1770771092,"~/.claude/settings.json"
 -'  46  91  ~/.claude/settings.json
 |4,39,46,91,1770771092,"~/.claude/settings.json"
 -'  46  91  ~/.claude/settings.json
@@ -161,6 +186,8 @@
 |4,39,1,0,1770770958,"~/.claude/settings.json"
 -'  1  0  ~/.claude/settings.json
 |4,39,1,0,1770770958,"~/.claude/settings.json"
+-'  1  0  ~/.claude/settings.json
+|4,39,1,0,1770770958,"~/.claude/settings.json"
 -'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
 |4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 -'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
@@ -225,24 +252,8 @@
 |4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 -'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
 |4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
--'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
-|4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
+-'  193  18  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
+|4,39,193,18,1755206880,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 -'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
 |4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 -'  202  11  ~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile
@@ -265,6 +276,18 @@
 |4,39,202,11,1755206751,"~/.config/brewfile/Baelson_DuqueClan-Configs/Brewfile"
 
 # History of marks within files (newest to oldest):
+
+> /private/var/folders/zw/mdb7vmqs6mg3tz9sm53kp50m0000gq/T/chezmoi-merge1117997179/known_hosts
+	*	1773765572	0
+	"	35	2
+
+> /private/var/folders/zw/mdb7vmqs6mg3tz9sm53kp50m0000gq/T/chezmoi-merge-plaintext1982142760/private_dot_ssh/encrypted_private_known_hosts.age
+	*	1773765566	0
+	"	35	2
+
+> ~/.ssh/known_hosts
+	*	1773765555	0
+	"	36	2
 
 > ~/Library/Application Support/Code/User/settings.json
 	*	1770771151	0
