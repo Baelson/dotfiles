@@ -1,0 +1,5 @@
+[".local/share/test-chezmoi-external"]
+    type = "archive"
+    url = "https://github.com/zsh-users/antigen/archive/refs/tags/v2.2.3.tar.gz"
+    exact = true
+    stripComponents = 1
