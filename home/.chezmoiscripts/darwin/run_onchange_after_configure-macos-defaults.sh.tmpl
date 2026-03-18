@@ -99,25 +99,14 @@ defaults write com.apple.Terminal "Default Window Settings" -string "Default-Hom
 defaults write com.apple.Terminal "Startup Window Settings" -string "Homebrew"
 defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"
 
-# iTerm2 preferences
+# iTerm2 preferences — load settings from chezmoi-managed plist
+# chezmoi deploys the full plist to ~/.config/iterm2/com.googlecode.iterm2.plist.
+# iTerm2 reads/writes from this custom folder, and the chezmoi-sync stop hook
+# syncs changes back to the chezmoi source automatically.
 echo "🖥️  Configuring iTerm2..."
-# Disable custom prefs folder — we manage iTerm2 settings via PlistBuddy
-# and DynamicProfiles, not via a shared plist in a custom directory.
-# LoadPrefsFromCustomFolder causes "Missing or malformed file" errors
-# when the custom dir doesn't contain a com.googlecode.iterm2.plist.
-defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "false"
-
-# Set Nerd Font on iTerm2 Default profile for p10k/tmux glyph rendering
-# PlistBuddy targets the first profile (Default) in the New Bookmarks array.
-# Uses Set with a fallback to Add in case the key doesn't exist yet.
-ITERM_PLIST="$HOME/Library/Preferences/com.googlecode.iterm2.plist"
-if [[ -f "$ITERM_PLIST" ]]; then
-    echo "🔤 Setting iTerm2 font to MesloLGS Nerd Font..."
-    /usr/libexec/PlistBuddy -c "Set ':New Bookmarks:0:Normal Font' 'MesloLGS-NF-Regular 11'" "$ITERM_PLIST" 2>/dev/null || \
-        /usr/libexec/PlistBuddy -c "Add ':New Bookmarks:0:Normal Font' string 'MesloLGS-NF-Regular 11'" "$ITERM_PLIST" 2>/dev/null
-    /usr/libexec/PlistBuddy -c "Set ':New Bookmarks:0:Use Non-ASCII Font' false" "$ITERM_PLIST" 2>/dev/null || \
-        /usr/libexec/PlistBuddy -c "Add ':New Bookmarks:0:Use Non-ASCII Font' bool false" "$ITERM_PLIST" 2>/dev/null
-fi
+# shellcheck disable=SC2088  # iTerm2 expands ~ internally for PrefsCustomFolder
+defaults write com.googlecode.iterm2 "PrefsCustomFolder" -string "~/.config/iterm2"
+defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "true"
 
 # Moom window manager preferences
 echo "🪟 Configuring Moom..."

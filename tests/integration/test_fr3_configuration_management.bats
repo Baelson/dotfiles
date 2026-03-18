@@ -227,20 +227,20 @@ teardown() {
     echo "$managed" | grep -qF ".zshrc"
 }
 
-# ── FR-3.12: External framework contents are ignored ────────
+# ── FR-3.12: External framework archives are managed by chezmoi ────────
 
-@test "FR-3.12: Given shell frameworks in .chezmoiexternal, when chezmoi managed is run, then framework internals are not listed" {
+@test "FR-3.12: Given shell frameworks in .chezmoiexternal, when chezmoi managed is run, then external archives are present" {
     # Given
     command -v chezmoi >/dev/null 2>&1 || skip "chezmoi not installed"
 
-    # When
-    local managed_count
-    managed_count=$(chezmoi managed 2>/dev/null | wc -l | tr -d ' ')
+    # When — check that externals show up in managed output
+    # (previously these were .chezmoiignored, which broke downloads on new machines)
+    local external_count
+    external_count=$(chezmoi managed 2>/dev/null | grep -c '\.local/share/' || true)
 
-    # Then — managed count should be reasonable (< 200, not 1500+)
-    [[ $managed_count -lt 200 ]] || {
-        echo "chezmoi managed lists $managed_count files — external framework contents likely leaking" >&2
-        echo "Expected < 200 managed files (externals should be ignored)" >&2
+    # Then — external framework files should be present (oh-my-zsh, antigen, dircolors)
+    [[ $external_count -gt 0 ]] || {
+        echo "No .local/share/ files in chezmoi managed — externals may not be configured" >&2
         return 1
     }
 }
