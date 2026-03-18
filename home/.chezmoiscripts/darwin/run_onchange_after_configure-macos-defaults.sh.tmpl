@@ -100,10 +100,12 @@ defaults write com.apple.Terminal "Startup Window Settings" -string "Homebrew"
 defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"
 
 # iTerm2 preferences
-echo "🖥️  Configuring iTerm2 preferences folder..."
-# shellcheck disable=SC2088  # iTerm2 expands ~ internally for PrefsCustomFolder
-defaults write com.googlecode.iterm2 "PrefsCustomFolder" -string "~/.config/iterm2"
-defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "true"
+echo "🖥️  Configuring iTerm2..."
+# Disable custom prefs folder — we manage iTerm2 settings via PlistBuddy
+# and DynamicProfiles, not via a shared plist in a custom directory.
+# LoadPrefsFromCustomFolder causes "Missing or malformed file" errors
+# when the custom dir doesn't contain a com.googlecode.iterm2.plist.
+defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "false"
 
 # Set Nerd Font on iTerm2 Default profile for p10k/tmux glyph rendering
 # PlistBuddy targets the first profile (Default) in the New Bookmarks array.
