@@ -19,12 +19,6 @@ CHANGELOG*
 *.md
 *.txt
 
-# ── Shell frameworks (upstream code, not personal config) ─
-# Downloaded by .chezmoiexternal.toml.tmpl; ignore contents
-# to keep `chezmoi managed` output readable
-.local/share/oh-my-zsh/**
-.local/share/antigen/**
-.local/share/dircolors/**
 
 # ── Editor temp files ───────────────────────────────
 *.swp
