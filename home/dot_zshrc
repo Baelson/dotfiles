@@ -41,7 +41,7 @@ zstyle ':omz:lib:theme-and-appearance' gnu-ls yes
 ############################################
 export ITERM2_SQUELCH_MARK=1
 export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=1
-source "${HOME}/.iterm2_shell_integration.zsh"
+[[ -f "${HOME}/.iterm2_shell_integration.zsh" ]] && source "${HOME}/.iterm2_shell_integration.zsh"
 
 ############################################
 ###     Shell Env Interactive.           ###
@@ -225,8 +225,9 @@ bindkey "^[e" end-of-line
 # alias gfa="cd ~/Git/Titan/apollo && git fetch gerrit"
 
 # Auto attach or create a new tmux session if inside SSH
+# Stderr redirected to avoid console output that triggers p10k instant prompt warning
 if [[ -n $SSH_CONNECTION ]] && command -v tmux &>/dev/null; then
-   [[ -z $TMUX ]] && (tmux attach-session -t default || tmux new-session -s default)
+   [[ -z $TMUX ]] && (tmux attach-session -t default 2>/dev/null || tmux new-session -s default) 2>/dev/null
 fi
 # bun completions
 [ -s "/Users/baelson/.bun/_bun" ] && source "/Users/baelson/.bun/_bun"
