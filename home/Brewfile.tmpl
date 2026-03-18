@@ -79,6 +79,9 @@ brew 'rcmdnk/file/brew-file'  # Brewfile manager for Homebrew                   
 {{- if not .headless }}
 # GUI Applications (non-headless environments)
 
+# Fonts (required for p10k/tmux status line glyphs)
+cask 'font-meslo-lg-nerd-font'  # Meslo Nerd Font — Powerline glyphs for p10k and tmux         -- https://github.com/ryanoasis/nerd-fonts
+
 # Development tools
 cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
 cask 'beyond-compare'       # Compare files and folders                                         -- https://www.scootersoftware.com/

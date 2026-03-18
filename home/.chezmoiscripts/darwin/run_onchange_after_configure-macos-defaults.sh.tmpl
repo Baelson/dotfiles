@@ -99,13 +99,23 @@ defaults write com.apple.Terminal "Default Window Settings" -string "Default-Hom
 defaults write com.apple.Terminal "Startup Window Settings" -string "Homebrew"
 defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"
 
-# iTerm2 — delegate full config to plist sync via LoadPrefsFromCustomFolder
-# iTerm2 profiles contain binary font data, color schemes, keyboard maps,
-# and AI config that cannot be reliably set via defaults write.
+# iTerm2 preferences
 echo "🖥️  Configuring iTerm2 preferences folder..."
 # shellcheck disable=SC2088  # iTerm2 expands ~ internally for PrefsCustomFolder
 defaults write com.googlecode.iterm2 "PrefsCustomFolder" -string "~/.config/iterm2"
 defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "true"
+
+# Set Nerd Font on iTerm2 Default profile for p10k/tmux glyph rendering
+# PlistBuddy targets the first profile (Default) in the New Bookmarks array.
+# Uses Set with a fallback to Add in case the key doesn't exist yet.
+ITERM_PLIST="$HOME/Library/Preferences/com.googlecode.iterm2.plist"
+if [[ -f "$ITERM_PLIST" ]]; then
+    echo "🔤 Setting iTerm2 font to MesloLGS Nerd Font..."
+    /usr/libexec/PlistBuddy -c "Set ':New Bookmarks:0:Normal Font' 'MesloLGS-NF-Regular 11'" "$ITERM_PLIST" 2>/dev/null || \
+        /usr/libexec/PlistBuddy -c "Add ':New Bookmarks:0:Normal Font' string 'MesloLGS-NF-Regular 11'" "$ITERM_PLIST" 2>/dev/null
+    /usr/libexec/PlistBuddy -c "Set ':New Bookmarks:0:Use Non-ASCII Font' false" "$ITERM_PLIST" 2>/dev/null || \
+        /usr/libexec/PlistBuddy -c "Add ':New Bookmarks:0:Use Non-ASCII Font' bool false" "$ITERM_PLIST" 2>/dev/null
+fi
 
 # Moom window manager preferences
 echo "🪟 Configuring Moom..."
