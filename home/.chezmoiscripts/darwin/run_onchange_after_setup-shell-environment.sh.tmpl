@@ -26,10 +26,14 @@ echo "🐚 Setting up shell environment..."
 if command -v fzf >/dev/null 2>&1; then
     echo "🔍 Setting up fzf key bindings..."
     if [[ ! -f "$HOME/.fzf.zsh" ]]; then
+        # Flags:
+        #   --key-bindings  Install CTRL-T, CTRL-R, ALT-C key bindings for shell
+        #   --completion    Install fuzzy completion for commands and paths
+        #   --no-update-rc  Don't modify shell rc files (chezmoi manages those)
         "$(brew --prefix)/opt/fzf/install" \
-            --key-bindings \  # Install key bindings for shell
-            --completion \    # Install fuzzy completion
-            --no-update-rc    # Don't modify shell rc files (chezmoi manages those)
+            --key-bindings \
+            --completion \
+            --no-update-rc
     fi
     echo "✅ fzf configured"
 fi
