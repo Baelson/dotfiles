@@ -59,6 +59,7 @@ defaults write com.apple.AppleMultitouchTrackpad "Clicking" -bool "true"
 
 # Screenshots preferences
 echo "📸 Configuring Screenshots..."
+# shellcheck disable=SC2088  # macOS defaults expands ~ at the Cocoa level
 defaults write com.apple.screencapture "location" -string "~/Desktop/Screenshots"
 defaults write com.apple.screencapture "type" -string "png"
 defaults write com.apple.screencapture "disable-shadow" -bool "true"
@@ -102,6 +103,7 @@ defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"
 # iTerm2 profiles contain binary font data, color schemes, keyboard maps,
 # and AI config that cannot be reliably set via defaults write.
 echo "🖥️  Configuring iTerm2 preferences folder..."
+# shellcheck disable=SC2088  # iTerm2 expands ~ internally for PrefsCustomFolder
 defaults write com.googlecode.iterm2 "PrefsCustomFolder" -string "~/.config/iterm2"
 defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "true"
 

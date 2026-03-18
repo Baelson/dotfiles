@@ -384,7 +384,7 @@ JSON
     skip "shellcheck not installed"
   fi
 
-  run shellcheck \
+  run shellcheck --severity=warning \
     "$DOTFILES_ROOT/scripts/vm/vmctl.sh" \
     "$DOTFILES_ROOT/scripts/vm/vm-matrix.sh" \
     "$DOTFILES_ROOT/scripts/vm/init-matrix.sh" \

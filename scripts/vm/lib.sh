@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared helpers for local macOS VM infrastructure scripts.
 
 set -euo pipefail

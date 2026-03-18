@@ -11,14 +11,14 @@
 #   pre-commit run --all-files
 
 repos:
-  # Shell script linting and formatting
+  # Shell script linting — .bash files checked directly, .sh/.sh.tmpl via local hook
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6
     hooks:
       - id: shellcheck
         args: [--severity=warning]
-        files: \.(bash)$  # Only check .bash files, skip .sh (which are zsh)
-        exclude: ^(tests/fixtures/|.*\.sh$)
+        files: \.(bash)$
+        exclude: ^tests/fixtures/
 
   # File formatting and cleanup
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -45,6 +45,15 @@ repos:
         language: script
         stages: [pre-commit]
         files: \.(sh|bash|bats)$
+        pass_filenames: false
+
+      # ShellCheck for chezmoi script templates (renders through chezmoi first)
+      - id: shellcheck-templates
+        name: ShellCheck Chezmoi Templates
+        entry: ./scripts/test/shellcheck-templates.sh
+        language: script
+        stages: [pre-commit]
+        files: home/\.chezmoiscripts/.*\.(sh|sh\.tmpl)$
         pass_filenames: false
 
       # Validate test helper syntax
