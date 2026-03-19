@@ -39,7 +39,7 @@ if [[ "$ICLOUD_ACCOUNT_COUNT" -eq 0 ]]; then
     echo "💡 Sign into the App Store to install MAS apps, then re-run: chezmoi apply"
     # Extract all MAS app IDs from Brewfile and tell brew bundle to skip them
     # Skipper matches on either app name or numeric ID (see homebrew bundle/skipper.rb)
-    MAS_IDS=$(grep '^mas ' "$HOME/Brewfile" 2>/dev/null | sed 's/.*id: //' | tr '\n' ' ')
+    MAS_IDS=$(grep '^mas ' "$HOME/Brewfile" 2>/dev/null | sed 's/.*id: //' | tr '\n' ' ' || true)
     if [[ -n "$MAS_IDS" ]]; then
         export HOMEBREW_BUNDLE_MAS_SKIP="$MAS_IDS"
     fi
