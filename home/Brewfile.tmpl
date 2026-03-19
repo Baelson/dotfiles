@@ -9,11 +9,16 @@
 # - chezmoi templating: https://www.chezmoi.io/user-guide/templating/
 # - Package management patterns: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
 #
+{{- /* Default mas to false if not provided (backwards-compatible with tests) */ -}}
+{{- $mas := false -}}
+{{- if hasKey . "mas" -}}{{- $mas = .mas -}}{{- end -}}
+#
 # Generated Configuration:
 # Environment: {{ if .work }}work{{ else if .personal }}personal{{ else }}unknown{{ end }}
 # Hostname: {{ .hostname }}
 # Ephemeral: {{ .ephemeral }} ({{ if .ephemeral }}minimal packages, no GUI apps{{ else }}full installation{{ end }})
 # Headless: {{ .headless }} ({{ if .headless }}CLI tools only{{ else }}includes GUI applications{{ end }})
+# MAS: {{ $mas }} ({{ if $mas }}Mac App Store apps included{{ else }}MAS apps skipped — use CHEZMOI_MAS=true to enable{{ end }})
 #
 # Package Categories:
 # - Core development tools (all environments)
@@ -110,13 +115,13 @@ cask 'figma'                # Collaborative team software                       
 cask 'softraid'             # Powerful and intuitive software RAID utility                      -- https://www.softraid.com/
 {{- end }}
 
-{{- if .work }}
-# Work-specific applications
+{{- if and .work $mas }}
+# Work-specific applications (requires: CHEZMOI_MAS=true)
 mas 'Slack (4.45.64)', id: 803453959
 {{- end }}
 
-{{- if not .ephemeral }}
-# App Store applications (persistent environments only)
+{{- if and (not .ephemeral) $mas }}
+# App Store applications (requires: CHEZMOI_MAS=true)
 {{- if .personal }}
 mas 'Amphetamine (5.3.2)', id: 937984704
 mas 'Apple Configurator (2.18)', id: 1037126344
@@ -152,7 +157,9 @@ mas 'Xcode (16.4)', id: 497799835
 # mas 'Noir (2025.1.6)', id: 1592917505
 # mas 'OmniPlan (4.9.6)', id: 1460319993
 {{- end }}
+{{- end }}
 
+{{- if not .ephemeral }}
 # VS Code extensions (all non-headless environments)
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"

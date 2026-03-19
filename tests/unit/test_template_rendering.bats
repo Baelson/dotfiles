@@ -143,7 +143,7 @@ teardown() {
 }
 
 @test "TEMPLATE-9: Brewfile includes Mac App Store apps in persistent personal environment" {
-    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "hostname=personal-mac"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "mas=true" "hostname=personal-mac"
     assert_chezmoi_success
 
     # Should include Mac App Store apps

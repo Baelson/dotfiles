@@ -32,9 +32,9 @@ teardown() {
     [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]
 
     # When
-    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "mas=true" "hostname=test-host"
 
-    # Then — rendered output has all three directive types
+    # Then — rendered output has all three directive types (mas requires mas=true)
     assert_rendered_contains "^brew "
     assert_rendered_contains "^cask "
     assert_rendered_contains "^mas "
@@ -77,8 +77,8 @@ teardown() {
 # ── FR-2.4: MAS apps in rendered Brewfile ────────────────────
 
 @test "FR-2.4: Given personal non-headless environment, when Brewfile renders, then MAS apps are present" {
-    # Given
-    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+    # Given (mas=true required to include MAS apps)
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "mas=true" "hostname=test-host"
 
     # Then — at least 1 MAS entry
     local mas_count
@@ -126,8 +126,8 @@ teardown() {
 # ── FR-2.7: Package count meets 70+ requirement ─────────────
 
 @test "FR-2.7: Given personal full environment, when Brewfile renders, then at least 70 packages are defined" {
-    # Given
-    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "hostname=test-host"
+    # Given (mas=true to include full package count)
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "mas=true" "hostname=test-host"
 
     # When
     local total

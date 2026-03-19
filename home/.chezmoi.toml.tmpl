@@ -20,17 +20,23 @@ Environment Variables Explained:
   * false: Full GUI applications and desktop preferences
 
 - personal: Personal vs work machine differentiation
-  * true: Personal apps (gaming, social, creative tools), all MAS apps
+  * true: Personal apps (gaming, social, creative tools)
   * false: Work-focused apps only, minimal personal tools
 
 - work: Automatically detected based on hostname patterns
   * true: Work-specific apps, corporate tools, limited personal apps
   * false: Full personal setup with all applications
 
+- mas: Mac App Store apps (opt-in, requires Apple ID login)
+  * true: Install MAS apps (requires interactive Apple ID sign-in)
+  * false (default): Skip MAS apps for fully non-interactive bootstrap
+  * Override: CHEZMOI_MAS=true chezmoi apply
+
 Customization:
 To override automatic detection, run:
   chezmoi init --data ephemeral=true
   chezmoi init --data headless=true
+  CHEZMOI_MAS=true chezmoi apply  # enable MAS apps
 */}}
 
 {{/* Default Environment Values */}}
@@ -38,6 +44,7 @@ To override automatic detection, run:
 {{- $headless := false -}}
 {{- $personal := true -}}
 {{- $work := false -}}
+{{- $mas := false -}}
 
 {{/* Automatic Work Environment Detection */}}
 {{- $hostname := .chezmoi.hostname -}}
@@ -68,6 +75,12 @@ To override automatic detection, run:
 {{-   $work = .work -}}
 {{- end -}}
 
+{{- if hasKey . "mas" -}}
+{{-   $mas = .mas -}}
+{{- else if env "CHEZMOI_MAS" -}}
+{{-   $mas = true -}}
+{{- end -}}
+
 {{- if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
 sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
 {{- end }}
@@ -80,6 +93,7 @@ encryption = "age"
     headless = {{ $headless }}
     personal = {{ $personal }}
     work = {{ $work }}
+    mas = {{ $mas }}
     hostname = {{ $hostname | quote }}
 
 # Encryption settings (only active when age key is provisioned)
