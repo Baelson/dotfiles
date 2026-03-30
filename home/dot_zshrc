@@ -243,6 +243,7 @@ alias ocgw-restart='sudo launchctl kickstart -k system/ai.openclaw.gateway'
 alias ocgw-stop='sudo launchctl bootout system/ai.openclaw.gateway'
 alias ocgw-start='sudo launchctl bootstrap system /Library/LaunchDaemons/ai.openclaw.gateway.plist'
 alias ocgw-status='sudo launchctl print system/ai.openclaw.gateway 2>&1 | grep -E "^\s+(state|pid) ="; openclaw gateway health'
+alias ocgw-reboot='sudo fdesetup authrestart'
 
 # OpenClaw Completion
 source "/Users/baelson/.openclaw/completions/openclaw.zsh"
