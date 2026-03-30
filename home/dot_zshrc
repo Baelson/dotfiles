@@ -237,3 +237,6 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 alias claude-mem='/Users/baelson/.bun/bin/bun "/Users/baelson/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
+
+# OpenClaw Completion
+source "/Users/baelson/.openclaw/completions/openclaw.zsh"
