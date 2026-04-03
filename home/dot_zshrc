@@ -41,7 +41,9 @@ zstyle ':omz:lib:theme-and-appearance' gnu-ls yes
 ############################################
 export ITERM2_SQUELCH_MARK=1
 export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=1
-[[ -f "${HOME}/.iterm2_shell_integration.zsh" ]] && source "${HOME}/.iterm2_shell_integration.zsh"
+if [[ -r "${HOME}/.iterm2_shell_integration.zsh" ]]; then
+  source "${HOME}/.iterm2_shell_integration.zsh"
+fi
 
 ############################################
 ###     Shell Env Interactive.           ###
@@ -199,9 +201,6 @@ bindkey "^[f" forward-word
 bindkey "^[a" beginning-of-line
 bindkey "^[e" end-of-line
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
 
 ############################################
 ###              Work Settings          ###
@@ -227,23 +226,41 @@ bindkey "^[e" end-of-line
 # Auto attach or create a new tmux session if inside SSH
 # Stderr redirected to avoid console output that triggers p10k instant prompt warning
 if [[ -n $SSH_CONNECTION ]] && command -v tmux &>/dev/null; then
-   [[ -z $TMUX ]] && (tmux attach-session -t default 2>/dev/null || tmux new-session -s default) 2>/dev/null
+   [[ -z $TMUX ]] && tmux new-session -AD -s default) 2>/dev/null
 fi
-# bun completions
-[ -s "/Users/baelson/.bun/_bun" ] && source "/Users/baelson/.bun/_bun"
 
-# bun
+
+############################################
+###                 bun                  ###
+############################################
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-alias claude-mem='/Users/baelson/.bun/bin/bun "/Users/baelson/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
+# bun completions
+if [[ -s "${BUN_INSTALL}/_bun" ]]; then
+    source "${BUN_INSTALL}/_bun"
+fi
+
+alias claude-mem='${BUN_INSTALL}/bin/bun "${HOME}/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
+
+
+############################################
+###             Open Claw                ###
+############################################
+# openclaw completions
+if [[ -r ${HOME}/.openclaw/completions/openclaw.zsh ]]; then
+    source "${HOME}/.openclaw/completions/openclaw.zsh"
+fi
 
 # OpenClaw Gateway (LaunchDaemon management)
-alias ocgw-restart='sudo launchctl kickstart -k system/ai.openclaw.gateway'
-alias ocgw-stop='sudo launchctl bootout system/ai.openclaw.gateway'
-alias ocgw-start='sudo launchctl bootstrap system /Library/LaunchDaemons/ai.openclaw.gateway.plist'
-alias ocgw-status='sudo launchctl print system/ai.openclaw.gateway 2>&1 | grep -E "^\s+(state|pid) ="; openclaw gateway health'
-alias ocgw-reboot='sudo fdesetup authrestart'
+# alias ocgw-restart='sudo launchctl kickstart -k system/ai.openclaw.gateway'
+# alias ocgw-stop='sudo launchctl bootout system/ai.openclaw.gateway'
+# alias ocgw-start='sudo launchctl bootstrap system /Library/LaunchDaemons/ai.openclaw.gateway.plist'
+# alias ocgw-status='sudo launchctl print system/ai.openclaw.gateway 2>&1 | grep -E "^\s+(state|pid) ="; openclaw gateway health'
+# alias ocgw-reboot='sudo fdesetup authrestart'
 
-# OpenClaw Completion
-source "/Users/baelson/.openclaw/completions/openclaw.zsh"
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+if [[ -r "${HOME}/.p10k.zsh" ]]; then
+  source "${HOME}/.p10k.zsh"
+fi
