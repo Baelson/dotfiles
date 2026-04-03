@@ -258,7 +258,7 @@ bindkey "^[e" end-of-line
 # Auto attach or create a new tmux session if inside SSH
 # Stderr redirected to avoid console output that triggers p10k instant prompt warning
 if [[ -n $SSH_CONNECTION ]] && command -v tmux &>/dev/null; then
-   [[ -z $TMUX ]] && tmux new-session -AD -s default 2>/dev/null
+   [[ -z $TMUX ]] && tmux new-session -AD -s default 2>/dev/null;
 fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
