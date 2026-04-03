@@ -262,6 +262,4 @@ if [[ -n $SSH_CONNECTION ]] && command -v tmux &>/dev/null; then
 fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-if [[ -r "${HOME}/.p10k.zsh" ]]; then
-  source "${HOME}/.p10k.zsh"
-fi
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
