@@ -10,15 +10,16 @@ path+=(/opt/homebrew/sbin)
 path+=(/opt/homebrew/opt/coreutils/libexec/gnubin)
 path+=(/opt/homebrew/opt/grep/libexec/gnubin)
 
-# Append lower-priority paths
-path+=($HOME/bin)
+############################################
+###            User bin directory        ###
+############################################
+# Central reference for scripts migrated out of ~/Git/Tools/.
+# Consumed by chezmoi templates and iTerm2 profile Commands via $HOME.
+path+=("${HOME}/.local/bin")
 path+=(/usr/local/bin)
 
-# uv
-path+=(/Users/baelson/.local/bin)
-
 # Antigravity
-path+=(/Users/baelson/.antigravity/antigravity/bin)
+path+=("${HOME}/.antigravity/antigravity/bin")
 
 ############################################
 ###              Homebrew Env            ###
@@ -28,6 +29,12 @@ export HOMEBREW_PREFIX="/opt/homebrew"
 export HOMEBREW_REPOSITORY="/opt/homebrew"
 export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
 export MANPATH="/opt/homebrew/share/man:/usr/local/opt/coreutils/libexec/gnuman${MANPATH+:$MANPATH}:"
+
+############################################
+###                 bun                  ###
+############################################
+export BUN_INSTALL="${HOME}/.bun"
+path+=("${BUN_INSTALL}/bin")
 
 ############################################
 ###     Shell Env Non-interactive        ###

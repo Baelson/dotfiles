@@ -147,27 +147,13 @@ antigen apply
 
 
 ############################################
-###            User bin directory        ###
-############################################
-# Central reference for scripts migrated out of ~/Git/Tools/.
-# Consumed by chezmoi templates and iTerm2 profile Commands via $HOME.
-export USER_BIN="$HOME/.local/bin"
-path=("$USER_BIN" $path)
-typeset -U path
-
-
-############################################
 ###                 bun                  ###
 ############################################
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# bun completions
+# bun completions. $BUN_INSTALL defined in .zshenv
 if [[ -s "${BUN_INSTALL}/_bun" ]]; then
     source "${BUN_INSTALL}/_bun"
 fi
 
-alias claude-mem='${BUN_INSTALL}/bin/bun "${HOME}/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
 
 
 ############################################
@@ -234,6 +220,7 @@ alias dcconfigs="pushd ~/Git/DuqueClan-Configs"                         # pushd 
 alias gdd="git difftool --dir-diff --no-symlinks"
 alias grsa="git restore --staged ."
 
+alias claude-mem='${BUN_INSTALL}/bin/bun "${HOME}/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
 
 ############################################
 ###             key bindings             ###
