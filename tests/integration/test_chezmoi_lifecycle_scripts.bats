@@ -77,8 +77,8 @@ teardown() {
     # Should include Brewfile hash for change detection
     grep -q "Brewfile.*sha256sum" "$script_path" || grep -q "hash:" "$script_path"
 
-    # Should reference Brewfile location
-    grep -q "\$HOME/Brewfile" "$script_path" || grep -q "~/Brewfile" "$script_path"
+    # Should reference Brewfile location ($HOME or ${HOME} both valid)
+    grep -qE '\$\{?HOME\}?/Brewfile' "$script_path" || grep -q "~/Brewfile" "$script_path"
 }
 
 @test "LIFECYCLE-6: Package script has environment-aware logic" {

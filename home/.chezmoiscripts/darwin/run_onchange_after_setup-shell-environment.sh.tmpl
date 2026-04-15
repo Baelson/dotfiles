@@ -22,9 +22,9 @@ set -euo pipefail
 echo "🐚 Setting up shell environment..."
 
 # Install iTerm2 shell integration if not present
-if [[ ! -f "$HOME/.iterm2_shell_integration.zsh" ]]; then
+if [[ ! -f "${HOME}/.iterm2_shell_integration.zsh" ]]; then
     echo "🔗 Installing iTerm2 shell integration..."
-    curl -fsSL https://iterm2.com/shell_integration/zsh -o "$HOME/.iterm2_shell_integration.zsh" 2>/dev/null && \
+    curl -fsSL https://iterm2.com/shell_integration/zsh -o "${HOME}/.iterm2_shell_integration.zsh" 2>/dev/null && \
         echo "✅ iTerm2 shell integration installed" || \
         echo "⚠️  iTerm2 shell integration download failed (non-fatal)"
 fi
@@ -33,7 +33,7 @@ fi
 # Setup fzf key bindings and completion (persistent environments only)
 if command -v fzf >/dev/null 2>&1; then
     echo "🔍 Setting up fzf key bindings..."
-    if [[ ! -f "$HOME/.fzf.zsh" ]]; then
+    if [[ ! -f "${HOME}/.fzf.zsh" ]]; then
         # Flags:
         #   --key-bindings  Install CTRL-T, CTRL-R, ALT-C key bindings for shell
         #   --completion    Install fuzzy completion for commands and paths

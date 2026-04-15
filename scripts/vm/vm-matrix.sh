@@ -20,7 +20,7 @@ main() {
   parse_arguments "$@"
   validate_matrix
 
-  if [[ "$ACTION" == 'doctor' && -z "$PROFILE_FILTER" ]]; then
+  if [[ "${ACTION}" == 'doctor' && -z "${PROFILE_FILTER}" ]]; then
     run_vmctl_doctor
     return 0
   fi
@@ -101,9 +101,9 @@ parse_arguments() {
 }
 
 validate_matrix() {
-  [[ -f "$MATRIX_FILE" ]] || vm_die "Matrix file not found: ${MATRIX_FILE}"
+  [[ -f "${MATRIX_FILE}" ]] || vm_die "Matrix file not found: ${MATRIX_FILE}"
 
-  if ! vm_matrix_validate_schema "$MATRIX_FILE" >/dev/null; then
+  if ! vm_matrix_validate_schema "${MATRIX_FILE}" >/dev/null; then
     vm_die "Matrix validation failed: ${MATRIX_FILE}"
   fi
 }
@@ -112,33 +112,33 @@ run_vmctl_doctor() {
   local -a cmd=(
     "${SCRIPT_DIR}/vmctl.sh"
     --action doctor
-    --matrix-file "$MATRIX_FILE"
+    --matrix-file "${MATRIX_FILE}"
   )
 
-  if [[ "$VERBOSE" == 'true' ]]; then
+  if [[ "${VERBOSE}" == 'true' ]]; then
     cmd+=( --verbose )
   fi
 
-  if [[ "$DRY_RUN" == 'true' ]]; then
+  if [[ "${DRY_RUN}" == 'true' ]]; then
     cmd+=( --dry-run )
   fi
 
-  vm_run_or_echo "$DRY_RUN" "${cmd[@]}"
+  vm_run_or_echo "${DRY_RUN}" "${cmd[@]}"
 }
 
 collect_profiles() {
   local include_disabled_arg='true'
 
-  if [[ "$INCLUDE_DISABLED" != 'true' ]]; then
+  if [[ "${INCLUDE_DISABLED}" != 'true' ]]; then
     include_disabled_arg='false'
   fi
 
-  if [[ -n "$PROFILE_FILTER" ]]; then
-    printf '%s\n' "$PROFILE_FILTER" | tr ',' '\n'
+  if [[ -n "${PROFILE_FILTER}" ]]; then
+    printf '%s\n' "${PROFILE_FILTER}" | tr ',' '\n'
     return 0
   fi
 
-  vm_matrix_profiles "$MATRIX_FILE" "$include_disabled_arg"
+  vm_matrix_profiles "${MATRIX_FILE}" "${include_disabled_arg}"
 }
 
 run_matrix_action() {
@@ -149,40 +149,40 @@ run_matrix_action() {
   profiles="$(collect_profiles)"
 
   while IFS= read -r profile; do
-    [[ -n "$profile" ]] || continue
+    [[ -n "${profile}" ]] || continue
 
     vm_log_info "Running action '${ACTION}' for profile '${profile}'"
 
     local -a cmd=(
       "${SCRIPT_DIR}/vmctl.sh"
-      --action "$ACTION"
-      --profile "$profile"
-      --matrix-file "$MATRIX_FILE"
+      --action "${ACTION}"
+      --profile "${profile}"
+      --matrix-file "${MATRIX_FILE}"
     )
 
-    if [[ "$VERBOSE" == 'true' ]]; then
+    if [[ "${VERBOSE}" == 'true' ]]; then
       cmd+=( --verbose )
     fi
 
-    if [[ "$DRY_RUN" == 'true' ]]; then
+    if [[ "${DRY_RUN}" == 'true' ]]; then
       cmd+=( --dry-run )
     fi
 
-    if [[ "$APPLY_MODE" == 'true' ]]; then
+    if [[ "${APPLY_MODE}" == 'true' ]]; then
       cmd+=( --apply )
     fi
 
-    if [[ "$KEEP_VM" == 'true' ]]; then
+    if [[ "${KEEP_VM}" == 'true' ]]; then
       cmd+=( --keep-vm )
     fi
 
-    if ! vm_run_or_echo "$DRY_RUN" "${cmd[@]}"; then
+    if ! vm_run_or_echo "${DRY_RUN}" "${cmd[@]}"; then
       failures=$((failures + 1))
       vm_log_error "Action '${ACTION}' failed for profile '${profile}'"
     fi
-  done <<< "$profiles"
+  done <<< "${profiles}"
 
-  if [[ "$failures" -gt 0 ]]; then
+  if [[ "${failures}" -gt 0 ]]; then
     vm_die "Matrix action completed with ${failures} failure(s)."
   fi
 

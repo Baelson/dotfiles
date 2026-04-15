@@ -23,7 +23,7 @@ vm_die() {
 vm_repo_root() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  dirname "$(dirname "$script_dir")"
+  dirname "$(dirname "${script_dir}")"
 }
 
 vm_default_matrix_file() {
@@ -35,21 +35,21 @@ vm_default_matrix_file() {
   local_matrix="${repo_root}/infrastructure/vm/macos-matrix.local.json"
   example_matrix="${repo_root}/infrastructure/vm/macos-matrix.example.json"
 
-  if [[ -f "$local_matrix" ]]; then
-    printf '%s\n' "$local_matrix"
+  if [[ -f "${local_matrix}" ]]; then
+    printf '%s\n' "${local_matrix}"
     return 0
   fi
 
-  printf '%s\n' "$example_matrix"
+  printf '%s\n' "${example_matrix}"
 }
 
 vm_require_command() {
   local command_name="$1"
   local install_hint="$2"
 
-  if ! command -v "$command_name" >/dev/null 2>&1; then
+  if ! command -v "${command_name}" >/dev/null 2>&1; then
     vm_log_error "Missing required command: ${command_name}"
-    if [[ -n "$install_hint" ]]; then
+    if [[ -n "${install_hint}" ]]; then
       vm_log_error "Install hint: ${install_hint}"
     fi
     return 1
@@ -63,7 +63,7 @@ vm_print_command() {
   local arg
 
   for arg in "$@"; do
-    escaped+="$(printf '%q' "$arg") "
+    escaped+="$(printf '%q' "${arg}") "
   done
 
   printf '%s\n' "${escaped% }"
@@ -73,7 +73,7 @@ vm_run_or_echo() {
   local dry_run="$1"
   shift
 
-  if [[ "$dry_run" == 'true' ]]; then
+  if [[ "${dry_run}" == 'true' ]]; then
     vm_log_info "[dry-run] $(vm_print_command "$@")"
     return 0
   fi
@@ -84,7 +84,7 @@ vm_run_or_echo() {
 vm_matrix_validate_schema() {
   local matrix_file="$1"
 
-  python3 - "$matrix_file" <<'PY'
+  python3 - "${matrix_file}" <<'PY'
 import json
 import pathlib
 import sys
@@ -141,7 +141,7 @@ vm_matrix_profiles() {
   local matrix_file="$1"
   local only_enabled="$2"
 
-  python3 - "$matrix_file" "$only_enabled" <<'PY'
+  python3 - "${matrix_file}" "${only_enabled}" <<'PY'
 import json
 import sys
 
@@ -164,7 +164,7 @@ vm_matrix_profile_exists() {
   local matrix_file="$1"
   local profile_name="$2"
 
-  python3 - "$matrix_file" "$profile_name" <<'PY'
+  python3 - "${matrix_file}" "${profile_name}" <<'PY'
 import json
 import sys
 
@@ -186,7 +186,7 @@ vm_matrix_profile_field() {
   local profile_name="$2"
   local field_name="$3"
 
-  python3 - "$matrix_file" "$profile_name" "$field_name" <<'PY'
+  python3 - "${matrix_file}" "${profile_name}" "${field_name}" <<'PY'
 import json
 import sys
 
@@ -224,7 +224,7 @@ vm_is_running() {
   local vm_name="$1"
   # tart list columns: Source Name ... State (last column)
   # Name is column 2, State is $NF
-  if tart list 2>/dev/null | awk -v name="$vm_name" '$2 == name && $NF == "running" { found=1 } END { exit !found }'; then
+  if tart list 2>/dev/null | awk -v name="${vm_name}" '$2 == name && $NF == "running" { found=1 } END { exit !found }'; then
     return 0
   fi
   return 1
@@ -244,56 +244,56 @@ vm_wait_for_ssh() {
 
   vm_log_info "Waiting up to ${max_wait}s for SSH on VM '${vm_name}'..."
 
-  while [[ "$elapsed" -lt "$max_wait" ]]; do
-    guest_ip="$(tart ip "$vm_name" 2>/dev/null || true)"
+  while [[ "${elapsed}" -lt "${max_wait}" ]]; do
+    guest_ip="$(tart ip "${vm_name}" 2>/dev/null || true)"
 
-    if [[ -n "$guest_ip" ]]; then
+    if [[ -n "${guest_ip}" ]]; then
       local -a ssh_args=(
         -o "BatchMode=yes"
         -o "StrictHostKeyChecking=accept-new"
         -o "ConnectTimeout=5"
-        -p "$ssh_port"
+        -p "${ssh_port}"
       )
-      if [[ -n "$ssh_key_path" ]]; then
-        ssh_args+=( -i "$ssh_key_path" )
+      if [[ -n "${ssh_key_path}" ]]; then
+        ssh_args+=( -i "${ssh_key_path}" )
       fi
 
       # Capture stderr so we can report the last failure reason on timeout
       last_ssh_error="$(ssh "${ssh_args[@]}" "${ssh_user}@${guest_ip}" 'echo vm-ready' 2>&1 >/dev/null || true)"
 
-      if [[ -z "$last_ssh_error" ]]; then
+      if [[ -z "${last_ssh_error}" ]]; then
         vm_log_info "SSH ready at ${guest_ip} after ${elapsed}s"
-        printf '%s\n' "$guest_ip"
+        printf '%s\n' "${guest_ip}"
         return 0
       fi
     else
       last_ssh_error="tart ip returned no address"
     fi
 
-    sleep "$interval"
+    sleep "${interval}"
     elapsed=$((elapsed + interval))
     # Exponential backoff capped at 30s
-    if [[ "$interval" -lt 30 ]]; then
+    if [[ "${interval}" -lt 30 ]]; then
       interval=$((interval + 5))
     fi
   done
 
   vm_log_error "SSH not ready after ${max_wait}s for VM '${vm_name}'"
-  if [[ -n "$guest_ip" ]]; then
+  if [[ -n "${guest_ip}" ]]; then
     vm_log_error "Last resolved IP: ${guest_ip}"
   fi
-  if [[ -n "$last_ssh_error" ]]; then
+  if [[ -n "${last_ssh_error}" ]]; then
     vm_log_error "Last SSH error: ${last_ssh_error}"
   fi
 
   # Provide actionable guidance based on the failure pattern
-  if [[ "$last_ssh_error" == *'Connection refused'* ]]; then
+  if [[ "${last_ssh_error}" == *'Connection refused'* ]]; then
     vm_log_error "Remote Login (SSH) is not enabled in the guest."
     vm_log_error "Enable it: System Settings → General → Sharing → Remote Login"
     vm_log_error "Then configure authorized_keys for user '${ssh_user}'."
-  elif [[ "$last_ssh_error" == *'Permission denied'* ]]; then
+  elif [[ "${last_ssh_error}" == *'Permission denied'* ]]; then
     vm_log_error "SSH authentication failed. Check ssh_key and authorized_keys for user '${ssh_user}'."
-  elif [[ "$last_ssh_error" == *'No route to host'* ]] || [[ "$last_ssh_error" == *'Operation timed out'* ]]; then
+  elif [[ "${last_ssh_error}" == *'No route to host'* ]] || [[ "${last_ssh_error}" == *'Operation timed out'* ]]; then
     vm_log_error "Guest network is not reachable. Verify VM networking configuration."
   fi
 
@@ -317,25 +317,25 @@ vm_verify_manifest() {
   local result=""
 
   {
-    printf '=== Verification manifest: %s ===\n' "$manifest_file"
-    printf '=== Target: %s ===\n' "$target"
+    printf '=== Verification manifest: %s ===\n' "${manifest_file}"
+    printf '=== Target: %s ===\n' "${target}"
     printf '=== Started: %s ===\n\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
-    while IFS= read -r line || [[ -n "$line" ]]; do
+    while IFS= read -r line || [[ -n "${line}" ]]; do
       # Skip comments and blank lines
-      if [[ "$line" =~ ^[[:space:]]*# ]] || [[ -z "${line// /}" ]]; then
+      if [[ "${line}" =~ ^[[:space:]]*# ]] || [[ -z "${line// /}" ]]; then
         continue
       fi
 
       # Parse fields: type path [pattern]
-      line_type="$(printf '%s' "$line" | awk '{print $1}')"
-      line_path="$(printf '%s' "$line" | awk '{print $2}')"
-      line_pattern="$(printf '%s' "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')"
+      line_type="$(printf '%s' "${line}" | awk '{print $1}')"
+      line_path="$(printf '%s' "${line}" | awk '{print $2}')"
+      line_pattern="$(printf '%s' "${line}" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')"
 
       total=$((total + 1))
       check_cmd=""
 
-      case "$line_type" in
+      case "${line_type}" in
         file)
           check_cmd="test -f \"\$HOME/${line_path}\""
           ;;
@@ -350,35 +350,35 @@ vm_verify_manifest() {
           ;;
         cmd)
           # Everything after 'cmd ' is the command
-          check_cmd="$(printf '%s' "$line" | sed 's/^cmd[[:space:]]*//')"
+          check_cmd="$(printf '%s' "${line}" | sed 's/^cmd[[:space:]]*//')"
           ;;
         *)
-          printf '[SKIP] Unknown type: %s\n' "$line_type"
+          printf '[SKIP] Unknown type: %s\n' "${line_type}"
           total=$((total - 1))
           continue
           ;;
       esac
 
       set +e
-      ssh "${ssh_args[@]}" "$target" "$check_cmd" >/dev/null 2>&1
+      ssh "${ssh_args[@]}" "${target}" "${check_cmd}" >/dev/null 2>&1
       result=$?
       set -e
 
-      if [[ "$result" -eq 0 ]]; then
-        printf '[PASS] %s %s %s\n' "$line_type" "$line_path" "$line_pattern"
+      if [[ "${result}" -eq 0 ]]; then
+        printf '[PASS] %s %s %s\n' "${line_type}" "${line_path}" "${line_pattern}"
         passed=$((passed + 1))
       else
-        printf '[FAIL] %s %s %s\n' "$line_type" "$line_path" "$line_pattern"
+        printf '[FAIL] %s %s %s\n' "${line_type}" "${line_path}" "${line_pattern}"
         failed=$((failed + 1))
       fi
-    done < "$manifest_file"
+    done < "${manifest_file}"
 
-    printf '\n=== Summary: %d passed, %d failed, %d total ===\n' "$passed" "$failed" "$total"
-  } | tee "$log_file"
+    printf '\n=== Summary: %d passed, %d failed, %d total ===\n' "${passed}" "${failed}" "${total}"
+  } | tee "${log_file}"
 
   # The pipeline runs the block in a subshell, so $failed is not visible here.
   # Check the log file for [FAIL] markers instead.
-  if grep -q '\[FAIL\]' "$log_file"; then
+  if grep -q '\[FAIL\]' "${log_file}"; then
     return 1
   fi
   return 0
@@ -394,13 +394,13 @@ vm_capture_log() {
 
   {
     printf '=== Log capture: %s ===\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    printf '=== Command: %s ===\n\n' "$remote_command"
-  } > "$log_file"
+    printf '=== Command: %s ===\n\n' "${remote_command}"
+  } > "${log_file}"
 
   set +e
-  ssh "${ssh_args[@]}" "$target" "$remote_command" 2>&1 | tee -a "$log_file"
+  ssh "${ssh_args[@]}" "${target}" "${remote_command}" 2>&1 | tee -a "${log_file}"
   ssh_status=${PIPESTATUS[0]}
   set -e
 
-  return "$ssh_status"
+  return "${ssh_status}"
 }

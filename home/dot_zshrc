@@ -4,8 +4,8 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+if [[ -r "${XDG_CACHE_HOME:-${HOME}/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-${HOME}/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 
@@ -85,7 +85,7 @@ HIST_STAMPS="%Y.%m.%d_%I:%M:%S %r"
 
 # using antigen for oh-my-zsh plug-in management
 plugins=()
-source $ZSH/oh-my-zsh.sh
+source ${ZSH}/oh-my-zsh.sh
 
 
 ############################################
@@ -254,8 +254,8 @@ bindkey "^[e" end-of-line
 
 # Auto attach or create a new tmux session if inside SSH
 # Stderr redirected to avoid console output that triggers p10k instant prompt warning
-if [[ -n $SSH_CONNECTION ]] && command -v tmux >/dev/null 2>&1; then
-   [[ -z $TMUX ]] && tmux new-session -AD -s default 2>/dev/null;
+if [[ -n ${SSH_CONNECTION} ]] && command -v tmux >/dev/null 2>&1; then
+   [[ -z ${TMUX} ]] && tmux new-session -AD -s default 2>/dev/null;
 fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.

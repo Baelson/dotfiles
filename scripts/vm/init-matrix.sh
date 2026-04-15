@@ -58,14 +58,14 @@ parse_arguments() {
 }
 
 initialize_matrix() {
-  [[ -f "$MATRIX_TEMPLATE" ]] || vm_die "Matrix template not found: ${MATRIX_TEMPLATE}"
+  [[ -f "${MATRIX_TEMPLATE}" ]] || vm_die "Matrix template not found: ${MATRIX_TEMPLATE}"
 
-  if [[ -f "$MATRIX_OUTPUT" && "$FORCE_WRITE" != 'true' ]]; then
+  if [[ -f "${MATRIX_OUTPUT}" && "${FORCE_WRITE}" != 'true' ]]; then
     vm_die "Output already exists: ${MATRIX_OUTPUT}. Re-run with --force to overwrite."
   fi
 
-  mkdir -p "$(dirname "$MATRIX_OUTPUT")"
-  cp "$MATRIX_TEMPLATE" "$MATRIX_OUTPUT"
+  mkdir -p "$(dirname "${MATRIX_OUTPUT}")"
+  cp "${MATRIX_TEMPLATE}" "${MATRIX_OUTPUT}"
 
   vm_log_info "Created local VM matrix: ${MATRIX_OUTPUT}"
   vm_log_info "Next: update beta profile ipsw path in ${MATRIX_OUTPUT}"
