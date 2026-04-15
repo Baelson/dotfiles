@@ -147,6 +147,16 @@ antigen apply
 
 
 ############################################
+###            User bin directory        ###
+############################################
+# Central reference for scripts migrated out of ~/Git/Tools/.
+# Consumed by chezmoi templates and iTerm2 profile Commands via $HOME.
+export USER_BIN="$HOME/.local/bin"
+path=("$USER_BIN" $path)
+typeset -U path
+
+
+############################################
 ###                 bun                  ###
 ############################################
 export BUN_INSTALL="$HOME/.bun"

@@ -108,13 +108,13 @@ encryption = "age"
     autoCommit = true
     autoPush = true
 
-{{- if stat "/Users/baelson/Git/Tools/bcomp-wrapper.sh" }}
+{{- if stat (joinPath .chezmoi.homeDir ".local/bin/bcomp-wrapper.sh") }}
 
 # Diff settings
 [diff]
-    command = "/Users/baelson/Git/Tools/bcomp-wrapper.sh"
+    command = "{{ .chezmoi.homeDir }}/.local/bin/bcomp-wrapper.sh"
     pager = ""
 
 [merge]
-    command = "/Users/baelson/Git/Tools/bcomp-wrapper.sh"
+    command = "{{ .chezmoi.homeDir }}/.local/bin/bcomp-wrapper.sh"
 {{- end }}
