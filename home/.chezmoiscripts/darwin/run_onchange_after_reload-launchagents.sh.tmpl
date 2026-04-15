@@ -13,7 +13,7 @@
 #   - man launchctl (bootout / bootstrap)
 #
 # Source hash (triggers re-run when any tracked plist changes):
-# {{ range $p, $_ := glob (joinPath .chezmoi.sourceDir "Library/LaunchAgents/*.plist") }}{{ include $p | sha256sum }}{{ end }}{{ range $p, $_ := glob (joinPath .chezmoi.sourceDir "Library/LaunchAgents/*.plist.tmpl") }}{{ include $p | sha256sum }}{{ end }}
+# {{ range $_, $path := glob (joinPath .chezmoi.sourceDir "private_Library/private_LaunchAgents/*.plist") }}{{ include $path | sha256sum }}{{ end }}{{ range $_, $path := glob (joinPath .chezmoi.sourceDir "private_Library/private_LaunchAgents/*.plist.tmpl") }}{{ include $path | sha256sum }}{{ end }}{{ range $_, $path := glob (joinPath .chezmoi.sourceDir "Library/LaunchAgents/*.plist") }}{{ include $path | sha256sum }}{{ end }}{{ range $_, $path := glob (joinPath .chezmoi.sourceDir "Library/LaunchAgents/*.plist.tmpl") }}{{ include $path | sha256sum }}{{ end }}
 
 set -euo pipefail
 
