@@ -28,7 +28,7 @@ export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
 export HOMEBREW_PREFIX="/opt/homebrew"
 export HOMEBREW_REPOSITORY="/opt/homebrew"
 export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
-export MANPATH="/opt/homebrew/share/man:/usr/local/opt/coreutils/libexec/gnuman${MANPATH+:$MANPATH}:"
+export MANPATH="/opt/homebrew/share/man:/usr/local/opt/coreutils/libexec/gnuman${MANPATH+:${MANPATH}}:"
 
 ############################################
 ###                 bun                  ###
@@ -41,7 +41,7 @@ path+=("${BUN_INSTALL}/bin")
 ############################################
 export EDITOR="antigravity --wait"
 export VISUAL="antigravity --wait"
-export MANPATH="/usr/local/man:$MANPATH"
+export MANPATH="/usr/local/man:${MANPATH}"
 
 # For gnutls -- https://www.topbug.net/blog/2013/04/14/install-and-use-gnu-command-line-tools-in-mac-os-x/
 # export GUILE_LOAD_PATH="/opt/homebrew/share/guile/site/3.0"

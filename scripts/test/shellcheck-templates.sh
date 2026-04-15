@@ -19,30 +19,30 @@
 set -euo pipefail
 
 DOTFILES_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPTS_DIR="$DOTFILES_ROOT/home/.chezmoiscripts"
+SCRIPTS_DIR="${DOTFILES_ROOT}/home/.chezmoiscripts"
 
 errors=0
 
 check_rendered_template() {
     local tmpl="$1"
-    local relpath="${tmpl#"$DOTFILES_ROOT"/}"
+    local relpath="${tmpl#"${DOTFILES_ROOT}"/}"
 
     # Render template through chezmoi, then shellcheck the output
     # Flags:
     #   --shell=bash   Closest supported dialect to zsh (shellcheck has no zsh support)
     #   --severity=warning  Skip style/info-level noise
-    if ! chezmoi execute-template < "$tmpl" 2>/dev/null | shellcheck --shell=bash --severity=warning -; then
-        echo "FAIL: $relpath"
+    if ! chezmoi execute-template < "${tmpl}" 2>/dev/null | shellcheck --shell=bash --severity=warning -; then
+        echo "FAIL: ${relpath}"
         errors=$((errors + 1))
     fi
 }
 
 check_plain_script() {
     local script="$1"
-    local relpath="${script#"$DOTFILES_ROOT"/}"
+    local relpath="${script#"${DOTFILES_ROOT}"/}"
 
-    if ! shellcheck --shell=bash --severity=warning "$script"; then
-        echo "FAIL: $relpath"
+    if ! shellcheck --shell=bash --severity=warning "${script}"; then
+        echo "FAIL: ${relpath}"
         errors=$((errors + 1))
     fi
 }
@@ -61,25 +61,25 @@ main() {
     if [[ $# -gt 0 ]]; then
         # Check specific files passed as arguments
         for f in "$@"; do
-            if [[ "$f" == *.sh.tmpl ]]; then
-                check_rendered_template "$f"
-            elif [[ "$f" == *.sh ]]; then
-                check_plain_script "$f"
+            if [[ "${f}" == *.sh.tmpl ]]; then
+                check_rendered_template "${f}"
+            elif [[ "${f}" == *.sh ]]; then
+                check_plain_script "${f}"
             fi
         done
     else
         # Check all templates and plain scripts
         while IFS= read -r -d '' tmpl; do
-            check_rendered_template "$tmpl"
-        done < <(find "$SCRIPTS_DIR" -name '*.sh.tmpl' -print0 2>/dev/null)
+            check_rendered_template "${tmpl}"
+        done < <(find "${SCRIPTS_DIR}" -name '*.sh.tmpl' -print0 2>/dev/null)
 
         while IFS= read -r -d '' script; do
-            check_plain_script "$script"
-        done < <(find "$SCRIPTS_DIR" -name '*.sh' -not -name '*.sh.tmpl' -print0 2>/dev/null)
+            check_plain_script "${script}"
+        done < <(find "${SCRIPTS_DIR}" -name '*.sh' -not -name '*.sh.tmpl' -print0 2>/dev/null)
     fi
 
-    if [[ $errors -gt 0 ]]; then
-        echo "$errors file(s) failed shellcheck"
+    if [[ ${errors} -gt 0 ]]; then
+        echo "${errors} file(s) failed shellcheck"
         exit 1
     fi
 }

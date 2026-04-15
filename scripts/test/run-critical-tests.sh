@@ -10,8 +10,8 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-TESTS_DIR="$DOTFILES_ROOT/tests"
+DOTFILES_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+TESTS_DIR="${DOTFILES_ROOT}/tests"
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,20 +37,20 @@ run_required_bats_file() {
     shift 2
     local bats_args=("$@")
 
-    if [[ ! -e "$test_file" ]]; then
-        log_error "Required test path missing: $test_file"
+    if [[ ! -e "${test_file}" ]]; then
+        log_error "Required test path missing: ${test_file}"
         exit 1
     fi
 
     local bats_exit_code=0
     if [[ ${#bats_args[@]} -gt 0 ]]; then
-        bats "${bats_args[@]}" "$test_file" || bats_exit_code=$?
+        bats "${bats_args[@]}" "${test_file}" || bats_exit_code=$?
     else
-        bats "$test_file" || bats_exit_code=$?
+        bats "${test_file}" || bats_exit_code=$?
     fi
 
-    if [[ $bats_exit_code -ne 0 ]]; then
-        log_error "$failure_message"
+    if [[ ${bats_exit_code} -ne 0 ]]; then
+        log_error "${failure_message}"
         exit 1
     fi
 }
@@ -59,8 +59,8 @@ main() {
     log_info "Running critical tests for pre-commit validation..."
 
     # Change to dotfiles root
-    cd "$DOTFILES_ROOT" || {
-        log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
+    cd "${DOTFILES_ROOT}" || {
+        log_error "Cannot change to dotfiles root: ${DOTFILES_ROOT}"
         exit 1
     }
 
@@ -76,20 +76,20 @@ main() {
     fi
 
     # Verify test structure exists
-    if [[ ! -d "$TESTS_DIR" ]]; then
-        log_error "Tests directory not found: $TESTS_DIR"
+    if [[ ! -d "${TESTS_DIR}" ]]; then
+        log_error "Tests directory not found: ${TESTS_DIR}"
         exit 1
     fi
 
     # Run all test suites (unit + integration + system)
     log_info "Running unit tests..."
-    run_required_bats_file "$TESTS_DIR/unit" "Unit tests failed"
+    run_required_bats_file "${TESTS_DIR}/unit" "Unit tests failed"
 
     log_info "Running integration tests..."
-    run_required_bats_file "$TESTS_DIR/integration" "Integration tests failed"
+    run_required_bats_file "${TESTS_DIR}/integration" "Integration tests failed"
 
     log_info "Running system tests..."
-    run_required_bats_file "$TESTS_DIR/system" "System tests failed"
+    run_required_bats_file "${TESTS_DIR}/system" "System tests failed"
 
     log_info "✅ All tests passed successfully!"
 }

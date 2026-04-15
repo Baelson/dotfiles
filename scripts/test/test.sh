@@ -32,8 +32,8 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-TESTS_DIR="$DOTFILES_ROOT/tests"
+DOTFILES_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+TESTS_DIR="${DOTFILES_ROOT}/tests"
 
 # Colors for output
 RED='\033[0;31m'
@@ -77,7 +77,7 @@ log_warning() {
 }
 
 log_debug() {
-    if [[ "$DEBUG" == "true" ]]; then
+    if [[ "${DEBUG}" == "true" ]]; then
         echo -e "${CYAN}[DEBUG]${NC} $1"
     fi
 }
@@ -180,7 +180,7 @@ check_bats_installation() {
     if command -v bats &> /dev/null; then
         local version
         version=$(bats --version 2>/dev/null | head -1)
-        log_info "BATS found: $version"
+        log_info "BATS found: ${version}"
         return 0
     else
         log_warning "BATS not found"
@@ -210,56 +210,56 @@ install_bats() {
 get_test_files() {
     local test_files=()
 
-    if [[ "$QUICK_MODE" == "true" ]]; then
+    if [[ "${QUICK_MODE}" == "true" ]]; then
         # Quick mode: run only essential tests for faster feedback
         test_files=(
-            "$TESTS_DIR/system/test_fr1_modern_bootstrap.bats"
-            "$TESTS_DIR/system/test_fr7_debug_modes.bats"
-            "$TESTS_DIR/unit/test_brewfile_syntax.bats"
-            "$TESTS_DIR/unit/test_security_secrets.bats"
+            "${TESTS_DIR}/system/test_fr1_modern_bootstrap.bats"
+            "${TESTS_DIR}/system/test_fr7_debug_modes.bats"
+            "${TESTS_DIR}/unit/test_brewfile_syntax.bats"
+            "${TESTS_DIR}/unit/test_security_secrets.bats"
         )
-    elif [[ "$UNIT_ONLY" == "true" ]]; then
+    elif [[ "${UNIT_ONLY}" == "true" ]]; then
         # Unit tests only
-        if [[ -n "$TEST_PATTERN" ]]; then
-            test_files=("$TESTS_DIR/unit/test_${TEST_PATTERN}_*.bats")
+        if [[ -n "${TEST_PATTERN}" ]]; then
+            test_files=("${TESTS_DIR}/unit/test_${TEST_PATTERN}_*.bats")
         else
-            test_files=("$TESTS_DIR/unit/"*.bats)
+            test_files=("${TESTS_DIR}/unit/"*.bats)
         fi
-    elif [[ "$INTEGRATION_ONLY" == "true" ]]; then
+    elif [[ "${INTEGRATION_ONLY}" == "true" ]]; then
         # Integration tests only
-        if [[ -n "$TEST_PATTERN" ]]; then
-            test_files=("$TESTS_DIR/integration/test_${TEST_PATTERN}_*.bats")
+        if [[ -n "${TEST_PATTERN}" ]]; then
+            test_files=("${TESTS_DIR}/integration/test_${TEST_PATTERN}_*.bats")
         else
-            test_files=("$TESTS_DIR/integration/"*.bats)
+            test_files=("${TESTS_DIR}/integration/"*.bats)
         fi
-    elif [[ "$SYSTEM_ONLY" == "true" ]]; then
+    elif [[ "${SYSTEM_ONLY}" == "true" ]]; then
         # System tests only
-        if [[ -n "$TEST_PATTERN" ]]; then
-            test_files=("$TESTS_DIR/system/test_${TEST_PATTERN}_*.bats")
+        if [[ -n "${TEST_PATTERN}" ]]; then
+            test_files=("${TESTS_DIR}/system/test_${TEST_PATTERN}_*.bats")
         else
-            test_files=("$TESTS_DIR/system/"*.bats)
+            test_files=("${TESTS_DIR}/system/"*.bats)
         fi
-    elif [[ -n "$TEST_PATTERN" ]]; then
+    elif [[ -n "${TEST_PATTERN}" ]]; then
         # Specific functional requirement
         test_files=(
-            "$TESTS_DIR/unit/test_${TEST_PATTERN}_*.bats"
-            "$TESTS_DIR/integration/test_${TEST_PATTERN}_*.bats"
-            "$TESTS_DIR/system/test_${TEST_PATTERN}_*.bats"
+            "${TESTS_DIR}/unit/test_${TEST_PATTERN}_*.bats"
+            "${TESTS_DIR}/integration/test_${TEST_PATTERN}_*.bats"
+            "${TESTS_DIR}/system/test_${TEST_PATTERN}_*.bats"
         )
     else
         # All tests
         test_files=(
-            "$TESTS_DIR/unit/"*.bats
-            "$TESTS_DIR/integration/"*.bats
-            "$TESTS_DIR/system/"*.bats
+            "${TESTS_DIR}/unit/"*.bats
+            "${TESTS_DIR}/integration/"*.bats
+            "${TESTS_DIR}/system/"*.bats
         )
     fi
 
     # Filter out non-existent files
     local existing_files=()
     for file in "${test_files[@]}"; do
-        if [[ -f "$file" ]]; then
-            existing_files+=("$file")
+        if [[ -f "${file}" ]]; then
+            existing_files+=("${file}")
         fi
     done
 
@@ -281,11 +281,11 @@ run_tests() {
     # Build BATS command args
     local bats_args=()
 
-    if [[ "$VERBOSE" == "true" ]]; then
+    if [[ "${VERBOSE}" == "true" ]]; then
         bats_args+=("--show-output-of-passing-tests")
     fi
 
-    if [[ "$DEBUG" == "true" ]]; then
+    if [[ "${DEBUG}" == "true" ]]; then
         bats_args+=("--tap")
     fi
 
@@ -306,7 +306,7 @@ run_tests() {
         bats "${test_files[@]}" || bats_exit_code=$?
     fi
 
-    if [[ $bats_exit_code -eq 0 ]]; then
+    if [[ ${bats_exit_code} -eq 0 ]]; then
         local end_time
         end_time=$(date +%s)
         local duration=$((end_time - start_time))
@@ -327,25 +327,25 @@ show_test_summary() {
     echo "🧪 Test Runner Summary"
     echo "======================"
 
-    if [[ "$QUICK_MODE" == "true" ]]; then
+    if [[ "${QUICK_MODE}" == "true" ]]; then
         echo "Mode: Quick (critical tests only)"
-    elif [[ "$UNIT_ONLY" == "true" ]]; then
+    elif [[ "${UNIT_ONLY}" == "true" ]]; then
         echo "Mode: Unit tests only"
-    elif [[ "$INTEGRATION_ONLY" == "true" ]]; then
+    elif [[ "${INTEGRATION_ONLY}" == "true" ]]; then
         echo "Mode: Integration tests only"
-    elif [[ "$SYSTEM_ONLY" == "true" ]]; then
+    elif [[ "${SYSTEM_ONLY}" == "true" ]]; then
         echo "Mode: System tests only"
-    elif [[ -n "$TEST_PATTERN" ]]; then
-        echo "Mode: $TEST_PATTERN tests only"
+    elif [[ -n "${TEST_PATTERN}" ]]; then
+        echo "Mode: ${TEST_PATTERN} tests only"
     else
         echo "Mode: All tests"
     fi
 
-    if [[ "$VERBOSE" == "true" ]]; then
+    if [[ "${VERBOSE}" == "true" ]]; then
         echo "Output: Verbose"
     fi
 
-    if [[ "$DEBUG" == "true" ]]; then
+    if [[ "${DEBUG}" == "true" ]]; then
         echo "Debug: Enabled"
     fi
 
@@ -358,20 +358,20 @@ main() {
     echo ""
 
     # Change to dotfiles root
-    cd "$DOTFILES_ROOT" || {
-        log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
+    cd "${DOTFILES_ROOT}" || {
+        log_error "Cannot change to dotfiles root: ${DOTFILES_ROOT}"
         exit 1
     }
 
     # Check if tests directory exists
-    if [[ ! -d "$TESTS_DIR" ]]; then
-        log_error "Tests directory not found: $TESTS_DIR"
+    if [[ ! -d "${TESTS_DIR}" ]]; then
+        log_error "Tests directory not found: ${TESTS_DIR}"
         exit 1
     fi
 
     # Check BATS installation
     if ! check_bats_installation; then
-        if [[ "$INSTALL_BATS" == "true" ]]; then
+        if [[ "${INSTALL_BATS}" == "true" ]]; then
             if ! install_bats; then
                 exit 1
             fi
@@ -399,7 +399,7 @@ main() {
 
     log_info "Test files to run:"
     for file in "${test_files[@]}"; do
-        echo "  - $(basename "$file")"
+        echo "  - $(basename "${file}")"
     done
     echo ""
 

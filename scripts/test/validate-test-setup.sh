@@ -10,8 +10,8 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-TESTS_DIR="$DOTFILES_ROOT/tests"
+DOTFILES_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+TESTS_DIR="${DOTFILES_ROOT}/tests"
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,8 +40,8 @@ main() {
     log_section "CI/CD Testing Infrastructure Validation"
 
     # Change to dotfiles root
-    cd "$DOTFILES_ROOT" || {
-        log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
+    cd "${DOTFILES_ROOT}" || {
+        log_error "Cannot change to dotfiles root: ${DOTFILES_ROOT}"
         exit 1
     }
 
@@ -53,7 +53,7 @@ main() {
     if command -v bats &> /dev/null; then
         local bats_version
         bats_version=$(bats --version)
-        log_info "BATS installed: $bats_version"
+        log_info "BATS installed: ${bats_version}"
     else
         log_error "BATS not installed"
         ((validation_errors++))
@@ -64,10 +64,10 @@ main() {
 
     local required_dirs=("tests/lib" "tests/system" "tests/integration" "tests/unit")
     for dir in "${required_dirs[@]}"; do
-        if [[ -d "$dir" ]]; then
-            log_info "Directory exists: $dir"
+        if [[ -d "${dir}" ]]; then
+            log_info "Directory exists: ${dir}"
         else
-            log_error "Missing directory: $dir"
+            log_error "Missing directory: ${dir}"
             ((validation_errors++))
         fi
     done
@@ -93,24 +93,24 @@ main() {
     )
 
     for file in "${test_files[@]}"; do
-        if [[ -f "$file" ]]; then
-            log_info "Test file exists: $file"
+        if [[ -f "${file}" ]]; then
+            log_info "Test file exists: ${file}"
             # Validate syntax/parsing (BATS files are not valid shell scripts under bash -n).
-            if [[ "$file" == *.bats ]]; then
-                if bats --count "$file" >/dev/null 2>&1; then
-                    log_info "✓ BATS file parses: $file"
+            if [[ "${file}" == *.bats ]]; then
+                if bats --count "${file}" >/dev/null 2>&1; then
+                    log_info "✓ BATS file parses: ${file}"
                 else
-                    log_error "✗ BATS parse error: $file"
+                    log_error "✗ BATS parse error: ${file}"
                     ((validation_errors++))
                 fi
-            elif bash -n "$file" 2>/dev/null; then
-                log_info "✓ Bash syntax valid: $file"
+            elif bash -n "${file}" 2>/dev/null; then
+                log_info "✓ Bash syntax valid: ${file}"
             else
-                log_error "✗ Syntax error: $file"
+                log_error "✗ Syntax error: ${file}"
                 ((validation_errors++))
             fi
         else
-            log_error "Missing test file: $file"
+            log_error "Missing test file: ${file}"
             ((validation_errors++))
         fi
     done
@@ -150,10 +150,10 @@ main() {
             "scripts/vm/vm-matrix.sh"
         )
         for script in "${required_scripts[@]}"; do
-            if [[ -f "$script" && -x "$script" ]]; then
-                log_info "✓ Pre-commit script ready: $script"
+            if [[ -f "${script}" && -x "${script}" ]]; then
+                log_info "✓ Pre-commit script ready: ${script}"
             else
-                log_error "✗ Missing or non-executable: $script"
+                log_error "✗ Missing or non-executable: ${script}"
                 ((validation_errors++))
             fi
         done
@@ -172,17 +172,17 @@ main() {
     )
 
     for doc in "${doc_files[@]}"; do
-        if [[ -f "$doc" ]]; then
-            log_info "Documentation exists: $doc"
+        if [[ -f "${doc}" ]]; then
+            log_info "Documentation exists: ${doc}"
 
             # Check for testing-related content
-            if grep -q -i "test\|bats\|ci/cd" "$doc"; then
-                log_info "✓ Contains testing content: $doc"
+            if grep -q -i "test\|bats\|ci/cd" "${doc}"; then
+                log_info "✓ Contains testing content: ${doc}"
             else
-                log_warn "⚠ May be missing testing content: $doc"
+                log_warn "⚠ May be missing testing content: ${doc}"
             fi
         else
-            log_error "Missing documentation: $doc"
+            log_error "Missing documentation: ${doc}"
             ((validation_errors++))
         fi
     done
@@ -192,22 +192,22 @@ main() {
 
     local total_tests=0
     for test_file in tests/*/*.bats; do
-        if [[ -f "$test_file" ]]; then
+        if [[ -f "${test_file}" ]]; then
             local file_tests
-            file_tests=$(grep -c "^@test" "$test_file" 2>/dev/null || echo "0")
+            file_tests=$(grep -c "^@test" "${test_file}" 2>/dev/null || echo "0")
             total_tests=$((total_tests + file_tests))
-            log_info "Tests in $(basename "$test_file"): $file_tests"
+            log_info "Tests in $(basename "${test_file}"): ${file_tests}"
         fi
     done
 
-    log_info "Total automated tests: $total_tests"
+    log_info "Total automated tests: ${total_tests}"
 
-    if [[ $total_tests -ge 70 ]]; then
-        log_info "✓ Good test coverage ($total_tests tests)"
-    elif [[ $total_tests -ge 50 ]]; then
-        log_warn "⚠ Moderate test coverage ($total_tests tests)"
+    if [[ ${total_tests} -ge 70 ]]; then
+        log_info "✓ Good test coverage (${total_tests} tests)"
+    elif [[ ${total_tests} -ge 50 ]]; then
+        log_warn "⚠ Moderate test coverage (${total_tests} tests)"
     else
-        log_error "✗ Insufficient test coverage ($total_tests tests)"
+        log_error "✗ Insufficient test coverage (${total_tests} tests)"
         ((validation_errors++))
     fi
 
@@ -225,10 +225,10 @@ main() {
     # Final Summary
     log_section "Validation Summary"
 
-    if [[ $validation_errors -eq 0 ]]; then
+    if [[ ${validation_errors} -eq 0 ]]; then
         log_info "🎉 All validations passed! CI/CD testing infrastructure is ready."
         log_info "📊 Test Statistics:"
-        log_info "   - Total automated tests: $total_tests"
+        log_info "   - Total automated tests: ${total_tests}"
         log_info "   - Functional requirements covered: 7/7 (100%)"
         log_info "   - Test suites: 7"
         log_info "   - GitHub Actions jobs: 6"
@@ -240,7 +240,7 @@ main() {
         log_info "   - Performance validation: ./scripts/tools/performance-check.sh"
         return 0
     else
-        log_error "❌ Validation failed with $validation_errors errors"
+        log_error "❌ Validation failed with ${validation_errors} errors"
         log_error "Please fix the issues above before proceeding"
         return 1
     fi

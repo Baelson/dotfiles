@@ -88,13 +88,13 @@ log_warning() {
 }
 
 debug_trace() {
-    if [[ "$DEBUG_TRACE" == "true" ]]; then
+    if [[ "${DEBUG_TRACE}" == "true" ]]; then
         echo "[TRACE] $1" >&2
     fi
 }
 
 debug_verbose() {
-    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
+    if [[ "${DEBUG_VERBOSE}" == "true" ]]; then
         echo "[DEBUG] $1" >&2
     fi
 }
@@ -216,7 +216,7 @@ parse_arguments() {
         esac
     done
 
-    debug_verbose "parse_arguments: DRY_RUN=$DRY_RUN, DEBUG_VERBOSE=$DEBUG_VERBOSE, DEBUG_TRACE=$DEBUG_TRACE"
+    debug_verbose "parse_arguments: DRY_RUN=${DRY_RUN}, DEBUG_VERBOSE=${DEBUG_VERBOSE}, DEBUG_TRACE=${DEBUG_TRACE}"
 }
 
 main() {
@@ -226,7 +226,7 @@ main() {
     parse_arguments "$@"
 
     # Show help if requested
-    if [[ "$SHOW_HELP" == "true" ]]; then
+    if [[ "${SHOW_HELP}" == "true" ]]; then
         show_help
         exit 0
     fi
@@ -235,15 +235,15 @@ main() {
     echo "🚀 Starting macOS Development Environment Setup..."
     echo "📍 Repository: ${REPO_OWNER}/${REPO_NAME}"
 
-    if [[ "$DRY_RUN" == "true" ]]; then
+    if [[ "${DRY_RUN}" == "true" ]]; then
         echo "🔍 DRY RUN MODE: No system changes will be made"
     fi
 
-    if [[ "$DEBUG_VERBOSE" == "true" ]]; then
+    if [[ "${DEBUG_VERBOSE}" == "true" ]]; then
         echo "🐛 DEBUG VERBOSE: Detailed execution logging enabled"
     fi
 
-    if [[ "$DEBUG_TRACE" == "true" ]]; then
+    if [[ "${DEBUG_TRACE}" == "true" ]]; then
         echo "🔬 DEBUG TRACE: Function-level tracing enabled"
     fi
 
@@ -256,7 +256,7 @@ main() {
     run_chezmoi_init
 
     echo ""
-    if [[ "$DRY_RUN" == "true" ]]; then
+    if [[ "${DRY_RUN}" == "true" ]]; then
         echo "🔍 DRY RUN completed successfully!"
         echo "💡 Remove --dry-run flag to perform actual installation"
     else
@@ -272,8 +272,8 @@ check_prerequisites() {
     echo "🔍 Checking prerequisites..."
 
     # Check if we're on macOS
-    debug_verbose "check_prerequisites: checking operating system (OSTYPE=$OSTYPE)"
-    if [[ "$OSTYPE" != "darwin"* ]]; then
+    debug_verbose "check_prerequisites: checking operating system (OSTYPE=${OSTYPE})"
+    if [[ "${OSTYPE}" != "darwin"* ]]; then
         log_error "This installer is designed for macOS only"
         echo ""
         echo "🔧 Recovery suggestions:"
@@ -286,7 +286,7 @@ check_prerequisites() {
     # Check if git is available (needed for chezmoi)
     debug_verbose "check_prerequisites: checking for git availability"
     if ! command -v git &> /dev/null; then
-        if [[ "$DRY_RUN" == "true" ]]; then
+        if [[ "${DRY_RUN}" == "true" ]]; then
             echo "🔍 [DRY RUN] Would install Xcode CLI Tools (git not found)"
         else
             echo "📱 Git not found. Installing Xcode CLI Tools..."
@@ -315,12 +315,12 @@ install_chezmoi_if_needed() {
     if command -v chezmoi &> /dev/null; then
         local chezmoi_version
         chezmoi_version=$(chezmoi --version | head -1)
-        log_success "chezmoi already installed: $chezmoi_version"
+        log_success "chezmoi already installed: ${chezmoi_version}"
         debug_verbose "install_chezmoi_if_needed: found chezmoi at $(which chezmoi)"
         return 0
     fi
 
-    if [[ "$DRY_RUN" == "true" ]]; then
+    if [[ "${DRY_RUN}" == "true" ]]; then
         echo "🔍 [DRY RUN] Would install chezmoi using official installer:"
         echo "    sh -c \"\$(curl -fsLS get.chezmoi.io)\""
         echo "    export PATH=\"\$HOME/bin:\$PATH\""
@@ -334,13 +334,13 @@ install_chezmoi_if_needed() {
     sh -c "$(curl -fsLS get.chezmoi.io)"
 
     # Add to PATH for current session
-    export PATH="$HOME/bin:$PATH"
+    export PATH="${HOME}/bin:${PATH}"
     debug_verbose "install_chezmoi_if_needed: updated PATH to include \$HOME/bin"
 
     if command -v chezmoi &> /dev/null; then
         local chezmoi_version
         chezmoi_version=$(chezmoi --version | head -1)
-        log_success "chezmoi installed successfully: $chezmoi_version"
+        log_success "chezmoi installed successfully: ${chezmoi_version}"
         debug_verbose "install_chezmoi_if_needed: chezmoi installed at $(which chezmoi)"
     else
         log_error "chezmoi installation failed"
@@ -366,7 +366,7 @@ run_chezmoi_init() {
     )
 
     # Add --apply only if not in dry-run mode
-    if [[ "$DRY_RUN" == "true" ]]; then
+    if [[ "${DRY_RUN}" == "true" ]]; then
         chezmoi_args+=("--dry-run")
         debug_verbose "run_chezmoi_init: added --dry-run to chezmoi command"
     else
@@ -382,40 +382,40 @@ run_chezmoi_init() {
 
     # Use provided values or defaults for ephemeral
     local json_ephemeral="false"
-    if [[ -n "${EPHEMERAL:-}" ]] && [[ "$EPHEMERAL" =~ ^(true|1|yes)$ ]]; then
+    if [[ -n "${EPHEMERAL:-}" ]] && [[ "${EPHEMERAL}" =~ ^(true|1|yes)$ ]]; then
          json_ephemeral="true"
     fi
 
     # Use provided values or defaults for headless
     local json_headless="false"
-    if [[ -n "${HEADLESS:-}" ]] && [[ "$HEADLESS" =~ ^(true|1|yes)$ ]]; then
+    if [[ -n "${HEADLESS:-}" ]] && [[ "${HEADLESS}" =~ ^(true|1|yes)$ ]]; then
         json_headless="true"
     fi
 
     local template_data="{\"ephemeral\": ${json_ephemeral}, \"headless\": ${json_headless}}"
 
     # Append data arg if not empty
-    if [[ -n "$template_data" ]]; then
+    if [[ -n "${template_data}" ]]; then
         # CRITICAL: Use --override-data to inject values. --data is a boolean flag in init!
-        chezmoi_args+=("--override-data" "$template_data")
+        chezmoi_args+=("--override-data" "${template_data}")
         debug_verbose "run_chezmoi_init: added template data block"
     fi
 
     # Interactive mode allows for prompts
-    if [[ -z "$ASK" ]] && [[ -t 0 ]]; then
+    if [[ -z "${ASK}" ]] && [[ -t 0 ]]; then
         echo "💬 Running in interactive mode (set ASK=1 to force prompts)"
         debug_verbose "run_chezmoi_init: interactive mode detected (stdin is TTY)"
     else
-        debug_verbose "run_chezmoi_init: non-interactive mode (ASK=$ASK, stdin TTY check: $([[ -t 0 ]] && echo "true" || echo "false"))"
+        debug_verbose "run_chezmoi_init: non-interactive mode (ASK=${ASK}, stdin TTY check: $([[ -t 0 ]] && echo "true" || echo "false"))"
     fi
 
     # Initialize chezmoi with the repository
-    local cmd_display="chezmoi init ${chezmoi_args[*]} ${DOTFILES_REPO_URL:-$REPO_OWNER}"
-    echo "🔧 Running: $cmd_display"
+    local cmd_display="chezmoi init ${chezmoi_args[*]} ${DOTFILES_REPO_URL:-${REPO_OWNER}}"
+    echo "🔧 Running: ${cmd_display}"
     debug_verbose "run_chezmoi_init: executing chezmoi command with args: ${chezmoi_args[*]}"
 
-    if [[ "$DRY_RUN" == "true" ]]; then
-        echo "🔍 [DRY RUN] Would execute: $cmd_display"
+    if [[ "${DRY_RUN}" == "true" ]]; then
+        echo "🔍 [DRY RUN] Would execute: ${cmd_display}"
         echo "🔍 [DRY RUN] This would initialize chezmoi with your dotfiles repository"
         echo "🔍 [DRY RUN] Template data: ephemeral=${EPHEMERAL:-false}, headless=${HEADLESS:-false}"
     else
@@ -436,7 +436,7 @@ error_handler() {
     local exit_code=$?
     local line_no=$1
 
-    log_error "Script failed at line $line_no with exit code $exit_code"
+    log_error "Script failed at line ${line_no} with exit code ${exit_code}"
     echo ""
     echo "🔧 Recovery suggestions:"
     echo "   1. Run with --debug-verbose to see detailed execution information"
@@ -446,7 +446,7 @@ error_handler() {
     echo ""
     echo "For more help, visit: https://github.com/Baelson/dotfiles"
 
-    exit $exit_code
+    exit ${exit_code}
 }
 
 # Set up error handling

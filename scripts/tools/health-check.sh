@@ -18,9 +18,9 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-CHEZMOI_SOURCE_DIR="$DOTFILES_ROOT/home"
-LIFECYCLE_DIR="$CHEZMOI_SOURCE_DIR/.chezmoiscripts/darwin"
+DOTFILES_ROOT="$(dirname "$(dirname "${SCRIPT_DIR}")")"
+CHEZMOI_SOURCE_DIR="${DOTFILES_ROOT}/home"
+LIFECYCLE_DIR="${CHEZMOI_SOURCE_DIR}/.chezmoiscripts/darwin"
 
 # Colors for output
 RED='\033[0;31m'
@@ -47,8 +47,8 @@ main() {
     echo ""
 
     # Change to dotfiles root
-    cd "$DOTFILES_ROOT" || {
-        log_error "Cannot change to dotfiles root: $DOTFILES_ROOT"
+    cd "${DOTFILES_ROOT}" || {
+        log_error "Cannot change to dotfiles root: ${DOTFILES_ROOT}"
         exit 1
     }
 
@@ -63,28 +63,28 @@ main() {
     check_shell_environment
     check_package_management
 
-    if [[ "$FULL_MODE" == "true" ]]; then
+    if [[ "${FULL_MODE}" == "true" ]]; then
         check_application_configurations
         check_recent_test_results
     fi
 
     # Summary
     echo "Health Check Summary:"
-    echo "   Passed: $checks_passed checks"
-    echo "   Warnings: $checks_warning checks"
-    echo "   Failed: $checks_failed checks"
+    echo "   Passed: ${checks_passed} checks"
+    echo "   Warnings: ${checks_warning} checks"
+    echo "   Failed: ${checks_failed} checks"
     echo ""
 
-    if [[ $checks_failed -eq 0 ]]; then
-        if [[ $checks_warning -eq 0 ]]; then
+    if [[ ${checks_failed} -eq 0 ]]; then
+        if [[ ${checks_warning} -eq 0 ]]; then
             log_success "All health checks passed. System is healthy."
             exit 0
         else
-            log_warning "System is mostly healthy with $checks_warning warning(s)."
+            log_warning "System is mostly healthy with ${checks_warning} warning(s)."
             exit 0
         fi
     else
-        log_error "Health check failed with $checks_failed error(s)."
+        log_error "Health check failed with ${checks_failed} error(s)."
         echo ""
         echo "Next steps:"
         echo "   1. Review the failed checks above"
@@ -121,10 +121,10 @@ check_critical_commands() {
 
     local critical_commands=("curl" "git" "zsh" "bash")
     for cmd in "${critical_commands[@]}"; do
-        if command -v "$cmd" &> /dev/null; then
-            log_success "$cmd is available"
+        if command -v "${cmd}" &> /dev/null; then
+            log_success "${cmd} is available"
         else
-            log_error "$cmd is not available"
+            log_error "${cmd} is not available"
         fi
     done
     echo ""
@@ -138,7 +138,7 @@ check_development_tools() {
         log_success "Xcode CLI Tools installed"
     else
         log_error "Xcode CLI Tools not installed"
-        if [[ "$AUTO_FIX" == "true" ]]; then
+        if [[ "${AUTO_FIX}" == "true" ]]; then
             log_info "Attempting to install Xcode CLI Tools..."
             xcode-select --install || log_error "Failed to trigger Xcode CLI Tools installation"
         fi
@@ -162,22 +162,22 @@ check_repository_structure() {
     log_info "Checking repository structure..."
 
     local required_files=(
-        "$DOTFILES_ROOT/.git"
-        "$DOTFILES_ROOT/README.md"
-        "$DOTFILES_ROOT/setup.sh"
-        "$DOTFILES_ROOT/infrastructure/vm/macos-matrix.example.json"
-        "$CHEZMOI_SOURCE_DIR/.chezmoi.toml.tmpl"
-        "$CHEZMOI_SOURCE_DIR/.chezmoiexternal.toml"
-        "$CHEZMOI_SOURCE_DIR/Brewfile.tmpl"
-        "$LIFECYCLE_DIR/run_once_before_install-homebrew.sh"
-        "$LIFECYCLE_DIR/run_onchange_after_install-packages.sh.tmpl"
+        "${DOTFILES_ROOT}/.git"
+        "${DOTFILES_ROOT}/README.md"
+        "${DOTFILES_ROOT}/setup.sh"
+        "${DOTFILES_ROOT}/infrastructure/vm/macos-matrix.example.json"
+        "${CHEZMOI_SOURCE_DIR}/.chezmoi.toml.tmpl"
+        "${CHEZMOI_SOURCE_DIR}/.chezmoiexternal.toml"
+        "${CHEZMOI_SOURCE_DIR}/Brewfile.tmpl"
+        "${LIFECYCLE_DIR}/run_once_before_install-homebrew.sh"
+        "${LIFECYCLE_DIR}/run_onchange_after_install-packages.sh.tmpl"
     )
 
     for file in "${required_files[@]}"; do
-        if [[ -e "$file" ]]; then
-            log_success "$(basename "$file") exists"
+        if [[ -e "${file}" ]]; then
+            log_success "$(basename "${file}") exists"
         else
-            log_error "$(basename "$file") missing"
+            log_error "$(basename "${file}") missing"
         fi
     done
     echo ""
@@ -187,20 +187,20 @@ check_local_workflow_scripts() {
     log_info "Checking local workflow scripts..."
 
     local workflow_scripts=(
-        "$DOTFILES_ROOT/scripts/test/test.sh"
-        "$DOTFILES_ROOT/scripts/test/run-critical-tests.sh"
-        "$DOTFILES_ROOT/scripts/test/validate-test-setup.sh"
-        "$DOTFILES_ROOT/scripts/vm/init-matrix.sh"
-        "$DOTFILES_ROOT/scripts/vm/vmctl.sh"
-        "$DOTFILES_ROOT/scripts/vm/vm-matrix.sh"
-        "$DOTFILES_ROOT/scripts/tools/performance-check.sh"
+        "${DOTFILES_ROOT}/scripts/test/test.sh"
+        "${DOTFILES_ROOT}/scripts/test/run-critical-tests.sh"
+        "${DOTFILES_ROOT}/scripts/test/validate-test-setup.sh"
+        "${DOTFILES_ROOT}/scripts/vm/init-matrix.sh"
+        "${DOTFILES_ROOT}/scripts/vm/vmctl.sh"
+        "${DOTFILES_ROOT}/scripts/vm/vm-matrix.sh"
+        "${DOTFILES_ROOT}/scripts/tools/performance-check.sh"
     )
 
     for script in "${workflow_scripts[@]}"; do
-        if [[ -x "$script" ]]; then
-            log_success "$(basename "$script") is executable"
+        if [[ -x "${script}" ]]; then
+            log_success "$(basename "${script}") is executable"
         else
-            log_error "$(basename "$script") is missing or not executable"
+            log_error "$(basename "${script}") is missing or not executable"
         fi
     done
     echo ""
@@ -209,14 +209,14 @@ check_local_workflow_scripts() {
 check_setup_script_modes() {
     log_info "Checking setup.sh capabilities..."
 
-    if [[ -x "$DOTFILES_ROOT/setup.sh" ]]; then
-        if "$DOTFILES_ROOT/setup.sh" --help >/dev/null 2>&1; then
+    if [[ -x "${DOTFILES_ROOT}/setup.sh" ]]; then
+        if "${DOTFILES_ROOT}/setup.sh" --help >/dev/null 2>&1; then
             log_success "setup.sh --help works"
         else
             log_error "setup.sh --help failed"
         fi
 
-        if "$DOTFILES_ROOT/setup.sh" --dry-run >/dev/null 2>&1; then
+        if "${DOTFILES_ROOT}/setup.sh" --dry-run >/dev/null 2>&1; then
             log_success "setup.sh --dry-run works"
         else
             log_error "setup.sh --dry-run failed"
@@ -233,18 +233,18 @@ check_ssh_configuration() {
     # Check for SSH keys
     local ssh_keys_found=false
     for key_type in rsa ed25519; do
-        if [[ -f "$HOME/.ssh/id_$key_type" ]]; then
-            log_success "SSH $key_type key exists"
+        if [[ -f "${HOME}/.ssh/id_${key_type}" ]]; then
+            log_success "SSH ${key_type} key exists"
             ssh_keys_found=true
         fi
     done
 
-    if [[ "$ssh_keys_found" == "false" ]]; then
+    if [[ "${ssh_keys_found}" == "false" ]]; then
         log_warning "No SSH keys found"
     fi
 
     # Check SSH config
-    if [[ -f "$HOME/.ssh/config" ]]; then
+    if [[ -f "${HOME}/.ssh/config" ]]; then
         log_success "SSH config exists"
     else
         log_warning "SSH config not found"
@@ -258,7 +258,7 @@ check_chezmoi_configuration() {
     if command -v chezmoi &> /dev/null; then
         log_success "Chezmoi installed"
 
-        if [[ -f "$CHEZMOI_SOURCE_DIR/.chezmoiexternal.toml" ]]; then
+        if [[ -f "${CHEZMOI_SOURCE_DIR}/.chezmoiexternal.toml" ]]; then
             log_success "Chezmoi source directory configured"
         else
             log_error "Chezmoi source directory not configured"
@@ -282,28 +282,28 @@ check_shell_environment() {
     log_info "Checking shell environment..."
 
     # Check current shell
-    if [[ "$SHELL" == *"zsh"* ]]; then
+    if [[ "${SHELL}" == *"zsh"* ]]; then
         log_success "Zsh is the default shell"
     else
-        log_warning "Default shell is not Zsh (current: $SHELL)"
+        log_warning "Default shell is not Zsh (current: ${SHELL})"
     fi
 
     # Check Oh My Zsh
-    if [[ -d "$HOME/.oh-my-zsh" ]]; then
+    if [[ -d "${HOME}/.oh-my-zsh" ]]; then
         log_success "Oh My Zsh installed"
     else
         log_warning "Oh My Zsh not installed"
     fi
 
     # Check Antigen
-    if [[ -d "$HOME/.local/share/antigen" ]]; then
+    if [[ -d "${HOME}/.local/share/antigen" ]]; then
         log_success "Antigen installed"
     else
         log_warning "Antigen not installed"
     fi
 
     # Check Powerlevel10k
-    if [[ -f "$HOME/.p10k.zsh" ]]; then
+    if [[ -f "${HOME}/.p10k.zsh" ]]; then
         log_success "Powerlevel10k configured"
     else
         log_warning "Powerlevel10k not configured"
@@ -315,13 +315,13 @@ check_package_management() {
     log_info "Checking package management..."
 
     if command -v brew &> /dev/null; then
-        if [[ -f "$CHEZMOI_SOURCE_DIR/Brewfile.tmpl" ]]; then
+        if [[ -f "${CHEZMOI_SOURCE_DIR}/Brewfile.tmpl" ]]; then
             log_success "Chezmoi Brewfile template present"
         else
             log_error "Chezmoi Brewfile template missing"
         fi
 
-        if [[ -f "$HOME/Brewfile" ]]; then
+        if [[ -f "${HOME}/Brewfile" ]]; then
             log_success "Materialized \$HOME/Brewfile present"
         else
             log_warning "\$HOME/Brewfile not present yet (run chezmoi apply to materialize)"
@@ -335,7 +335,7 @@ check_package_management() {
 check_recent_test_results() {
     log_info "Running quick verification tests..."
 
-    if "$DOTFILES_ROOT/scripts/test/test.sh" --quick >/dev/null 2>&1; then
+    if "${DOTFILES_ROOT}/scripts/test/test.sh" --quick >/dev/null 2>&1; then
         log_success "Quick test suite passed"
     else
         log_error "Quick test suite failed"
@@ -347,14 +347,14 @@ check_application_configurations() {
     log_info "Checking application configurations..."
 
     # VS Code
-    if [[ -d "$HOME/Library/Application Support/Code/User" ]]; then
+    if [[ -d "${HOME}/Library/Application Support/Code/User" ]]; then
         log_success "VS Code configuration directory exists"
     else
         log_warning "VS Code configuration directory not found"
     fi
 
     # Cursor
-    if [[ -d "$HOME/Library/Application Support/Cursor/User" ]]; then
+    if [[ -d "${HOME}/Library/Application Support/Cursor/User" ]]; then
         log_success "Cursor configuration directory exists"
     else
         log_warning "Cursor configuration directory not found"

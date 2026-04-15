@@ -63,7 +63,7 @@ echo "📸 Configuring Screenshots..."
 defaults write com.apple.screencapture "location" -string "~/Desktop/Screenshots"
 defaults write com.apple.screencapture "type" -string "png"
 defaults write com.apple.screencapture "disable-shadow" -bool "true"
-mkdir -p "$HOME/Desktop/Screenshots"
+mkdir -p "${HOME}/Desktop/Screenshots"
 
 # Keyboard shortcuts — disable unused system hotkeys
 # Reference: https://web.archive.org/web/2024/https://krypted.com/mac-os-x/defaults-symbolichotkeys/
@@ -76,7 +76,7 @@ echo "⌨️  Configuring keyboard shortcuts..."
 # 48/49: Dock toggle hiding
 # 160: Accessibility controls
 for hotkey_id in 16 18 20 21 22 24 25 26 39 41 48 49 160; do
-    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add "$hotkey_id" '<dict><key>enabled</key><false/></dict>'
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add "${hotkey_id}" '<dict><key>enabled</key><false/></dict>'
 done
 
 {{- if .work }}
