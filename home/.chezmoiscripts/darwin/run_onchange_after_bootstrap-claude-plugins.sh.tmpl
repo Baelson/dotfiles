@@ -11,9 +11,6 @@
 # - Claude Code CLI: claude plugins install <plugin>[@marketplace]
 # - Claude Code marketplaces: claude plugins marketplace add github:<owner>/<repo>
 #
-# Marketplaces hash: {{ include "dot_claude/plugins/known_marketplaces.json" | sha256sum }}
-# Plugins hash: {{ include "dot_claude/plugins/installed_plugins.json" | sha256sum }}
-#
 
 set -euo pipefail
 
