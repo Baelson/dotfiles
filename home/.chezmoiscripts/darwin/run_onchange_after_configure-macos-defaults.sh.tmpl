@@ -94,9 +94,22 @@ defaults write com.apple.screencapture "show-thumbnail" -bool "true"
 # =============================================================================
 
 # Terminal.app preferences
+# Profile: Solarized Dark + MesloLGS Nerd Font Mono 11pt
+# Source: ~/.config/terminal/Solarized-Dark-NerdFont.terminal (chezmoi-managed)
+# Import method: `open <file>.terminal` imports the profile into Terminal.app.
+# On first bootstrap, the font cask (font-meslo-lg-nerd-font) may not yet be
+# installed when this script runs (install-packages runs after configure-macos-
+# defaults). Terminal.app will fall back to a system font until the next apply
+# or until the user opens the .terminal file manually after brew bundle.
+# Terminal profile hash: {{ include "dot_config/terminal/Solarized-Dark-NerdFont.terminal" | sha256sum }}
 echo "💻 Configuring Terminal.app..."
-defaults write com.apple.Terminal "Default Window Settings" -string "Default-Homebrew"
-defaults write com.apple.Terminal "Startup Window Settings" -string "Homebrew"
+TERMINAL_PROFILE="${HOME}/.config/terminal/Solarized-Dark-NerdFont.terminal"
+if [[ -f "${TERMINAL_PROFILE}" ]]; then
+    open "${TERMINAL_PROFILE}"
+    sleep 1
+fi
+defaults write com.apple.Terminal "Default Window Settings" -string "Solarized-Dark-NerdFont"
+defaults write com.apple.Terminal "Startup Window Settings" -string "Solarized-Dark-NerdFont"
 defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"
 
 # iTerm2 preferences — load settings from chezmoi-managed plist
