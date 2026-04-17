@@ -45,12 +45,20 @@ To override automatic detection, run:
 {{- $personal := true -}}
 {{- $work := false -}}
 {{- $mas := false -}}
+{{- $is_kurama := false -}}
 
 {{/* Automatic Work Environment Detection */}}
 {{- $hostname := .chezmoi.hostname -}}
 {{- if or (eq $hostname "work-laptop") (contains "corp" $hostname) -}}
 {{-   $work = true -}}
 {{-   $personal = false -}}
+{{- end -}}
+
+{{/* Primary-machine detection (Mac Studio "Kurama") — gates apps/configs
+     that should only land on the primary personal Mac, not on shared
+     family Macs (e.g. Jennifers-iMac, Jennifers-MacBook-Pro). */}}
+{{- if eq $hostname "Kurama" -}}
+{{-   $is_kurama = true -}}
 {{- end -}}
 
 {{/* Interactive Prompts (only when connected to terminal) */}}
@@ -94,6 +102,7 @@ encryption = "age"
     personal = {{ $personal }}
     work = {{ $work }}
     mas = {{ $mas }}
+    is_kurama = {{ $is_kurama }}
     hostname = {{ $hostname | quote }}
 
 # Encryption settings (only active when age key is provisioned)
