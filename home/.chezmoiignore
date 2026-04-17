@@ -74,3 +74,30 @@ Brewfile
 .config/age
 .config/age/**
 {{- end }}
+
+# ── Kurama-only files (primary Mac Studio) ────────
+# Excluded on all other Macs (e.g. Jennifers-iMac, Jennifers-MacBook-Pro).
+# The Claude Desktop JSON is NOT ignored here — instead it's templated
+# (private_claude_desktop_config.json.tmpl) so the softeria-m365 MCP
+# entry drops out on non-Kurama while the rest of the config deploys.
+{{ if not (and (hasKey . "is_kurama") .is_kurama) -}}
+# ms365-mcp LaunchAgent + wrapper scripts
+Library/LaunchAgents/com.duqueclan.ms365-mcp.plist
+.local/bin/ms365-mcp-start.sh
+.local/bin/ms365-mcp-stdio.sh
+
+# Cursor IDE (config + app support)
+.cursor
+.cursor/**
+.local/bin/open-cursor-global-workspace.sh
+Library/Application Support/Cursor
+Library/Application Support/Cursor/**
+
+# Postman (app support only — cask is not gated)
+Library/Application Support/Postman
+Library/Application Support/Postman/**
+
+# GitKraken
+.gitkraken
+.gitkraken/**
+{{- end }}

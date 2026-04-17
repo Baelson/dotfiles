@@ -12,6 +12,9 @@
 {{- /* Default mas to false if not provided (backwards-compatible with tests) */ -}}
 {{- $mas := false -}}
 {{- if hasKey . "mas" -}}{{- $mas = .mas -}}{{- end -}}
+{{- /* is_kurama gates apps/extensions that should only land on the primary Mac Studio */ -}}
+{{- $is_kurama := false -}}
+{{- if hasKey . "is_kurama" -}}{{- $is_kurama = .is_kurama -}}{{- end -}}
 #
 # Generated Configuration:
 # Environment: {{ if .work }}work{{ else if .personal }}personal{{ else }}unknown{{ end }}
@@ -87,58 +90,52 @@ brew 'rcmdnk/file/brew-file'  # Brewfile manager for Homebrew                   
 # Fonts (required for p10k/tmux status line glyphs)
 cask 'font-meslo-lg-nerd-font'  # Meslo Nerd Font — Powerline glyphs for p10k and tmux         -- https://github.com/ryanoasis/nerd-fonts
 
-# Development tools
-cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
+# Development tools (cross-machine)
 cask 'beyond-compare'       # Compare files and folders                                         -- https://www.scootersoftware.com/
 cask 'chatgpt'              # OpenAI's official ChatGPT desktop app                             -- https://chatgpt.com/
 cask 'claude'               # Anthropic's official Claude AI desktop app                        -- https://claude.ai/download
-cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
-cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
-cask 'docker-desktop'       # Pack, ship and run any application as a lightweight container     -- https://www.docker.com/
-cask 'orbstack'             # Fast, lightweight Docker & Linux on macOS (primary runtime)       -- https://orbstack.dev/
-cask 'github'               # Desktop client for GitHub repositories                            -- https://desktop.github.com/
 cask 'iterm2'               # Terminal emulator as alternative to Apple's Terminal app          -- https://iterm2.com/
 cask 'itermai'              # Enable generative AI features in iTerm2                           -- https://iterm2.com/ai-plugin.html
-cask 'menuwhere'            # Access the menu from anywhere                                     -- https://manytricks.com/menuwhere/
 cask 'obsidian'             # Knowledge base in local folder of plain text Markdown files       -- https://obsidian.md/
+cask 'orbstack'             # Fast, lightweight Docker & Linux on macOS (primary runtime)       -- https://orbstack.dev/
 cask 'postman'              # Collaboration platform for API development                        -- https://www.postman.com/
-cask 'sublime-merge'        # Git client                                                        -- https://www.sublimemerge.com/
 cask 'sublime-text'         # Text editor for code, markup and prose                            -- https://www.sublimetext.com/
 cask 'visual-studio-code'   # Open-source code editor                                           -- https://code.visualstudio.com/
 cask 'webex-meetings'       # Video communication and virtual meeting platform                  -- https://www.webex.com/
 cask 'zoom'                 # Video communication and virtual meeting platform                  -- https://www.zoom.us/
 
-{{- if .personal }}
-# Personal applications
-cask 'discord'              # Voice and text chat software                                      -- https://discord.com/
-cask 'figma'                # Collaborative team software                                       -- https://www.figma.com/
-cask 'softraid'             # Powerful and intuitive software RAID utility                      -- https://www.softraid.com/
+{{- if $is_kurama }}
+# Kurama-only development tools (primary Mac Studio)
+cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
+cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
+cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
+cask 'github'               # Desktop client for GitHub repositories                            -- https://desktop.github.com/
+cask 'menuwhere'            # Access the menu from anywhere                                     -- https://manytricks.com/menuwhere/
+cask 'sublime-merge'        # Git client                                                        -- https://www.sublimemerge.com/
 {{- end }}
 
-{{- if and .work $mas }}
-# Work-specific applications (requires: CHEZMOI_MAS=true)
+{{- if .personal }}
+# Personal applications
+cask 'softraid'             # Powerful and intuitive software RAID utility                      -- https://www.softraid.com/
+{{- if $is_kurama }}
+cask 'discord'              # Voice and text chat software                                      -- https://discord.com/
+cask 'figma'                # Collaborative team software                                       -- https://www.figma.com/
+{{- end }}
+{{- end }}
+
+{{- if and .work $mas $is_kurama }}
+# Work-specific applications (Kurama only, requires: CHEZMOI_MAS=true)
 mas 'Slack (4.45.64)', id: 803453959
 {{- end }}
 
 {{- if and (not .ephemeral) $mas }}
 # App Store applications (requires: CHEZMOI_MAS=true)
 {{- if .personal }}
+# Cross-machine MAS apps
 mas 'Amphetamine (5.3.2)', id: 937984704
-mas 'Apple Configurator (2.18)', id: 1037126344
-mas 'Blackmagic Disk Speed Test (3.4.2)', id: 425264550
-mas 'Blurred (1.2.0)', id: 1497527363
 mas 'Canva (1.112.1)', id: 897446215
-mas 'DaisyDisk (4.31)', id: 411643860
-mas 'Developer (10.8.2)', id: 640199958
-mas 'Display Menu (2.2.5)', id: 549083868
-mas 'Final Cut Pro (11.1.1)', id: 424389933
-mas 'Ground News (3.0.3)', id: 1324203419
-mas 'Hidden Bar (1.8)', id: 1452453066
 mas 'iMovie (10.4.3)', id: 408981434
 mas 'Keynote (14.4)', id: 409183694
-## 2026-03-18: Disabling MacFamilyTree and Messenger since it's failing
-# mas 'MacFamilyTree 10 (10.4)', id: 1567970985
-# mas 'Messenger (518.0.0)', id: 1480068668
 mas 'Microsoft Excel (16.100)', id: 462058435
 mas 'Microsoft OneNote (16.100)', id: 784801555
 mas 'Microsoft PowerPoint (16.100)', id: 462062816
@@ -148,10 +145,27 @@ mas 'OmniFocus (4.6.1)', id: 1542143627
 mas 'OneDrive (25.140.0720)', id: 823766827
 mas 'Pages (14.4)', id: 409201541
 mas 'Pixelmator Pro (3.7)', id: 1289583905
+
+{{- if $is_kurama }}
+
+# Kurama-only MAS apps (primary Mac Studio)
+mas 'Apple Configurator (2.18)', id: 1037126344
+mas 'Blackmagic Disk Speed Test (3.4.2)', id: 425264550
+mas 'Blurred (1.2.0)', id: 1497527363
+mas 'DaisyDisk (4.31)', id: 411643860
+mas 'Developer (10.8.2)', id: 640199958
+mas 'Display Menu (2.2.5)', id: 549083868
+mas 'Final Cut Pro (11.1.1)', id: 424389933
+mas 'Ground News (3.0.3)', id: 1324203419
+mas 'Hidden Bar (1.8)', id: 1452453066
 mas 'Streaks (10.4.13)', id: 963034692
 mas 'Swift Playground (4.6.4)', id: 1496833156
 mas 'Xcode (16.4)', id: 497799835
+{{- end }}
 
+## 2026-03-18: Disabling MacFamilyTree and Messenger since it's failing
+# mas 'MacFamilyTree 10 (10.4)', id: 1567970985
+# mas 'Messenger (518.0.0)', id: 1480068668
 # mas 'iA Writer (7.2.15)', id: 775737590
 # mas 'MindNode (2023.7)', id: 1289197285
 # mas 'Noir (2025.1.6)', id: 1592917505
@@ -159,8 +173,8 @@ mas 'Xcode (16.4)', id: 497799835
 {{- end }}
 {{- end }}
 
-{{- if not .ephemeral }}
-# VS Code extensions (all non-headless environments)
+{{- if and (not .ephemeral) $is_kurama }}
+# VS Code extensions (Kurama only)
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"
 vscode "ms-toolsai.jupyter"
