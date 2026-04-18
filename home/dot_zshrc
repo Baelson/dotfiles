@@ -224,14 +224,15 @@ alias grsa="git restore --staged ."
 # claude-mem added by plug-in
 alias claude-mem='${BUN_INSTALL}/bin/bun "${HOME}/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
 # TODO: Inline commands to set `--name`. Default would be `cwd_YYYY-MM-DD_HH-mm-ss-TZ` in 24h current timezone
-alias ccd="claude --dangerously-skip-permissions"
-alias ccad="claude --allow-dangerously-skip-permissions --permission-mode auto"
+alias ccd="claude --dangerously-skip-permissions --resume"
+alias ccad="claude --allow-dangerously-skip-permissions --permission-mode auto --resume"
 
 # chezmoi alias'
 alias cm="chezmoi"
 alias cmdiff="chezmoi diff"
 alias cmcd="chezmoi cd"
 alias cmedit="chezmoi edit"
+alias cmapply="chezmoi apply"
 alias cmstatus="echo '== Col1: last write vs. actual, Col2: actual vs. target ==\\n' && chezmoi status"
 alias cminit="echo '== chezmoi init ==\\n' && chezmoi init"
 alias cmdrupdate="echo '== [DRY RUN] chezmoi update ==' && chezmoi update --dry-run"
