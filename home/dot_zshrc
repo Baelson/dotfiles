@@ -229,14 +229,18 @@ alias ccad="claude --allow-dangerously-skip-permissions --permission-mode auto -
 
 # chezmoi alias'
 alias cm="chezmoi"
-alias cmdiff="chezmoi diff"
 alias cmcd="chezmoi cd"
+alias cmdiff="chezmoi diff"
+alias cmadd="chezmoi add"
+alias cmradd="chezmoi re-add"
 alias cmedit="chezmoi edit"
 alias cmapply="chezmoi apply"
 alias cmstatus="echo '== Col1: last write vs. actual, Col2: actual vs. target ==\\n' && chezmoi status"
 alias cminit="echo '== chezmoi init ==\\n' && chezmoi init"
 alias cmdrupdate="echo '== [DRY RUN] chezmoi update ==' && chezmoi update --dry-run"
 alias cmdrapply="echo '== [DRY RUN] chezmoi apply ==' && chezmoi apply --dry-run"
+alias cmdradd="echo '== [DRY RUN] chezmoi add ==' && chezmoi add --dry-run"
+alias cmdrradd="echo '== [DRY RUN] chezmoi re-add ==' && chezmoi re-add --dry-run"
 
 ############################################
 ###             key bindings             ###
