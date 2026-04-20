@@ -114,7 +114,7 @@ teardown() {
 }
 
 @test "TEMPLATE-7: Brewfile includes GUI apps in non-headless environment" {
-    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "hostname=desktop"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "hostname=desktop" "is_kurama=true"
     assert_chezmoi_success
 
     # Should include GUI applications
@@ -143,7 +143,7 @@ teardown() {
 }
 
 @test "TEMPLATE-9: Brewfile includes Mac App Store apps in persistent personal environment" {
-    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "mas=true" "hostname=personal-mac"
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "mas=true" "is_kurama=true" "hostname=personal-mac"
     assert_chezmoi_success
 
     # Should include Mac App Store apps

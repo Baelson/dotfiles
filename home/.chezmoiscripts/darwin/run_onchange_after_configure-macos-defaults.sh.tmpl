@@ -105,8 +105,14 @@ defaults write com.apple.screencapture "show-thumbnail" -bool "true"
 echo "💻 Configuring Terminal.app..."
 TERMINAL_PROFILE="${HOME}/.config/terminal/Solarized-Dark-NerdFont.terminal"
 if [[ -f "${TERMINAL_PROFILE}" ]]; then
-    open "${TERMINAL_PROFILE}"
-    sleep 1
+    # `open` requires an Aqua/GUI session; fails in --no-graphics VMs and
+    # non-interactive SSH bootstraps with OSLaunchdErrorDomain Code=125.
+    # Degrade gracefully — the profile stays on disk for manual import later.
+    if open "${TERMINAL_PROFILE}" 2>/dev/null; then
+        sleep 1
+    else
+        echo "⚠️  Could not open Terminal profile (headless / no GUI session) — import manually after first Terminal.app launch"
+    fi
 fi
 defaults write com.apple.Terminal "Default Window Settings" -string "Solarized-Dark-NerdFont"
 defaults write com.apple.Terminal "Startup Window Settings" -string "Solarized-Dark-NerdFont"
