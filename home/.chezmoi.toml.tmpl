@@ -32,11 +32,17 @@ Environment Variables Explained:
   * false (default): Skip MAS apps for fully non-interactive bootstrap
   * Override: CHEZMOI_MAS=true chezmoi apply
 
+- skip_flaky_casks: Omit casks whose installers are known to fail in some
+  contexts (today: zoom, which fails on `--no-graphics` tart VMs with a
+  pkg-script error). Default false; set to true for VM E2E bootstraps.
+  * Override: CHEZMOI_SKIP_FLAKY_CASKS=true chezmoi apply
+
 Customization:
 To override automatic detection, run:
   chezmoi init --data ephemeral=true
   chezmoi init --data headless=true
-  CHEZMOI_MAS=true chezmoi apply  # enable MAS apps
+  CHEZMOI_MAS=true chezmoi apply                 # enable MAS apps
+  CHEZMOI_SKIP_FLAKY_CASKS=true chezmoi apply    # skip zoom etc. in VM E2E
 */}}
 
 {{/* Default Environment Values */}}
@@ -46,6 +52,7 @@ To override automatic detection, run:
 {{- $work := false -}}
 {{- $mas := false -}}
 {{- $is_kurama := false -}}
+{{- $skip_flaky_casks := false -}}
 
 {{/* Automatic Work Environment Detection */}}
 {{- $hostname := .chezmoi.hostname -}}
@@ -89,6 +96,12 @@ To override automatic detection, run:
 {{-   $mas = true -}}
 {{- end -}}
 
+{{- if hasKey . "skip_flaky_casks" -}}
+{{-   $skip_flaky_casks = .skip_flaky_casks -}}
+{{- else if env "CHEZMOI_SKIP_FLAKY_CASKS" -}}
+{{-   $skip_flaky_casks = true -}}
+{{- end -}}
+
 {{- if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
 sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
 {{- end }}
@@ -103,6 +116,7 @@ encryption = "age"
     work = {{ $work }}
     mas = {{ $mas }}
     is_kurama = {{ $is_kurama }}
+    skip_flaky_casks = {{ $skip_flaky_casks }}
     hostname = {{ $hostname | quote }}
 
 # Encryption settings (only active when age key is provisioned)

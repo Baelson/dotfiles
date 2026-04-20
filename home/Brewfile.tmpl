@@ -15,6 +15,9 @@
 {{- /* is_kurama gates apps/extensions that should only land on the primary Mac Studio */ -}}
 {{- $is_kurama := false -}}
 {{- if hasKey . "is_kurama" -}}{{- $is_kurama = .is_kurama -}}{{- end -}}
+{{- /* skip_flaky_casks omits casks with unreliable installers (zoom in --no-graphics VMs) */ -}}
+{{- $skip_flaky_casks := false -}}
+{{- if hasKey . "skip_flaky_casks" -}}{{- $skip_flaky_casks = .skip_flaky_casks -}}{{- end -}}
 #
 # Generated Configuration:
 # Environment: {{ if .work }}work{{ else if .personal }}personal{{ else }}unknown{{ end }}
@@ -102,7 +105,9 @@ cask 'postman'              # Collaboration platform for API development        
 cask 'sublime-text'         # Text editor for code, markup and prose                            -- https://www.sublimetext.com/
 cask 'visual-studio-code'   # Open-source code editor                                           -- https://code.visualstudio.com/
 cask 'webex-meetings'       # Video communication and virtual meeting platform                  -- https://www.webex.com/
+{{- if not $skip_flaky_casks }}
 cask 'zoom'                 # Video communication and virtual meeting platform                  -- https://www.zoom.us/
+{{- end }}
 
 {{- if $is_kurama }}
 # Kurama-only development tools (primary Mac Studio)
