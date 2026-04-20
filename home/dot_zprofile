@@ -26,3 +26,24 @@ export PATH="${PATH}:/Applications/Obsidian.app/Contents/MacOS"
 # Added by OrbStack: command-line tools and integration
 # This won't be added again if you remove it.
 source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+
+# Terminal.app profile auto-import (once per machine)
+# The chezmoi lifecycle script configure-macos-defaults.sh tries to `open` the
+# .terminal profile during apply so Terminal.app imports it. In headless
+# contexts (--no-graphics tart VMs, non-interactive SSH bootstraps) that open
+# call fails and only emits a warning — the named profile is never added to
+# Terminal.app's profile list. This snippet re-runs the import the first time
+# the user actually opens Terminal.app, with a marker file preventing repeat
+# imports or recursion.
+if [[ "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
+    _TERM_PROFILE="${HOME}/.config/terminal/Solarized-Dark-NerdFont.terminal"
+    _TERM_MARKER="${HOME}/.local/state/terminal-app-profile-imported"
+    if [[ ! -f "${_TERM_MARKER}" && -f "${_TERM_PROFILE}" ]]; then
+        mkdir -p "${HOME}/.local/state"
+        # Touch marker BEFORE open so the new Terminal window (which triggers
+        # this zprofile again) doesn't re-enter.
+        touch "${_TERM_MARKER}"
+        open "${_TERM_PROFILE}" 2>/dev/null || :
+    fi
+    unset _TERM_PROFILE _TERM_MARKER
+fi
