@@ -51,7 +51,21 @@ readonly ACCOUNT="${USER:-$(id -un)}"
 : "${ACCOUNT:?Unable to resolve current username}"
 
 # -----------------------------------------------------------------------------
-# Step 1: Homebrew — also handles CLT via softwareupdate under NONINTERACTIVE=1
+# Step 1: Pre-flight — confirm the PAT Keychain entry exists before we burn
+# minutes on Homebrew install. Checks presence only (no -w), so this does NOT
+# trigger a macOS "Allow access" dialog on first use.
+# -----------------------------------------------------------------------------
+
+log_step "Checking for Keychain entry (service=${KEYCHAIN_SERVICE}, account=${ACCOUNT})"
+if ! security find-generic-password -s "${KEYCHAIN_SERVICE}" -a "${ACCOUNT}" >/dev/null 2>&1; then
+    log_err "Missing Keychain entry for service=${KEYCHAIN_SERVICE}, account=${ACCOUNT}."
+    echo "Create a GitHub PAT with 'repo' scope at https://github.com/settings/tokens, then:" >&2
+    echo "  security add-generic-password -s ${KEYCHAIN_SERVICE} -a ${ACCOUNT} -w '<token>' -U" >&2
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# Step 2: Homebrew — also handles CLT via softwareupdate under NONINTERACTIVE=1
 # -----------------------------------------------------------------------------
 
 if command -v brew >/dev/null 2>&1; then
@@ -62,36 +76,40 @@ else
         "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Load brew shellenv for this shell — works on Apple Silicon and Intel.
-if [[ -x /opt/homebrew/bin/brew ]]; then
+# Load brew shellenv. command -v works if brew is on PATH already (test envs,
+# already-bootstrapped machines). Fall back to known install paths for the
+# "just-installed" case where PATH hasn't been refreshed in this shell.
+if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+elif [[ -x /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
 else
-    log_err "brew not found at /opt/homebrew/bin or /usr/local/bin after install"
+    log_err "brew not found on PATH or at /opt/homebrew/bin, /usr/local/bin after install"
     exit 1
 fi
 
 # -----------------------------------------------------------------------------
-# Step 2: Install chezmoi + age
+# Step 3: Install chezmoi + age
 # -----------------------------------------------------------------------------
 
 log_step "Installing chezmoi and age"
 brew install chezmoi age
 
 # -----------------------------------------------------------------------------
-# Step 3: Fetch PAT from Keychain (fail-fast) and write ~/.netrc (0600)
+# Step 4: Fetch PAT from Keychain and write ~/.netrc (0600)
 #
 # Install the cleanup trap BEFORE writing netrc so any failure — including
-# right after the file is created — still scrubs the plaintext token.
+# right after the file is created — still scrubs the plaintext token. The
+# existence check in Step 1 already failed fast on a missing entry; at this
+# point an empty value means the Keychain was tampered with mid-run.
 # -----------------------------------------------------------------------------
 
-log_step "Retrieving GitHub PAT from Keychain (service=${KEYCHAIN_SERVICE}, account=${ACCOUNT})"
+log_step "Retrieving PAT value from Keychain"
 TOKEN="$(security find-generic-password -s "${KEYCHAIN_SERVICE}" -a "${ACCOUNT}" -w 2>/dev/null || true)"
 if [[ -z "${TOKEN}" ]]; then
-    log_err "Missing Keychain entry for service=${KEYCHAIN_SERVICE}, account=${ACCOUNT}."
-    echo "Create a GitHub PAT with 'repo' scope at https://github.com/settings/tokens, then:" >&2
-    echo "  security add-generic-password -s ${KEYCHAIN_SERVICE} -a ${ACCOUNT} -w '<token>' -U" >&2
+    log_err "Keychain entry ${KEYCHAIN_SERVICE}:${ACCOUNT} exists but returned an empty value."
     exit 1
 fi
 
