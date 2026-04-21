@@ -172,16 +172,24 @@ setup_healthy_fakes() {
     [ "${mode}" = "600" ]
 }
 
-@test "bootstrap: ~/.netrc is absent after a successful run" {
+@test "bootstrap: ~/.netrc is empty (scrubbed but not deleted) after a successful run" {
+    # home/empty_dot_netrc makes chezmoi own ~/.netrc as an empty file.
+    # Bootstrap must truncate, not delete, to avoid chezmoi drift on subsequent
+    # apply calls. We verify both: the file still exists AND has zero length.
     setup_healthy_fakes
 
     run bash "${BOOTSTRAP_SCRIPT}"
 
     [ "${status}" -eq 0 ]
-    [ ! -f "${HOME}/.netrc" ]
+    [ -f "${HOME}/.netrc" ]
+    [ ! -s "${HOME}/.netrc" ]
+    # Must also still be 0600 so a subsequent real PAT write inherits tight perms.
+    local mode
+    mode="$(stat -f '%Lp' "${HOME}/.netrc")"
+    [ "${mode}" = "600" ]
 }
 
-@test "bootstrap: trap scrubs ~/.netrc when chezmoi init fails mid-run" {
+@test "bootstrap: trap scrubs ~/.netrc contents when chezmoi init fails mid-run" {
     fake security '
         for arg in "$@"; do
             if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
@@ -205,7 +213,12 @@ setup_healthy_fakes() {
     run bash "${BOOTSTRAP_SCRIPT}"
 
     [ "${status}" -ne 0 ]
-    [ ! -f "${HOME}/.netrc" ]
+    # Trap must have truncated the file. Either absent (never written, e.g.
+    # init failed before Step 4) OR present-and-empty is acceptable; the
+    # invariant is "no plaintext token value survives".
+    if [[ -f "${HOME}/.netrc" ]]; then
+        [ ! -s "${HOME}/.netrc" ]
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -220,6 +233,91 @@ setup_healthy_fakes() {
     [ "${status}" -eq 0 ]
     [ -f "${GIT_LOG}" ]
     grep -q -- "-C .* remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
+}
+
+@test "bootstrap: apply-with-scripts failure still flips remote to SSH and scrubs netrc" {
+    # Scenario: chezmoi apply --include=scripts exits non-zero (e.g., a flaky
+    # cask download). Install.sh must still do the remote-flip + netrc scrub,
+    # then surface the apply exit code at the end. This is the critical
+    # regression from the first E2E run on the bare VM.
+    fake security '
+        for arg in "$@"; do
+            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
+        done
+        exit 0
+    '
+    fake brew '
+        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
+        exit 0
+    '
+    fake chezmoi "
+        case \"\${1:-}\" in
+            source-path)
+                mkdir -p \"\${BATS_TEST_TMPDIR}/fake-source/.git\"
+                echo \"\${BATS_TEST_TMPDIR}/fake-source\"
+                ;;
+            apply)
+                # This is the --include=scripts --force call. Fail it.
+                # (init is also 'chezmoi init', not 'apply', so we only fail 'apply'.)
+                echo 'simulated cask download timeout' >&2
+                exit 1
+                ;;
+            init)
+                # init --apply succeeds quietly
+                ;;
+        esac
+        exit 0
+    "
+    fake git "echo \"\$@\" >> \"${GIT_LOG}\"; exit 0"
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    # Exit code should match the apply failure (propagated at the end)
+    [ "${status}" -ne 0 ]
+    # Output should note the partial-success state
+    [[ "${output}" =~ "partially succeeded" || "${output}" =~ "Continuing to remote-flip" ]]
+    # Remote-flip MUST have happened even though apply failed
+    [ -f "${GIT_LOG}" ]
+    grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
+    # netrc must be truncated (or absent) — no plaintext PAT left on disk
+    if [[ -f "${HOME}/.netrc" ]]; then
+        [ ! -s "${HOME}/.netrc" ]
+    fi
+}
+
+@test "bootstrap: remote-flip works when source-path is a child of the git checkout" {
+    # chezmoi with .chezmoiroot puts the source at <checkout>/home, so .git
+    # lives one level up from source-path. Install.sh must find it either way.
+    fake security '
+        for arg in "$@"; do
+            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
+        done
+        exit 0
+    '
+    fake brew '
+        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
+        exit 0
+    '
+    fake chezmoi "
+        case \"\${1:-}\" in
+            source-path)
+                mkdir -p \"\${BATS_TEST_TMPDIR}/fake-checkout/.git\"
+                mkdir -p \"\${BATS_TEST_TMPDIR}/fake-checkout/home\"
+                # source lives at checkout/home (matches .chezmoiroot layout)
+                echo \"\${BATS_TEST_TMPDIR}/fake-checkout/home\"
+                ;;
+        esac
+        exit 0
+    "
+    fake git "echo \"\$@\" >> \"${GIT_LOG}\"; exit 0"
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    [ "${status}" -eq 0 ]
+    [ -f "${GIT_LOG}" ]
+    grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
+    # The -C path should be the checkout dir (parent of source-path), not the source-path itself
+    grep -qE -- "-C [^ ]*fake-checkout remote set-url" "${GIT_LOG}"
 }
 
 @test "bootstrap: init invocation uses --exclude=encrypted,scripts" {

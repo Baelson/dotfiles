@@ -113,8 +113,16 @@ if [[ -z "${TOKEN}" ]]; then
     exit 1
 fi
 
+# Scrub the PAT value by truncating ~/.netrc rather than deleting it. The
+# dotfiles source tree contains `home/empty_dot_netrc` (chezmoi-managed empty
+# placeholder), so deleting the file would leave chezmoi reporting drift on
+# every subsequent apply. Truncating removes the plaintext token while
+# preserving chezmoi's "managed empty file" invariant.
 cleanup_netrc() {
-    rm -f "${HOME}/.netrc"
+    if [[ -f "${HOME}/.netrc" ]]; then
+        : > "${HOME}/.netrc" 2>/dev/null || true
+        chmod 600 "${HOME}/.netrc" 2>/dev/null || true
+    fi
 }
 trap cleanup_netrc EXIT INT TERM
 
@@ -141,26 +149,51 @@ chezmoi init --apply --exclude=encrypted,scripts "${REPO_HTTPS_URL}"
 # -----------------------------------------------------------------------------
 # Step 5: chezmoi apply with scripts — age key is now provisioned, encrypted
 # files (including private_dot_ssh/) deploy here.
+#
+# A lifecycle script may fail (e.g., a flaky cask download timing out). That
+# failure is noted but does NOT short-circuit the remote-flip + netrc scrub —
+# those are independent of whether every package installed cleanly. If apply
+# failed, install.sh exits non-zero at the very end so the user still sees
+# the failure and can investigate.
 # -----------------------------------------------------------------------------
 
 log_step "chezmoi apply --include=scripts --force"
-chezmoi apply --include=scripts --force
+APPLY_EXIT=0
+chezmoi apply --include=scripts --force || APPLY_EXIT=$?
+if [[ "${APPLY_EXIT}" -ne 0 ]]; then
+    log_warn "chezmoi apply exited ${APPLY_EXIT}. Continuing to remote-flip; investigate after bootstrap."
+fi
 
 # -----------------------------------------------------------------------------
 # Step 6: Flip source-dir remote to SSH and scrub ~/.netrc
 # -----------------------------------------------------------------------------
 
 SRC="$(chezmoi source-path)"
+# chezmoi source-path returns the dir containing the source files. The git
+# checkout is one level up (the repo root), so check both locations.
+GIT_DIR=""
 if [[ -d "${SRC}/.git" ]]; then
+    GIT_DIR="${SRC}"
+elif [[ -d "${SRC}/../.git" ]]; then
+    GIT_DIR="$(cd "${SRC}/.." && pwd)"
+fi
+if [[ -n "${GIT_DIR}" ]]; then
     log_step "Flipping source-dir remote to SSH (${REPO_SSH_URL})"
-    git -C "${SRC}" remote set-url origin "${REPO_SSH_URL}"
+    git -C "${GIT_DIR}" remote set-url origin "${REPO_SSH_URL}"
 else
-    log_warn "chezmoi source-path (${SRC}) is not a git checkout — skipping remote flip"
+    log_warn "chezmoi source-path (${SRC}) is not inside a git checkout — skipping remote flip"
 fi
 
 log_step "Scrubbing ~/.netrc"
 cleanup_netrc
 trap - EXIT INT TERM
+
+# Surface the apply failure now that cleanup + flip are done.
+if [[ "${APPLY_EXIT}" -ne 0 ]]; then
+    log_err "chezmoi apply --include=scripts failed (exit ${APPLY_EXIT}). Bootstrap partially succeeded."
+    log_err "Fix the cause and re-run: chezmoi apply --include=scripts --force"
+    exit "${APPLY_EXIT}"
+fi
 
 # -----------------------------------------------------------------------------
 # Done
