@@ -15,7 +15,7 @@
 {{- /* is_kurama gates apps/extensions that should only land on the primary Mac Studio */ -}}
 {{- $is_kurama := false -}}
 {{- if hasKey . "is_kurama" -}}{{- $is_kurama = .is_kurama -}}{{- end -}}
-{{- /* skip_flaky_casks omits casks with unreliable installers (zoom in --no-graphics VMs) */ -}}
+{{- /* skip_flaky_casks omits casks with unreliable downloads/installers in --no-graphics VMs: zoom PKG hangs; orbstack CDN times out */ -}}
 {{- $skip_flaky_casks := false -}}
 {{- if hasKey . "skip_flaky_casks" -}}{{- $skip_flaky_casks = .skip_flaky_casks -}}{{- end -}}
 #
@@ -100,7 +100,9 @@ cask 'claude'               # Anthropic's official Claude AI desktop app        
 cask 'iterm2'               # Terminal emulator as alternative to Apple's Terminal app          -- https://iterm2.com/
 cask 'itermai'              # Enable generative AI features in iTerm2                           -- https://iterm2.com/ai-plugin.html
 cask 'obsidian'             # Knowledge base in local folder of plain text Markdown files       -- https://obsidian.md/
+{{- if not $skip_flaky_casks }}
 cask 'orbstack'             # Fast, lightweight Docker & Linux on macOS (primary runtime)       -- https://orbstack.dev/
+{{- end }}
 cask 'postman'              # Collaboration platform for API development                        -- https://www.postman.com/
 cask 'sublime-text'         # Text editor for code, markup and prose                            -- https://www.sublimetext.com/
 cask 'visual-studio-code'   # Open-source code editor                                           -- https://code.visualstudio.com/
