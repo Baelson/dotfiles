@@ -81,15 +81,13 @@ main() {
         exit 1
     fi
 
-    # Run all test suites (unit + integration + system)
+    # Run all test suites (unit + integration). tests/system/ was retired in
+    # ISSUE-019 along with setup.sh; no system-level tests remain.
     log_info "Running unit tests..."
     run_required_bats_file "${TESTS_DIR}/unit" "Unit tests failed"
 
     log_info "Running integration tests..."
     run_required_bats_file "${TESTS_DIR}/integration" "Integration tests failed"
-
-    log_info "Running system tests..."
-    run_required_bats_file "${TESTS_DIR}/system" "System tests failed"
 
     log_info "✅ All tests passed successfully!"
 }

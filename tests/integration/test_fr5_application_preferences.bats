@@ -188,18 +188,6 @@ teardown() {
 }
 
 # ── FR-5.10: Dry-run doesn't modify application state ───────
-
-@test "FR-5.10: Given setup.sh --dry-run, when executed, then no application configs are modified" {
-    # Given — snapshot temp dir
-    local snapshot_before="$BATS_TEST_TMPDIR/snapshot_before.txt"
-    find "$BATS_TEST_TMPDIR" -type f > "$snapshot_before" 2>/dev/null || true
-
-    # When
-    run_modern_setup --dry-run
-    assert_success
-
-    # Then — no filesystem modifications
-    local snapshot_after="$BATS_TEST_TMPDIR/snapshot_after.txt"
-    find "$BATS_TEST_TMPDIR" -type f > "$snapshot_after" 2>/dev/null || true
-    assert_no_system_modifications "$snapshot_before" "$snapshot_after"
-}
+# (Removed along with setup.sh in ISSUE-019. The steady-state dry-run is now
+# `chezmoi apply --dry-run`, which is a chezmoi feature, not something this
+# suite needs to re-prove.)

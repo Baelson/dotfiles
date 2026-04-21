@@ -6,18 +6,31 @@ Transform a fresh macOS installation into a fully configured development environ
 
 ## 🚀 Quick Start
 
+### One-time prerequisite (private repo)
+
+The dotfiles repo is currently private, so the bootstrap needs a GitHub personal access token (PAT) with `repo` scope. Store it in the Keychain once per machine (see [PROJECT_INIT.md](PROJECT_INIT.md) for details):
+
 ```bash
-# One-command setup (works on fresh macOS)
-curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zsh
+# Create a classic PAT with 'repo' scope at https://github.com/settings/tokens
+security add-generic-password -s github-pat -a "$USER" -w '<token>' -U
+```
+
+### Bootstrap
+
+```bash
+# One command, works on a completely bare macOS (no Xcode CLT, no Homebrew)
+curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
 ```
 
 **What this does:**
-- Installs Xcode CLI Tools, Homebrew, Git automatically
-- Clones repository to `~/Git/dotfiles/`
-- Installs 70+ CLI tools, desktop apps, and Mac App Store applications
-- Configures shell environment (Zsh + Oh My Zsh + Powerlevel10k)
-- Manages dotfiles and application preferences with [chezmoi](https://www.chezmoi.io/)
-- Sets up encrypted secrets management
+- Checks the Keychain for the PAT (fails fast if missing — no Homebrew install wasted)
+- Installs Homebrew non-interactively, which silently installs Xcode CLI Tools via `softwareupdate`
+- Installs `chezmoi` and `age`
+- Writes a short-lived `~/.netrc` (mode 0600) with the PAT so chezmoi can clone over HTTPS
+- Runs `chezmoi init --apply --exclude=encrypted,scripts`, then `chezmoi apply --include=scripts --force`
+- After apply, flips the source-dir remote from HTTPS to SSH and scrubs `~/.netrc` (the PAT never persists past bootstrap)
+
+See [docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md](docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md) for the design.
 
 **System Requirements:** macOS 12+ with internet connection and admin privileges
 
@@ -40,8 +53,8 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | zs
 Run the full test suite locally:
 
 ```bash
-# All 190 BATS tests
-bats tests/unit/ tests/integration/ tests/system/
+# Full BATS suite (~164 tests across unit + integration)
+bats tests/unit/ tests/integration/
 
 # Or use the test runner with category filters
 scripts/test/test.sh --all
@@ -79,18 +92,21 @@ scripts/vm/vm-matrix.sh --action run-e2e --dry-run
 See `docs/VM_TESTING.md` for full details.
 
 ### Debug and Testing Modes
+
+The bootstrap script is intentionally minimal — for preview and troubleshooting, use chezmoi's native flags after init:
+
 ```bash
-# Preview operations without making changes
-./setup.sh --dry-run
+# Preview what would change on an existing install
+chezmoi apply --dry-run --verbose
 
-# Detailed debugging with variable inspection
-./setup.sh --debug-verbose
+# Re-run the initial apply with verbose output
+chezmoi apply --force --verbose
 
-# Control flow tracing for troubleshooting
-./setup.sh --debug-trace
-
-# Verify system is properly configured
+# Health check
 chezmoi doctor
+
+# Behavioral regression suite
+bats tests/unit/ tests/integration/
 bats tests/integration/test_chezmoi_lifecycle_scripts.bats
 ```
 
@@ -116,7 +132,8 @@ chezmoi apply           # Execute
 ```
 dotfiles/
 ├── 📋 README.md                    # This file - project overview
-├── 🏗️ setup.sh                      # One-command setup entrypoint
+├── 📋 PROJECT_INIT.md              # One-time prerequisites (GitHub PAT)
+├── 🏗️ bootstrap/install.sh          # Canonical bootstrap entrypoint (ISSUE-019)
 ├── 📦 home/Brewfile.tmpl            # 70+ packages (CLI tools, apps, MAS)
 ├── 🧪 scripts/test/                 # Test runners
 ├── 🔧 scripts/tools/                # Local utility workflows
@@ -159,8 +176,8 @@ This project follows comprehensive documentation architecture with clear separat
 
 ### 🎯 Zero-Friction Setup
 - **One Command**: Complete environment setup with single curl command
-- **Self-Relocation**: Script works from any location, automatically creates proper directory structure
-- **SSH/HTTPS Fallback**: Automatic repository cloning with connection fallback
+- **Bare-Machine Ready**: Works on fresh macOS with no Xcode CLT, no Homebrew, no git (ISSUE-019)
+- **Keychain-Sourced Auth**: Short-lived `~/.netrc` is scrubbed after bootstrap; Keychain is the sole long-lived secret source
 
 ### 📦 Comprehensive Package Management
 - **CLI Tools** (24+): git, gh, uv, neovim, docker, kubectl, terraform
@@ -206,18 +223,18 @@ This system is designed for:
 # Check system status
 ./scripts/tools/health-check.sh --quick
 
-# Get debug information
-./setup.sh --help
+# Re-run bootstrap (safe — chezmoi apply is idempotent; install.sh trap scrubs netrc)
+curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
 
-# View detailed execution
-./setup.sh --debug-verbose
+# Preview current drift without making changes
+chezmoi apply --dry-run --verbose
 ```
 
 ### Common Issues
-- **Homebrew Installation Fails**: Script uses explicit bash shebang handling
-- **Repository Clone Issues**: Automatic SSH/HTTPS fallback implemented
-- **MAS Authentication**: Some Mac App Store apps require manual signin
-- **Permission Issues**: Script requests appropriate privileges as needed
+- **`Missing Keychain entry` on bootstrap**: Provision the PAT per [PROJECT_INIT.md](PROJECT_INIT.md)
+- **Homebrew install dialog on bare macOS**: Ensure `NONINTERACTIVE=1` is inherited (install.sh sets it); also see ISSUE-019 in docs/OPEN_ISSUES.md
+- **MAS Authentication**: MAS apps are opt-in via `CHEZMOI_MAS=true chezmoi apply`
+- **Permission Issues**: `sudo` is needed for Xcode CLT install; VMs must have a sudoer account
 
 ### Support Resources
 - **Documentation**: See [docs/](docs/) directory for comprehensive guides
@@ -237,9 +254,9 @@ This is a personal dotfiles repository, but the architecture and patterns are de
 - **Testing**: Multi-level validation with requirement traceability
 
 ### Architecture Highlights
-- **Self-Relocating Scripts**: Work from any execution context
-- **Native Tool Integration**: Use tools' built-in dry-run modes
-- **Comprehensive Error Handling**: Line-number reporting with recovery suggestions
+- **chezmoi-native bootstrap**: Uses chezmoi's built-in init/apply/source-path rather than a custom wrapper
+- **Native Tool Integration**: Preview and verbose modes via `chezmoi apply --dry-run --verbose`
+- **Trap-guaranteed cleanup**: Plaintext PAT cannot be left on disk after bootstrap (even on failure)
 - **Modular Design**: 1:1 setup/verification pattern with shared libraries
 
 ## 📄 License

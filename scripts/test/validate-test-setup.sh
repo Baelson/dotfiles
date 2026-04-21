@@ -62,7 +62,9 @@ main() {
     # 2. Test Structure Validation
     log_section "2. Test Structure Validation"
 
-    local required_dirs=("tests/lib" "tests/system" "tests/integration" "tests/unit")
+    # tests/system/ was removed in ISSUE-019 (setup.sh deletion); all remaining
+    # tests live under tests/unit/ and tests/integration/.
+    local required_dirs=("tests/lib" "tests/integration" "tests/unit")
     for dir in "${required_dirs[@]}"; do
         if [[ -d "${dir}" ]]; then
             log_info "Directory exists: ${dir}"
@@ -83,8 +85,7 @@ main() {
 
     local test_files=(
         "tests/lib/test_helper.bash"
-        "tests/system/test_fr1_modern_bootstrap.bats"
-        "tests/system/test_fr7_debug_modes.bats"
+        "tests/unit/test_bootstrap_install.bats"
         "tests/integration/test_fr2_package_management.bats"
         "tests/integration/test_fr3_configuration_management.bats"
         "tests/integration/test_fr4_shell_environment.bats"

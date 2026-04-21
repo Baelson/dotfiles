@@ -9,9 +9,9 @@
 # Test configuration
 export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
-export SETUP_SCRIPT="${DOTFILES_ROOT}/setup.sh"
 export TESTS_DIR="${DOTFILES_ROOT}/tests"
-export BOOTSTRAP_DIR="${DOTFILES_ROOT}"
+export BOOTSTRAP_DIR="${DOTFILES_ROOT}/bootstrap"
+export BOOTSTRAP_SCRIPT="${BOOTSTRAP_DIR}/install.sh"
 export DOTFILES_SOURCE_DIR="${DOTFILES_ROOT}/home"  # Chezmoi source directory
 
 # Test execution modes
@@ -35,104 +35,11 @@ setup_common() {
         return 1
     }
 
-    # Verify critical files exist
-    [[ -f "${SETUP_SCRIPT}" ]] || {
-        echo "ERROR: Setup script not found: ${SETUP_SCRIPT}" >&2
-        return 1
-    }
-
+    # Verify the chezmoi source template exists; everything else hangs off that.
     [[ -f "${DOTFILES_SOURCE_DIR}/.chezmoi.toml.tmpl" ]] || {
         echo "ERROR: chezmoi config template not found: ${DOTFILES_SOURCE_DIR}/.chezmoi.toml.tmpl" >&2
         return 1
     }
-}
-
-# Bootstrap script execution wrapper (legacy compatibility)
-run_bootstrap() {
-    shift  # Skip legacy script parameter, not used in modern system
-    local args=("$@")
-
-    # Always run with dry-run in test mode unless explicitly disabled
-    if [[ "${DRY_RUN_TESTS}" == "true" && ! " ${args[*]} " =~ " --dry-run " ]]; then
-        args+=("--dry-run")
-    fi
-
-    # For modern system, redirect to run_modern_setup
-    run_modern_setup "${args[@]}"
-}
-
-# Verify script output patterns
-assert_bootstrap_success() {
-    # shellcheck disable=SC2154 # status is set by BATS run command
-    if [[ "${status}" -ne 0 ]]; then
-        echo "Bootstrap script failed with exit code: ${status}" >&2
-        echo "Output:" >&2
-        echo "${output}" >&2
-        echo "Working directory: ${PWD}" >&2
-        return 1
-    fi
-    return 0
-}
-
-assert_bootstrap_output_contains() {
-    local expected="$1"
-    [[ "${output}" =~ ${expected} ]]
-}
-
-assert_bootstrap_error() {
-    [[ "${status}" -ne 0 ]]
-}
-
-# Command-line argument validation helpers
-validate_help_output() {
-    local output="$1"
-    [[ "${output}" =~ "USAGE:" ]]
-    [[ "${output}" =~ "OPTIONS:" ]]
-    [[ "${output}" =~ "--dry-run" ]]
-    [[ "${output}" =~ "--debug-trace" ]]
-    [[ "${output}" =~ "--debug-verbose" ]]
-    [[ "${output}" =~ "--help" ]]
-}
-
-validate_dry_run_output() {
-    local output="$1"
-    # Dry run should show setup messages but not execute installations
-    [[ "${output}" =~ "Starting Core macOS Development Environment Setup" || "${output}" =~ "already installed" || "${output}" =~ "Repository:" ]]
-}
-
-validate_debug_trace_output() {
-    local output="$1"
-    # Debug trace should show TRACE messages
-    [[ "${output}" =~ \[TRACE\] ]]
-}
-
-validate_debug_verbose_output() {
-    local output="$1"
-    # Debug verbose should show TRACE messages (our script uses TRACE, not DEBUG)
-    [[ "${output}" =~ \[TRACE\] ]]
-}
-
-# Functional requirement validation helpers
-validate_fr1_one_command_bootstrap() {
-    # FR-1: One-Command Bootstrap
-    [[ "${status}" -eq 0 ]]
-    [[ "${output}" =~ "Development Environment Setup" || "${output}" =~ "Bootstrap" ]]
-}
-
-validate_fr7_debug_capabilities() {
-    # FR-7: Debugging and Troubleshooting
-    local args_string="$1"
-    local output="$2"
-
-    if [[ "${args_string}" =~ --help ]]; then
-        validate_help_output "${output}"
-    elif [[ "${args_string}" =~ --dry-run ]]; then
-        validate_dry_run_output "${output}"
-    elif [[ "${args_string}" =~ --debug-verbose ]]; then
-        validate_debug_verbose_output "${output}"
-    elif [[ "${args_string}" =~ --debug-trace ]]; then
-        validate_debug_trace_output "${output}"
-    fi
 }
 
 # System state validation
@@ -180,64 +87,6 @@ validate_matrix_parameters() {
     echo "Matrix Test: ${test_name}"
     echo "CLI Args: ${cli_args}"
     echo "Expected: ${expected_behavior}"
-}
-
-# Modern chezmoi-native system test helpers
-# ===========================================
-
-# Modern setup script execution wrapper
-run_modern_setup() {
-    local args=("$@")
-
-    # Set up test environment for modern setup.sh
-    local setup_script="${DOTFILES_ROOT}/setup.sh"
-
-    # Verify modern setup script exists
-    [[ -f "${setup_script}" ]] || {
-        echo "ERROR: Modern setup script not found: ${setup_script}" >&2
-        return 1
-    }
-
-    # Build command with environment variables for testing
-    local env_vars=""
-    local script_args=""
-
-    # Process arguments to separate environment variables from script args
-    for arg in "${args[@]}"; do
-        if [[ "${arg}" =~ ^[A-Z_]+= ]]; then
-            env_vars="${env_vars} ${arg}"
-        else
-            script_args="${script_args} ${arg}"
-        fi
-    done
-
-    # Default to dry-run in test mode for hermetic behavior.
-    if [[ "${DRY_RUN_TESTS}" == "true" ]] \
-        && [[ ! " ${script_args} " =~ " --dry-run " ]] \
-        && [[ ! " ${script_args} " =~ " --help " ]] \
-        && [[ ! " ${script_args} " =~ " -h " ]]; then
-        script_args="${script_args} --dry-run"
-    fi
-
-    # Add test-specific environment variables
-    # CRITICAL: Isolate home directory to prevent touching real user data
-    # Adding defaults for test stability (avoids interactive prompts and skips encryption)
-    env_vars="${env_vars} EPHEMERAL='${EPHEMERAL:-true}' HEADLESS='${HEADLESS:-true}'"
-    # CRITICAL: Isolate home directory to prevent touching real user data
-    env_vars="${env_vars} HOME='${BATS_TEST_TMPDIR}'"
-    # CRITICAL: Use local repository for hermetic testing (no network clones)
-    env_vars="${env_vars} DOTFILES_REPO_URL='${DOTFILES_ROOT}'"
-
-    # Build run command
-    # Redirect input from /dev/null to prevent interactive prompts (bypasses chezmoi hanging)
-    local run_command="cd '${DOTFILES_ROOT}' && ${env_vars} zsh '${setup_script}' ${script_args} < /dev/null 2>&1"
-
-    if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-        # In CI, provide additional environment setup
-        run_command="export PATH=/opt/homebrew/bin:/usr/local/bin:\$PATH && ${run_command}"
-    fi
-
-    run zsh -c "${run_command}"
 }
 
 # chezmoi command execution wrapper for testing
@@ -322,30 +171,6 @@ test_template_rendering() {
     export CHEZMOI_INPUT_FILE="${DOTFILES_ROOT}/home/${template_file}"
     run_chezmoi execute-template --init --stdinisatty=false --override-data "${json_data}"
     unset CHEZMOI_INPUT_FILE
-}
-
-# Environment-specific test helpers
-test_ephemeral_environment() {
-    run_modern_setup "EPHEMERAL=1"
-}
-
-test_headless_environment() {
-    run_modern_setup "HEADLESS=1"
-}
-
-test_work_environment() {
-    run_modern_setup "WORK=1"
-}
-
-test_personal_environment() {
-    run_modern_setup "PERSONAL=1"
-}
-
-# Validation helpers for modern system
-assert_modern_setup_success() {
-    assert_bootstrap_success
-    # Additional validations for modern setup
-    [[ "${output}" =~ "chezmoi" ]] || [[ "${output}" =~ "Installing chezmoi" ]] || [[ "${output}" =~ "already installed" ]]
 }
 
 assert_chezmoi_success() {

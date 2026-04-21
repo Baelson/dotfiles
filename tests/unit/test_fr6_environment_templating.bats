@@ -200,21 +200,10 @@ teardown() {
 }
 
 @test "FR-6.12: Template testing and validation capability" {
-    # Check if template changes can be tested safely
-    template_testing_ready=false
-
-    # Dry-run capability indicates safe testing
-    run_bootstrap "setup.sh" "--dry-run"
-    if [[ "$status" -eq 0 ]]; then
-        template_testing_ready=true
-    fi
-
-    # Chezmoi diff capability
-    if command -v chezmoi &> /dev/null; then
-        template_testing_ready=true
-    fi
-
-    [[ "$template_testing_ready" == "true" ]]
+    # Template changes can be tested safely via chezmoi's native dry-run /
+    # diff / execute-template commands. (Previously this also checked
+    # setup.sh --dry-run, but setup.sh was removed in ISSUE-019.)
+    command -v chezmoi &> /dev/null
 }
 
 @test "FR-6.13: Environment templating documentation readiness" {

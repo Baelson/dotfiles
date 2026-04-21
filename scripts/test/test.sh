@@ -211,10 +211,11 @@ get_test_files() {
     local test_files=()
 
     if [[ "${QUICK_MODE}" == "true" ]]; then
-        # Quick mode: run only essential tests for faster feedback
+        # Quick mode: run only essential tests for faster feedback.
+        # (tests/system/ was removed in ISSUE-019; install.sh coverage lives
+        # under tests/unit/.)
         test_files=(
-            "${TESTS_DIR}/system/test_fr1_modern_bootstrap.bats"
-            "${TESTS_DIR}/system/test_fr7_debug_modes.bats"
+            "${TESTS_DIR}/unit/test_bootstrap_install.bats"
             "${TESTS_DIR}/unit/test_brewfile_syntax.bats"
             "${TESTS_DIR}/unit/test_security_secrets.bats"
         )

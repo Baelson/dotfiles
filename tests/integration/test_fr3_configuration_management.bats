@@ -192,18 +192,9 @@ teardown() {
 }
 
 # ── FR-3.10: Dry-run works for configuration management ─────
-
-@test "FR-3.10: Given setup.sh, when run with --dry-run, then chezmoi operations are previewed" {
-    # Given/When
-    run_modern_setup --dry-run
-    assert_success
-
-    # Then — output references chezmoi
-    [[ "$output" =~ chezmoi ]] || {
-        echo "Dry-run output missing chezmoi references" >&2
-        return 1
-    }
-}
+# (Removed along with setup.sh in ISSUE-019. Dry-run preview of steady-state
+# changes is now `chezmoi apply --dry-run --verbose` — covered by chezmoi
+# itself, not this suite.)
 
 # ── FR-3.11: Managed files map to standard home paths ────────
 
