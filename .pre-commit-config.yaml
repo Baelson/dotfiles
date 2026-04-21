@@ -71,14 +71,11 @@ repos:
         language: system
         files: .*\.bash$  # Only validate .bash files
 
-      # Performance validation (dry-run timing)
-      - id: performance-check
-        name: Performance Check (Dry-run < 120s)
-        entry: ./scripts/tools/performance-check.sh
-        language: script
-        stages: [pre-commit]
-        files: setup\.sh$
-        pass_filenames: false
+      # Performance validation retired with setup.sh (ISSUE-019). The hook
+      # timed `./setup.sh --dry-run --debug-verbose`; bootstrap/install.sh
+      # has no equivalent custom dry-run (it's a thin wrapper around Homebrew
+      # install + chezmoi init/apply, both external tools with their own
+      # performance characteristics we don't control).
 
   # Documentation and markdown
   - repo: https://github.com/igorshubovych/markdownlint-cli

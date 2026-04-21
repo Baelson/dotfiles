@@ -53,8 +53,8 @@ See [docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md](docs/plans/202
 Run the full test suite locally:
 
 ```bash
-# All 190 BATS tests
-bats tests/unit/ tests/integration/ tests/system/
+# Full BATS suite (~164 tests across unit + integration)
+bats tests/unit/ tests/integration/
 
 # Or use the test runner with category filters
 scripts/test/test.sh --all
@@ -106,7 +106,7 @@ chezmoi apply --force --verbose
 chezmoi doctor
 
 # Behavioral regression suite
-bats tests/unit/ tests/integration/ tests/system/
+bats tests/unit/ tests/integration/
 bats tests/integration/test_chezmoi_lifecycle_scripts.bats
 ```
 
