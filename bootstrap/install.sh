@@ -147,19 +147,27 @@ log_step "chezmoi init --apply --exclude=encrypted,scripts ${REPO_HTTPS_URL}"
 chezmoi init --apply --exclude=encrypted,scripts "${REPO_HTTPS_URL}"
 
 # -----------------------------------------------------------------------------
-# Step 5: chezmoi apply with scripts — age key is now provisioned, encrypted
-# files (including private_dot_ssh/) deploy here.
+# Step 5: chezmoi apply --force — full pass deploys scripts AND encrypted files.
 #
-# A lifecycle script may fail (e.g., a flaky cask download timing out). That
-# failure is noted but does NOT short-circuit the remote-flip + netrc scrub —
-# those are independent of whether every package installed cleanly. If apply
-# failed, install.sh exits non-zero at the very end so the user still sees
-# the failure and can investigate.
+# chezmoi's per-pass order is run_once_before_* → files → run_onchange_after_*,
+# so run_once_before_provision-age-key.sh provisions ~/.config/chezmoi/key.txt
+# (from the encrypted bootstrap/key.txt.age) BEFORE the files phase tries to
+# decrypt private_dot_ssh/, license files, etc. That makes a single apply
+# sufficient even on a bare machine — no third pass needed.
+#
+# (Earlier versions used --include=scripts here, which limited the pass to
+# scripts only; encrypted files never decrypted. The bug surfaced in the
+# first encryption-enabled VM E2E and was fixed by dropping the --include.)
+#
+# A lifecycle script may still fail (e.g., a flaky cask download timing out).
+# That failure is noted but does NOT short-circuit the remote-flip + netrc
+# scrub — those are independent of whether every package installed cleanly.
+# install.sh exits non-zero at the very end if apply failed.
 # -----------------------------------------------------------------------------
 
-log_step "chezmoi apply --include=scripts --force"
+log_step "chezmoi apply --force"
 APPLY_EXIT=0
-chezmoi apply --include=scripts --force || APPLY_EXIT=$?
+chezmoi apply --force || APPLY_EXIT=$?
 if [[ "${APPLY_EXIT}" -ne 0 ]]; then
     log_warn "chezmoi apply exited ${APPLY_EXIT}. Continuing to remote-flip; investigate after bootstrap."
 fi
@@ -190,8 +198,8 @@ trap - EXIT INT TERM
 
 # Surface the apply failure now that cleanup + flip are done.
 if [[ "${APPLY_EXIT}" -ne 0 ]]; then
-    log_err "chezmoi apply --include=scripts failed (exit ${APPLY_EXIT}). Bootstrap partially succeeded."
-    log_err "Fix the cause and re-run: chezmoi apply --include=scripts --force"
+    log_err "chezmoi apply failed (exit ${APPLY_EXIT}). Bootstrap partially succeeded."
+    log_err "Fix the cause and re-run: chezmoi apply --force"
     exit "${APPLY_EXIT}"
 fi
 

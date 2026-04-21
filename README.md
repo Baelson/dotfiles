@@ -27,7 +27,7 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/ins
 - Installs Homebrew non-interactively, which silently installs Xcode CLI Tools via `softwareupdate`
 - Installs `chezmoi` and `age`
 - Writes a short-lived `~/.netrc` (mode 0600) with the PAT so chezmoi can clone over HTTPS
-- Runs `chezmoi init --apply --exclude=encrypted,scripts`, then `chezmoi apply --include=scripts --force`
+- Runs `chezmoi init --apply --exclude=encrypted,scripts`, then `chezmoi apply --force` (single pass: scripts provision the age key, then encrypted files decrypt and deploy)
 - After apply, flips the source-dir remote from HTTPS to SSH and scrubs `~/.netrc` (the PAT never persists past bootstrap)
 
 See [docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md](docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md) for the design.

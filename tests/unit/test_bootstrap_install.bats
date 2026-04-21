@@ -348,6 +348,11 @@ setup_healthy_fakes() {
     [ "${status}" -eq 0 ]
     # init line must carry both the apply flag and the exclude set.
     grep -q -- "init --apply --exclude=encrypted,scripts https://github.com/Baelson/dotfiles.git" "${chezmoi_log}"
-    # Secondary apply must target scripts explicitly.
-    grep -q -- "apply --include=scripts --force" "${chezmoi_log}"
+    # Secondary apply must be a full pass (no --include=scripts gating) so
+    # encrypted files decrypt + deploy in the same run that provisions the
+    # age key via run_once_before_provision-age-key.sh.
+    grep -q -- "apply --force" "${chezmoi_log}"
+    # Regression guard: the old --include=scripts form limited the pass to
+    # scripts only and left encrypted files on disk as stubs.
+    ! grep -q -- "apply --include=scripts" "${chezmoi_log}"
 }
