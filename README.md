@@ -17,8 +17,22 @@ security add-generic-password -s github-pat -a "$USER" -w '<token>' -U
 
 ### Bootstrap
 
+Because the repo is still private, `raw.githubusercontent.com` returns 404 for unauthenticated requests. Fetch `install.sh` through GitHub's authenticated content API instead:
+
 ```bash
-# One command, works on a completely bare macOS (no Xcode CLT, no Homebrew)
+# Fetch install.sh via GitHub's authenticated content API, then run it.
+# (Works on a completely bare macOS — no Xcode CLT, no Homebrew required.)
+TOKEN=$(security find-generic-password -s github-pat -a "$USER" -w) && \
+  curl -fsSL -H "Authorization: token ${TOKEN}" \
+       -H "Accept: application/vnd.github.v3.raw" \
+       "https://api.github.com/repos/Baelson/dotfiles/contents/bootstrap/install.sh?ref=main" \
+  | bash
+```
+
+Once the repo goes public (tracked in [ISSUE-021](docs/OPEN_ISSUES.md#issue-021-public-repo-readiness-audit)), the unauthenticated one-liner works and the PAT step disappears entirely:
+
+```bash
+# Future (post-ISSUE-021):
 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
 ```
 
