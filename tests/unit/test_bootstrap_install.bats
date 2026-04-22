@@ -88,6 +88,19 @@ setup_healthy_fakes() {
 }
 
 # -----------------------------------------------------------------------------
+# Source-tree invariants — not execution-dependent
+# -----------------------------------------------------------------------------
+
+@test "source tree: netrc placeholder uses private_ prefix (mode 0600 after apply)" {
+    # Regression guard for ISSUE-022 sub-defect (b). Without the `private_`
+    # prefix, chezmoi apply relaxes ~/.netrc from install.sh's 0600 back to
+    # the default umask 0644, leaving loose perms on a credential file.
+    local repo_root="${BATS_TEST_DIRNAME%/tests/*}"
+    [ -f "${repo_root}/home/empty_private_dot_netrc" ]
+    [ ! -f "${repo_root}/home/empty_dot_netrc" ]
+}
+
+# -----------------------------------------------------------------------------
 # Static checks — no execution required
 # -----------------------------------------------------------------------------
 
@@ -173,7 +186,8 @@ setup_healthy_fakes() {
 }
 
 @test "bootstrap: ~/.netrc is empty (scrubbed but not deleted) after a successful run" {
-    # home/empty_dot_netrc makes chezmoi own ~/.netrc as an empty file.
+    # home/empty_private_dot_netrc makes chezmoi own ~/.netrc as a 0600-mode
+    # empty file (the `private_` prefix ensures apply keeps the tight perms).
     # Bootstrap must truncate, not delete, to avoid chezmoi drift on subsequent
     # apply calls. We verify both: the file still exists AND has zero length.
     setup_healthy_fakes
