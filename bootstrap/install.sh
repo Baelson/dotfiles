@@ -8,6 +8,13 @@
 # CLT via softwareupdate, then using real git for a chezmoi HTTPS clone
 # authenticated by a short-lived ~/.netrc sourced from the Keychain PAT.
 #
+# Resolves ISSUE-022: chezmoi loads its config once per invocation and
+# .chezmoi.toml.tmpl stat-gates the [age] block on ~/.config/chezmoi/key.txt.
+# We clone first (config without [age]), decrypt the age key from
+# bootstrap/key.txt.age here in install.sh (interactive passphrase prompt),
+# then re-run `chezmoi init` so the config regenerates with [age] populated,
+# then `chezmoi apply --force` deploys everything in a single pass.
+#
 # Usage (from a fresh macOS shell, local or SSH):
 #   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
 #
@@ -24,7 +31,8 @@
 #   - Chezmoi source-dir remote is flipped HTTPS → SSH, so steady-state
 #     `chezmoi update` uses SSH + ssh-agent (no netrc required)
 #
-# See docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md for the design.
+# See docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md (ISSUE-019)
+# and docs/plans/2026-04-22-issue-022-install-sh-age-key-ordering.md (ISSUE-022).
 
 set -euo pipefail
 
@@ -135,33 +143,106 @@ chmod 600 "${HOME}/.netrc"
 unset TOKEN
 
 # -----------------------------------------------------------------------------
-# Step 4: chezmoi init — HTTPS clone via go-git or real git (both read netrc)
+# Age-key provisioning helper (ISSUE-022)
 #
-# --exclude=encrypted,scripts:
-#   - encrypted: age key isn't provisioned yet; it'll be decrypted from
-#     bootstrap/key.txt.age by run_once_before_provision-age-key.sh during
-#     the next apply.
-#   - scripts:   deferred to the dedicated apply call below so CLT / Homebrew
-#     aren't re-triggered mid-init.
+# Decrypts the passphrase-protected bootstrap/key.txt.age into
+# ~/.config/chezmoi/key.txt so the subsequent `chezmoi init` renders a
+# config with the `[age]` block (stat-gated in .chezmoi.toml.tmpl).
+#
+# Must be called BETWEEN the two `chezmoi init` calls — the first init
+# clones the source dir so we can find bootstrap/key.txt.age, the second
+# init regenerates the config now that the key exists.
+#
+# Degrades gracefully when provisioning isn't possible:
+#   - key already present        → idempotent no-op
+#   - age binary missing         → warn + skip (shouldn't happen post-Step 3)
+#   - bootstrap/key.txt.age gone → warn + skip
+#   - stdin is not a TTY         → warn + skip (automated SSH-only regression)
+#   - age -d fails (bad passphrase) → rm partial, warn + continue
+# In all skip branches, encrypted files simply stay as stubs after apply;
+# the operator sees a clear warning and the rest of bootstrap still succeeds.
 # -----------------------------------------------------------------------------
 
-log_step "chezmoi init --apply --exclude=encrypted,scripts ${REPO_HTTPS_URL}"
-chezmoi init --apply --exclude=encrypted,scripts "${REPO_HTTPS_URL}"
+provision_age_key() {
+    local age_key_dir="${HOME}/.config/chezmoi"
+    local age_key_file="${age_key_dir}/key.txt"
+    local source_path
+    source_path="$(chezmoi source-path 2>/dev/null || true)"
+    local encrypted_key="${source_path}/../bootstrap/key.txt.age"
+
+    if [[ -f "${age_key_file}" ]]; then
+        log_step "Age key already present at ${age_key_file} — skipping provisioning"
+        return 0
+    fi
+    if ! command -v age >/dev/null 2>&1; then
+        log_warn "age not installed — skipping age key provisioning (encrypted files will not deploy)"
+        return 0
+    fi
+    if [[ ! -f "${encrypted_key}" ]]; then
+        log_warn "No encrypted age key at ${encrypted_key} — skipping (encrypted files will not deploy)"
+        return 0
+    fi
+    if [[ ! -t 0 ]]; then
+        log_warn "Non-interactive session — skipping age key provisioning (encrypted files will not deploy)"
+        log_warn "Run install.sh from an interactive terminal to provision the key."
+        return 0
+    fi
+
+    log_step "Provisioning age decryption key (passphrase-protected; one prompt below)"
+    mkdir -p "${age_key_dir}"
+    if age -d -o "${age_key_file}" "${encrypted_key}"; then
+        chmod 600 "${age_key_file}"
+        log_step "Age key provisioned at ${age_key_file}"
+    else
+        log_warn "Failed to decrypt age key (wrong passphrase?) — continuing without encryption"
+        rm -f "${age_key_file}"
+    fi
+}
 
 # -----------------------------------------------------------------------------
-# Step 5: chezmoi apply --force — full pass deploys scripts AND encrypted files.
+# Step 4: chezmoi init — clone only (no --apply).
 #
-# chezmoi's per-pass order is run_once_before_* → files → run_onchange_after_*,
-# so run_once_before_provision-age-key.sh provisions ~/.config/chezmoi/key.txt
-# (from the encrypted bootstrap/key.txt.age) BEFORE the files phase tries to
-# decrypt private_dot_ssh/, license files, etc. That makes a single apply
-# sufficient even on a bare machine — no third pass needed.
+# At this point the age key doesn't exist yet, so .chezmoi.toml.tmpl's
+# stat-gated [age] block renders empty. We clone the source dir now so
+# bootstrap/key.txt.age is available on disk for Step 5, then re-run
+# `chezmoi init` in Step 6 to regenerate chezmoi.toml with [age] populated.
 #
-# (Earlier versions used --include=scripts here, which limited the pass to
-# scripts only; encrypted files never decrypted. The bug surfaced in the
-# first encryption-enabled VM E2E and was fixed by dropping the --include.)
+# Splitting init (clone) from apply (deploy) sidesteps chezmoi's
+# load-config-once-per-invocation semantics — the follow-up init picks up
+# the newly-provisioned key.
+# -----------------------------------------------------------------------------
+
+log_step "chezmoi init ${REPO_HTTPS_URL}"
+chezmoi init "${REPO_HTTPS_URL}"
+
+# -----------------------------------------------------------------------------
+# Step 5: Provision the age key (primary entry point per ISSUE-022 fix).
 #
-# A lifecycle script may still fail (e.g., a flaky cask download timing out).
+# The lifecycle script home/.chezmoiscripts/darwin/run_once_before_provision-age-key.sh
+# remains in-tree as a fallback for users who clone manually (`chezmoi init`
+# directly, not via install.sh), but it is NO LONGER on the critical path —
+# it relied on chezmoi's subprocess stdin which is detached in practice.
+# -----------------------------------------------------------------------------
+
+provision_age_key
+
+# -----------------------------------------------------------------------------
+# Step 6: chezmoi init — regenerate chezmoi.toml now that the key exists.
+#
+# The stat guard in .chezmoi.toml.tmpl will now emit `encryption = "age"` +
+# the [age] block, so Step 7's apply can decrypt encrypted files successfully
+# in a single pass. If Step 5 skipped (non-TTY, missing age, etc.), the
+# regen is a no-op and encrypted files will stay as stubs — that's the
+# expected degrade-gracefully behavior.
+# -----------------------------------------------------------------------------
+
+log_step "chezmoi init (regenerate config; emits [age] block if key provisioned)"
+chezmoi init
+
+# -----------------------------------------------------------------------------
+# Step 7: chezmoi apply --force — full pass deploys files AND encrypted files.
+#
+# A lifecycle script may still fail (e.g. a flaky cask download timing out).
 # That failure is noted but does NOT short-circuit the remote-flip + netrc
 # scrub — those are independent of whether every package installed cleanly.
 # install.sh exits non-zero at the very end if apply failed.
@@ -175,7 +256,7 @@ if [[ "${APPLY_EXIT}" -ne 0 ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Step 6: Flip source-dir remote to SSH and scrub ~/.netrc
+# Step 8: Flip source-dir remote to SSH and scrub ~/.netrc
 # -----------------------------------------------------------------------------
 
 SRC="$(chezmoi source-path)"

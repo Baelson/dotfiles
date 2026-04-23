@@ -334,8 +334,64 @@ setup_healthy_fakes() {
     grep -qE -- "-C [^ ]*fake-checkout remote set-url" "${GIT_LOG}"
 }
 
-@test "bootstrap: init invocation uses --exclude=encrypted,scripts" {
-    # Capture chezmoi args separately for this assertion.
+# -----------------------------------------------------------------------------
+# ISSUE-022 fix — age-key ordering invariant
+#
+# The bootstrap must call, in order:
+#   1. chezmoi init <URL>     (clone only; config rendered without [age] block)
+#   2. provision_age_key      (decrypt bootstrap/key.txt.age into ~/.config/chezmoi/key.txt
+#                              if TTY + age present; else skip with a warning)
+#   3. chezmoi init           (regen chezmoi.toml — [age] block now emitted if
+#                              the key was provisioned)
+#   4. chezmoi apply --force  (single-pass deploy of files, encrypted files,
+#                              and lifecycle scripts)
+# The older, pre-ISSUE-022 form (`chezmoi init --apply --exclude=encrypted,scripts`)
+# MUST NOT appear — it rendered the config without [age] and forced manual
+# recovery on the 2026-04-21 VM walk.
+# -----------------------------------------------------------------------------
+
+@test "ISSUE-022 regression guard: install.sh source encodes the age-key ordering invariant" {
+    # Static assertion against the script text: the order of operations
+    # (init clone → provision age key → init regen → apply) is enforced by
+    # the SOURCE order of these calls. If someone reverts the ordering
+    # (e.g. back to a single `chezmoi init --apply --exclude=encrypted,scripts`),
+    # this test fails regardless of runtime behavior.
+    local src="${BOOTSTRAP_SCRIPT}"
+
+    # Line numbers of the four anchor points.
+    local ln_init_clone ln_provision ln_init_regen ln_apply
+    ln_init_clone=$(grep -n 'chezmoi init "${REPO_HTTPS_URL}"' "${src}" | head -1 | cut -d: -f1)
+    ln_provision=$(grep -n '^provision_age_key$' "${src}" | head -1 | cut -d: -f1)
+    # Second `chezmoi init` has no URL — look for the bare invocation (not the function definition).
+    ln_init_regen=$(grep -n '^chezmoi init$' "${src}" | head -1 | cut -d: -f1)
+    # Anchor on start-of-line so the docstring references (`# chezmoi apply --force`)
+    # don't beat the real invocation to the top of grep's output.
+    ln_apply=$(grep -n '^chezmoi apply --force' "${src}" | head -1 | cut -d: -f1)
+
+    [ -n "${ln_init_clone}" ]  || (echo "missing: chezmoi init clone line" >&2; false)
+    [ -n "${ln_provision}" ]   || (echo "missing: provision_age_key call line" >&2; false)
+    [ -n "${ln_init_regen}" ]  || (echo "missing: chezmoi init regen line" >&2; false)
+    [ -n "${ln_apply}" ]       || (echo "missing: chezmoi apply --force line" >&2; false)
+
+    # Strict ordering: each anchor appears strictly after the previous one.
+    [ "${ln_init_clone}" -lt "${ln_provision}" ]
+    [ "${ln_provision}" -lt "${ln_init_regen}" ]
+    [ "${ln_init_regen}" -lt "${ln_apply}" ]
+
+    # Hard regression guards against the two known-bad forms:
+    #   - pre-ISSUE-022: "init --apply --exclude=encrypted,scripts" rendered
+    #     config without [age]
+    #   - pre-ISSUE-019 encrypted-apply fix: "apply --include=scripts" limited
+    #     the pass to scripts only, never deploying encrypted files
+    ! grep -q -- "init --apply --exclude=encrypted,scripts" "${src}"
+    ! grep -q -- "apply --include=scripts" "${src}"
+}
+
+@test "ISSUE-022: runtime sequence is init-clone → provision → init-regen → apply --force" {
+    # Runtime assertion: fake chezmoi logs every invocation; verify the
+    # sequence of calls matches the ISSUE-022 ordering. BATS runs without
+    # a TTY on stdin by default, so provision_age_key skips gracefully with
+    # a warning — the init/apply sequence itself is independent of that skip.
     local chezmoi_log="${BATS_TEST_TMPDIR}/chezmoi.log"
     fake security '
         for arg in "$@"; do
@@ -347,26 +403,72 @@ setup_healthy_fakes() {
         if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
         exit 0
     '
+    # age fake is present but should never be called under non-TTY;
+    # presence guards against command-not-found masking the TTY-skip path.
+    fake age 'echo "age should not be invoked under non-TTY" >&2; exit 2'
     fake chezmoi "
         echo \"\$@\" >> \"${chezmoi_log}\"
-        if [[ \"\${1:-}\" == \"source-path\" ]]; then
-            mkdir -p \"\${BATS_TEST_TMPDIR}/fake-source/.git\"
-            echo \"\${BATS_TEST_TMPDIR}/fake-source\"
-        fi
+        case \"\${1:-}\" in
+            source-path)
+                mkdir -p \"\${BATS_TEST_TMPDIR}/fake-source/.git\"
+                echo \"\${BATS_TEST_TMPDIR}/fake-source\"
+                ;;
+        esac
         exit 0
     "
     fake git 'exit 0'
 
+    # Capture stderr (log_warn writes there) alongside stdout so we can assert
+    # the non-TTY skip warning appeared. BATS `run` only captures stdout by
+    # default; wrapping in `bash -c` + `2>&1` merges the streams.
+    run bash -c "bash '${BOOTSTRAP_SCRIPT}' 2>&1"
+
+    [ "${status}" -eq 0 ]
+
+    # Explicit ordering via line numbers in the captured log. The chezmoi
+    # fake records every invocation as one line; we assert:
+    #   - line with `init https://...` appears first (clone)
+    #   - bare `init` appears second (regen)
+    #   - `apply --force` appears last
+    local first_init_line second_init_line apply_line
+    first_init_line=$(grep -n '^init https' "${chezmoi_log}" | head -1 | cut -d: -f1)
+    second_init_line=$(grep -n '^init$' "${chezmoi_log}" | head -1 | cut -d: -f1)
+    apply_line=$(grep -n '^apply --force' "${chezmoi_log}" | head -1 | cut -d: -f1)
+    [ -n "${first_init_line}" ]  || (cat "${chezmoi_log}" >&2; false)
+    [ -n "${second_init_line}" ] || (cat "${chezmoi_log}" >&2; false)
+    [ -n "${apply_line}" ]       || (cat "${chezmoi_log}" >&2; false)
+    [ "${first_init_line}" -lt "${second_init_line}" ]
+    [ "${second_init_line}" -lt "${apply_line}" ]
+
+    # provision_age_key must produce one of its documented diagnostics — any
+    # of its four early-exit branches is acceptable here. The common
+    # substring "encrypted files will not deploy" covers three skip branches
+    # (missing-age, missing-encrypted-key, non-TTY); the fourth branch
+    # (wrong passphrase) uses "continuing without encryption".
+    [[ "${output}" == *"encrypted files will not deploy"* ]] || \
+      [[ "${output}" == *"continuing without encryption"* ]]
+}
+
+@test "ISSUE-022: missing age binary warns and continues without aborting" {
+    # Negative path: if the 'age' tool is somehow absent (shouldn't happen
+    # post-Step 3, but guard against a broken Homebrew install), the
+    # provisioner must warn and let the rest of the bootstrap proceed.
+    setup_healthy_fakes
+    # Explicitly leave 'age' out of FAKE_BIN — it's not in the base system
+    # PATH either (/usr/bin:/bin), so `command -v age` will return non-zero.
+
     run bash "${BOOTSTRAP_SCRIPT}"
 
     [ "${status}" -eq 0 ]
-    # init line must carry both the apply flag and the exclude set.
-    grep -q -- "init --apply --exclude=encrypted,scripts https://github.com/Baelson/dotfiles.git" "${chezmoi_log}"
-    # Secondary apply must be a full pass (no --include=scripts gating) so
-    # encrypted files decrypt + deploy in the same run that provisions the
-    # age key via run_once_before_provision-age-key.sh.
-    grep -q -- "apply --force" "${chezmoi_log}"
-    # Regression guard: the old --include=scripts form limited the pass to
-    # scripts only and left encrypted files on disk as stubs.
-    ! grep -q -- "apply --include=scripts" "${chezmoi_log}"
+    # The age-missing warning is a specific branch distinct from the
+    # non-TTY branch (the latter is what the other ISSUE-022 test exercises).
+    # If `age` isn't in FAKE_BIN AND stdin isn't a TTY, both conditions hold;
+    # the `age`-missing check in provision_age_key runs first, so that
+    # warning is the one we should see.
+    [[ "${output}" == *"age not installed"* ]] || \
+      [[ "${output}" == *"Non-interactive session"* ]]   # acceptable fallback
+    # Final apply still ran despite age being missing (encrypted files stay
+    # as stubs, but that's the documented degrade-gracefully behavior).
+    [ -f "${GIT_LOG}" ]
+    grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
 }
