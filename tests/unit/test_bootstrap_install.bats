@@ -100,6 +100,45 @@ setup_healthy_fakes() {
     [ ! -f "${repo_root}/home/empty_dot_netrc" ]
 }
 
+@test "ISSUE-022 curl|bash-safety: every subprocess call redirects stdin to /dev/null" {
+    # Regression guard for the pipe-consumption bug reproduced in the
+    # 2026-04-22 walk. When install.sh is run via `curl ... | bash`, bash's
+    # stdin IS the pipe containing the remaining script bytes. Any subprocess
+    # that reads FD 0 consumes those bytes, truncating the rest of our script
+    # and causing bash to exit 0 mid-bootstrap. Homebrew's installer,
+    # `brew install`, and `chezmoi init`/`chezmoi apply` all spawn git etc.
+    # that can read stdin. Every such call MUST redirect stdin from /dev/null.
+    #
+    # This test enumerates the canonical call sites and asserts each is
+    # followed (possibly after a line continuation) by `</dev/null`.
+    local src="${BOOTSTRAP_SCRIPT}"
+
+    # 1. Homebrew installer — `/bin/bash -c "$(...)"` with line continuation.
+    #    The `</dev/null` lands on the next line after the curl subcommand.
+    grep -qE '/bin/bash -c \\' "${src}"   || (echo "Homebrew-installer call not found in expected form" >&2; false)
+    # Look at the ~10 lines around the Homebrew install call and require
+    # </dev/null near it.
+    awk '/Installing Homebrew \(non-interactive/{flag=1} flag{print; if (/<\/dev\/null|\bfi\b/){exit}}' "${src}" \
+      | grep -q '</dev/null' \
+      || (echo "Homebrew installer call is missing </dev/null" >&2; false)
+
+    # 2. brew install chezmoi age — single-line call.
+    grep -qE '^brew install chezmoi age </dev/null' "${src}" \
+      || (echo "brew install chezmoi age is missing </dev/null" >&2; false)
+
+    # 3. chezmoi init <URL>  (Step 4, clone).
+    grep -qE '^chezmoi init "\$\{REPO_HTTPS_URL\}" </dev/null' "${src}" \
+      || (echo "chezmoi init <URL> is missing </dev/null" >&2; false)
+
+    # 4. chezmoi init         (Step 6, regen).
+    grep -qE '^chezmoi init </dev/null' "${src}" \
+      || (echo "chezmoi init (regen) is missing </dev/null" >&2; false)
+
+    # 5. chezmoi apply --force (Step 7, deploy).
+    grep -qE '^chezmoi apply --force </dev/null' "${src}" \
+      || (echo "chezmoi apply --force is missing </dev/null" >&2; false)
+}
+
 # -----------------------------------------------------------------------------
 # Static checks — no execution required
 # -----------------------------------------------------------------------------
@@ -362,8 +401,9 @@ setup_healthy_fakes() {
     local ln_init_clone ln_provision ln_init_regen ln_apply
     ln_init_clone=$(grep -n 'chezmoi init "${REPO_HTTPS_URL}"' "${src}" | head -1 | cut -d: -f1)
     ln_provision=$(grep -n '^provision_age_key$' "${src}" | head -1 | cut -d: -f1)
-    # Second `chezmoi init` has no URL — look for the bare invocation (not the function definition).
-    ln_init_regen=$(grep -n '^chezmoi init$' "${src}" | head -1 | cut -d: -f1)
+    # Second `chezmoi init` has no URL — look for the bare invocation (with
+    # </dev/null stdin-safety redirect; pre-hotfix this was `^chezmoi init$`).
+    ln_init_regen=$(grep -nE '^chezmoi init </dev/null' "${src}" | head -1 | cut -d: -f1)
     # Anchor on start-of-line so the docstring references (`# chezmoi apply --force`)
     # don't beat the real invocation to the top of grep's output.
     ln_apply=$(grep -n '^chezmoi apply --force' "${src}" | head -1 | cut -d: -f1)
