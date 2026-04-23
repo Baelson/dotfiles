@@ -26,10 +26,8 @@
 **/{.cache,Cache,Caches}
 **/{.cache,Cache,Caches}/**
 
-# ── Shell history (rapidly changing, not config) ───
-.bash_history
-.zsh_history
-.lesshst
+# ── Shell history (rapidly changing) ───────────────
+{.bash_history,.zsh_history,.lesshst}
 
 # ── GitHub CLI auth (machine-specific) ─────────────
 .config/gh/hosts.yml
