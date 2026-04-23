@@ -93,27 +93,20 @@ defaults write com.apple.screencapture "show-thumbnail" -bool "true"
 # APPLICATION PREFERENCES
 # =============================================================================
 
-# Terminal.app preferences
-# Profile: Solarized Dark + MesloLGS Nerd Font Mono 11pt
-# Source: ~/.config/terminal/Solarized-Dark-NerdFont.terminal (chezmoi-managed)
-# Import method: `open <file>.terminal` imports the profile into Terminal.app.
-# On first bootstrap, the font cask (font-meslo-lg-nerd-font) may not yet be
-# installed when this script runs (install-packages runs after configure-macos-
-# defaults). Terminal.app will fall back to a system font until the next apply
-# or until the user opens the .terminal file manually after brew bundle.
-# Terminal profile hash: {{ include "dot_config/terminal/Solarized-Dark-NerdFont.terminal" | sha256sum }}
-echo "💻 Configuring Terminal.app..."
-TERMINAL_PROFILE="${HOME}/.config/terminal/Solarized-Dark-NerdFont.terminal"
-if [[ -f "${TERMINAL_PROFILE}" ]]; then
-    # `open` requires an Aqua/GUI session; fails in --no-graphics VMs and
-    # non-interactive SSH bootstraps with OSLaunchdErrorDomain Code=125.
-    # Degrade gracefully — the profile stays on disk for manual import later.
-    if open "${TERMINAL_PROFILE}" 2>/dev/null; then
-        sleep 1
-    else
-        echo "⚠️  Could not open Terminal profile (headless / no GUI session) — import manually after first Terminal.app launch"
-    fi
-fi
+# Terminal.app preferences — font-independent defaults only.
+#
+# The `.terminal` profile IMPORT (`open ~/.config/terminal/....terminal`)
+# lives in run_onchange_after_setup-applications.sh.tmpl, which runs AFTER
+# run_onchange_after_install-packages (where the MesloLGS Nerd Font cask
+# gets installed). See ISSUE-024: importing here used to leave Terminal.app
+# with a "Menlo" font fallback cached into the profile because the font
+# cask hadn't yet installed — Powerlevel10k glyphs rendered as boxes.
+# The defaults writes below are safe to run before the profile is imported:
+# Terminal.app reads these at next launch and ignores a "Default Window
+# Settings" string that doesn't match any imported profile (falling back
+# to built-in Basic). Once setup-applications imports the profile a few
+# seconds later, these defaults take effect.
+echo "💻 Configuring Terminal.app defaults..."
 defaults write com.apple.Terminal "Default Window Settings" -string "Solarized-Dark-NerdFont"
 defaults write com.apple.Terminal "Startup Window Settings" -string "Solarized-Dark-NerdFont"
 defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"

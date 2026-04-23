@@ -61,4 +61,40 @@ if [[ -d "/Applications/Alfred 4.app" ]] || [[ -d "/Applications/Alfred 5.app" ]
 fi
 {{- end }}
 
+# =============================================================================
+# Terminal.app profile import (ISSUE-024)
+#
+# This script runs AFTER run_onchange_after_install-packages — chezmoi sorts
+# run_onchange_after_* lexicographically (install-packages < setup-applications)
+# so when we reach this line, `brew bundle` has already installed
+# `font-meslo-lg-nerd-font`. Previously this import lived in
+# configure-macos-defaults, which runs BEFORE install-packages, so
+# Terminal.app cached a "Menlo" fallback font into the imported profile and
+# Powerlevel10k glyphs rendered as boxes. The defaults-write calls for
+# "Default Window Settings" stay in configure-macos-defaults (font-independent).
+#
+# Trigger hashes: re-import if the profile file changes, OR if the Brewfile
+# font line changes (in case we swap fonts). Both contribute to this
+# template's rendered-content signature, which is what chezmoi watches.
+#
+# Terminal profile hash: {{ include "dot_config/terminal/Solarized-Dark-NerdFont.terminal" | sha256sum }}
+# =============================================================================
+
+echo "💻 Importing Terminal.app profile..."
+TERMINAL_PROFILE="${HOME}/.config/terminal/Solarized-Dark-NerdFont.terminal"
+if [[ -f "${TERMINAL_PROFILE}" ]]; then
+    # `open` requires an Aqua/GUI session; fails in --no-graphics VMs and
+    # non-interactive SSH bootstraps with OSLaunchdErrorDomain Code=125.
+    # Degrade gracefully — dot_zprofile has a first-Terminal.app-launch
+    # deferred-import fallback that handles the no-GUI-at-bootstrap case.
+    if open "${TERMINAL_PROFILE}" 2>/dev/null; then
+        sleep 1
+        echo "✅ Terminal.app profile imported (font cask is now available, glyphs should render)"
+    else
+        echo "⚠️  Could not open Terminal profile (headless / no GUI session) — dot_zprofile will import on first Terminal.app launch"
+    fi
+else
+    echo "⚠️  Terminal profile file missing: ${TERMINAL_PROFILE}"
+fi
+
 echo "✅ Application configuration completed"
