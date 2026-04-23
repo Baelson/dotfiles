@@ -2,10 +2,8 @@
 # Syntax: doublestar.Match (NOT gitignore)
 # Reference: https://www.chezmoi.io/reference/special-files/chezmoiignore/
 
-# ── macOS system files ──────────────────────────────
-.DS_Store
+# ── macOS system files (any depth) ──────────────────
 **/.DS_Store
-._*
 **/._*
 
 # ── Repository metadata (don't deploy to ~/) ───────
@@ -20,11 +18,9 @@ CHANGELOG*
 *.txt
 
 
-# ── Editor temp files ───────────────────────────────
-*.swp
-*.swo
+# ── Editor temp files (any depth) ───────────────────
 **/*.swp
-*~
+**/*.swo
 **/*~
 
 # ── Editor project files ───────────────────────────
