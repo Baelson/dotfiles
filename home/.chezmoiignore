@@ -49,29 +49,18 @@ Brewfile
 .ssh/**
 {{- end }}
 
-# ── Kurama-only files (primary Mac Studio) ────────
-# Excluded on all other Macs (e.g. Jennifers-iMac, Jennifers-MacBook-Pro).
-# The Claude Desktop JSON is NOT ignored here — instead it's templated
-# (private_claude_desktop_config.json.tmpl) so the softeria-m365 MCP
-# entry drops out on non-Kurama while the rest of the config deploys.
+# ── Kurama-only (primary Mac Studio) ───────────────
+# Non-Kurama Macs (Jennifers-iMac, Jennifers-MacBook-Pro) skip these.
+# Claude Desktop JSON is templated (private_claude_desktop_config.json.tmpl),
+# NOT ignored — softeria-m365 MCP entry drops out on non-Kurama only.
 {{ if not (and (hasKey . "is_kurama") .is_kurama) -}}
-# ms365-mcp LaunchAgent + wrapper scripts
+# LaunchAgents + wrapper scripts
 Library/LaunchAgents/com.duqueclan.ms365-mcp.plist
-.local/bin/ms365-mcp-start.sh
-.local/bin/ms365-mcp-stdio.sh
+.local/bin/{ms365-mcp-start.sh,ms365-mcp-stdio.sh,open-cursor-global-workspace.sh}
 
-# Cursor IDE (config + app support)
-.cursor
-.cursor/**
-.local/bin/open-cursor-global-workspace.sh
-Library/Application Support/Cursor
-Library/Application Support/Cursor/**
-
-# Postman (app support only — cask is not gated)
-Library/Application Support/Postman
-Library/Application Support/Postman/**
-
-# GitKraken
-.gitkraken
-.gitkraken/**
+# GUI apps (config dirs + app-support)
+{.cursor,.gitkraken}
+{.cursor,.gitkraken}/**
+Library/Application Support/{Cursor,Postman}
+Library/Application Support/{Cursor,Postman}/**
 {{- end }}
