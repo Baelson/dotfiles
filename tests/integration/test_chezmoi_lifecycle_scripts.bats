@@ -321,3 +321,51 @@ teardown() {
         grep -q "Script Behavior:" "$script_path" || grep -q "This script" "$script_path"
     done
 }
+
+# -----------------------------------------------------------------------------
+# ISSUE-024 — Terminal.app profile import must run AFTER font-cask install.
+#
+# chezmoi runs run_onchange_after_* scripts in lexicographic order:
+#   bootstrap-claude-plugins < configure-macos-defaults < install-packages
+#     < reload-launchagents < setup-applications < setup-shell-environment
+# The MesloLGS Nerd Font cask is installed by install-packages.sh.tmpl (via
+# Brewfile). If `open <profile>.terminal` runs BEFORE the font cask installs
+# (its pre-fix position inside configure-macos-defaults.sh.tmpl),
+# Terminal.app caches a "Menlo" fallback font into the imported profile and
+# Powerlevel10k glyphs render as boxes. The import must live in
+# setup-applications, which sorts AFTER install-packages.
+# -----------------------------------------------------------------------------
+
+@test "LIFECYCLE-24: Terminal.app profile import lives in setup-applications, NOT configure-macos-defaults (ISSUE-024 regression guard)" {
+    local defaults_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl"
+    local setup_apps_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
+
+    [[ -f "$defaults_script" ]] || (echo "missing: $defaults_script" >&2; false)
+    [[ -f "$setup_apps_script" ]] || (echo "missing: $setup_apps_script" >&2; false)
+
+    # Must NOT appear in configure-macos-defaults: this is the pre-ISSUE-024
+    # position that races the font cask. Match only real invocations, not
+    # doc-comment mentions (comment lines start with `#`).
+    ! grep -E '^[[:space:]]*if open "\$\{TERMINAL_PROFILE\}"' "$defaults_script" \
+      || (echo "ISSUE-024 regression: \`open \$TERMINAL_PROFILE\` still exists in configure-macos-defaults.sh.tmpl — must live in setup-applications.sh.tmpl" >&2; false)
+
+    # MUST appear in setup-applications: the post-ISSUE-024 position.
+    grep -qE '^[[:space:]]*if open "\$\{TERMINAL_PROFILE\}"' "$setup_apps_script" \
+      || (echo "ISSUE-024 regression: \`open \$TERMINAL_PROFILE\` missing from setup-applications.sh.tmpl — font cask ordering race will recur" >&2; false)
+
+    # And the profile hash (re-trigger) must also be in setup-applications so
+    # edits to the .terminal file re-fire this script.
+    grep -q 'Solarized-Dark-NerdFont.terminal.*sha256sum' "$setup_apps_script" \
+      || (echo "ISSUE-024: Terminal-profile content-hash trigger missing from setup-applications.sh.tmpl" >&2; false)
+}
+
+@test "LIFECYCLE-25: Brewfile font cask is installed by install-packages (ISSUE-024 sanity check)" {
+    # Confirms the prerequisite for LIFECYCLE-24's ordering argument: the
+    # MesloLGS font cask is in fact installed by install-packages.sh.tmpl
+    # (via Brewfile), so setup-applications can rely on it being present.
+    local brewfile="$DOTFILES_SOURCE_DIR/Brewfile.tmpl"
+    [[ -f "$brewfile" ]]
+
+    grep -q 'font-meslo-lg-nerd-font' "$brewfile" \
+      || (echo "ISSUE-024: font-meslo-lg-nerd-font cask missing from Brewfile.tmpl — Terminal.app glyph rendering will regress" >&2; false)
+}
