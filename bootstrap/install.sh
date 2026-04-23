@@ -74,6 +74,15 @@ fi
 
 # -----------------------------------------------------------------------------
 # Step 2: Homebrew — also handles CLT via softwareupdate under NONINTERACTIVE=1
+#
+# `</dev/null` on every subprocess that might read FD 0. The canonical
+# invocation is `curl ... | bash`, which makes bash's stdin the pipe from
+# curl. Subprocesses inherit that stdin; if ANY of them reads from it,
+# they consume bytes meant for bash to execute LATER — silently truncating
+# our script and exiting 0 in the middle of bootstrap. The 2026-04-22 walk
+# reproduced this: `brew install chezmoi age` mid-pour ate the rest of
+# install.sh, bash hit EOF after Step 3, Steps 4–7 never ran, and neither
+# the age passphrase prompt nor `chezmoi init` fired.
 # -----------------------------------------------------------------------------
 
 if command -v brew >/dev/null 2>&1; then
@@ -81,7 +90,8 @@ if command -v brew >/dev/null 2>&1; then
 else
     log_step "Installing Homebrew (non-interactive; will also install Xcode CLT if missing)"
     NONINTERACTIVE=1 /bin/bash -c \
-        "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+        </dev/null
 fi
 
 # Load brew shellenv. command -v works if brew is on PATH already (test envs,
@@ -103,7 +113,9 @@ fi
 # -----------------------------------------------------------------------------
 
 log_step "Installing chezmoi and age"
-brew install chezmoi age
+# </dev/null protects against stdin consumption under `curl ... | bash`; see
+# the Step 2 comment above for the full explanation.
+brew install chezmoi age </dev/null
 
 # -----------------------------------------------------------------------------
 # Step 4: Fetch PAT from Keychain and write ~/.netrc (0600)
@@ -233,7 +245,10 @@ provision_age_key() {
 # -----------------------------------------------------------------------------
 
 log_step "chezmoi init ${REPO_HTTPS_URL}"
-chezmoi init "${REPO_HTTPS_URL}"
+# </dev/null: chezmoi init spawns git subprocesses; under `curl ... | bash`
+# git would otherwise inherit our pipe and could consume bytes from the
+# remaining script. See Step 2 comment for context.
+chezmoi init "${REPO_HTTPS_URL}" </dev/null
 
 # -----------------------------------------------------------------------------
 # Step 5: Provision the age key (primary entry point per ISSUE-022 fix).
@@ -257,7 +272,7 @@ provision_age_key
 # -----------------------------------------------------------------------------
 
 log_step "chezmoi init (regenerate config; emits [age] block if key provisioned)"
-chezmoi init
+chezmoi init </dev/null
 
 # -----------------------------------------------------------------------------
 # Step 7: chezmoi apply --force — full pass deploys files AND encrypted files.
@@ -270,7 +285,7 @@ chezmoi init
 
 log_step "chezmoi apply --force"
 APPLY_EXIT=0
-chezmoi apply --force || APPLY_EXIT=$?
+chezmoi apply --force </dev/null || APPLY_EXIT=$?
 if [[ "${APPLY_EXIT}" -ne 0 ]]; then
     log_warn "chezmoi apply exited ${APPLY_EXIT}. Continuing to remote-flip; investigate after bootstrap."
 fi
