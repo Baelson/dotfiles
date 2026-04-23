@@ -2,54 +2,32 @@
 # Syntax: doublestar.Match (NOT gitignore)
 # Reference: https://www.chezmoi.io/reference/special-files/chezmoiignore/
 
-# ── macOS system files ──────────────────────────────
-.DS_Store
+# ── macOS system files (any depth) ──────────────────
 **/.DS_Store
-._*
 **/._*
 
-# ── Repository metadata (don't deploy to ~/) ───────
-.git/**
-.github/**
-.gitignore
-.gitattributes
-README*
-LICENSE*
-CHANGELOG*
+# ── Repo metadata guards (root-level only) ─────────
+# Defensive against future accidental ~/README.md / ~/NOTES.txt additions.
 *.md
 *.txt
 
-
-# ── Editor temp files ───────────────────────────────
-*.swp
-*.swo
+# ── Editor temp files (any depth) ───────────────────
 **/*.swp
-*~
+**/*.swo
 **/*~
 
-# ── Editor project files ───────────────────────────
-.vscode/
-**/.vscode/
+# ── Editor project files (any depth) ────────────────
+**/{.vscode,.idea}
+**/{.vscode,.idea}/**
 *.code-workspace
-*.sublime-workspace
-**/*.sublime-workspace
-*.sublime-project
-**/*.sublime-project
-.idea/
-**/.idea/
+**/*.sublime-{workspace,project}
 
-# ── Cache directories ──────────────────────────────
-.cache
-.cache/**
-**/Cache/**
-**/Caches/**
-Library/Caches
-Library/Caches/**
+# ── Cache dirs (any depth, entry + contents) ────────
+**/{.cache,Cache,Caches}
+**/{.cache,Cache,Caches}/**
 
-# ── Shell history (rapidly changing, not config) ───
-.bash_history
-.zsh_history
-.lesshst
+# ── Shell history (rapidly changing) ───────────────
+{.bash_history,.zsh_history,.lesshst}
 
 # ── GitHub CLI auth (machine-specific) ─────────────
 .config/gh/hosts.yml
@@ -65,39 +43,24 @@ Brewfile
 .local/share/applications/**
 {{- end }}
 
-# ── Ephemeral environment exclusions ───────────────
+# ── Ephemeral environment (disposable containers, CI, VMs) ─
 {{ if .ephemeral -}}
 .ssh
 .ssh/**
-.gnupg
-.gnupg/**
-.config/age
-.config/age/**
 {{- end }}
 
-# ── Kurama-only files (primary Mac Studio) ────────
-# Excluded on all other Macs (e.g. Jennifers-iMac, Jennifers-MacBook-Pro).
-# The Claude Desktop JSON is NOT ignored here — instead it's templated
-# (private_claude_desktop_config.json.tmpl) so the softeria-m365 MCP
-# entry drops out on non-Kurama while the rest of the config deploys.
+# ── Kurama-only (primary Mac Studio) ───────────────
+# Non-Kurama Macs (Jennifers-iMac, Jennifers-MacBook-Pro) skip these.
+# Claude Desktop JSON is templated (private_claude_desktop_config.json.tmpl),
+# NOT ignored — softeria-m365 MCP entry drops out on non-Kurama only.
 {{ if not (and (hasKey . "is_kurama") .is_kurama) -}}
-# ms365-mcp LaunchAgent + wrapper scripts
+# LaunchAgents + wrapper scripts
 Library/LaunchAgents/com.duqueclan.ms365-mcp.plist
-.local/bin/ms365-mcp-start.sh
-.local/bin/ms365-mcp-stdio.sh
+.local/bin/{ms365-mcp-start.sh,ms365-mcp-stdio.sh,open-cursor-global-workspace.sh}
 
-# Cursor IDE (config + app support)
-.cursor
-.cursor/**
-.local/bin/open-cursor-global-workspace.sh
-Library/Application Support/Cursor
-Library/Application Support/Cursor/**
-
-# Postman (app support only — cask is not gated)
-Library/Application Support/Postman
-Library/Application Support/Postman/**
-
-# GitKraken
-.gitkraken
-.gitkraken/**
+# GUI apps (config dirs + app-support)
+{.cursor,.gitkraken}
+{.cursor,.gitkraken}/**
+Library/Application Support/{Cursor,Postman}
+Library/Application Support/{Cursor,Postman}/**
 {{- end }}
