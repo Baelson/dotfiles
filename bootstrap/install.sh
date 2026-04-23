@@ -114,10 +114,12 @@ if [[ -z "${TOKEN}" ]]; then
 fi
 
 # Scrub the PAT value by truncating ~/.netrc rather than deleting it. The
-# dotfiles source tree contains `home/empty_dot_netrc` (chezmoi-managed empty
-# placeholder), so deleting the file would leave chezmoi reporting drift on
-# every subsequent apply. Truncating removes the plaintext token while
-# preserving chezmoi's "managed empty file" invariant.
+# dotfiles source tree contains `home/empty_private_dot_netrc` (chezmoi-managed
+# empty placeholder with mode 0600 via the `private_` prefix), so deleting the
+# file would leave chezmoi reporting drift on every subsequent apply.
+# Truncating removes the plaintext token while preserving chezmoi's "managed
+# empty file" invariant; the `private_` prefix ensures apply keeps ~/.netrc at
+# 0600 rather than relaxing it to the umask default 0644.
 cleanup_netrc() {
     if [[ -f "${HOME}/.netrc" ]]; then
         : > "${HOME}/.netrc" 2>/dev/null || true
