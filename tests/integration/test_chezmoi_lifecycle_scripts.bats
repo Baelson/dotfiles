@@ -369,3 +369,28 @@ teardown() {
     grep -q 'font-meslo-lg-nerd-font' "$brewfile" \
       || (echo "ISSUE-024: font-meslo-lg-nerd-font cask missing from Brewfile.tmpl — Terminal.app glyph rendering will regress" >&2; false)
 }
+
+@test "LIFECYCLE-26: setup-applications sets Terminal.app default profile via osascript (ISSUE-024 in-memory-default guard)" {
+    # The `defaults write "Default Window Settings"` in configure-macos-
+    # defaults is overridden by Terminal.app on quit when Terminal.app was
+    # already running at write time (which it always is during the walk —
+    # install.sh runs INSIDE a Terminal.app window). setup-applications
+    # must also tell the running Terminal.app about the new default via
+    # AppleScript IPC, so its in-memory state matches and persists on
+    # quit. See `~/.claude/rules/macos-app-config.md` "Plist Caching Caveat".
+    local setup_apps_script="$DOTFILES_SOURCE_DIR/.chezmoiscripts/darwin/run_onchange_after_setup-applications.sh.tmpl"
+    [[ -f "$setup_apps_script" ]]
+
+    # Must use osascript (not just `defaults write`) to update Terminal.app.
+    grep -q 'osascript' "$setup_apps_script" \
+      || (echo "ISSUE-024: osascript missing from setup-applications.sh.tmpl — running Terminal.app won't learn about the new default profile" >&2; false)
+
+    # Must set the DEFAULT settings to Solarized-Dark-NerdFont.
+    grep -q 'set default settings to settings set "Solarized-Dark-NerdFont"' "$setup_apps_script" \
+      || (echo "ISSUE-024: osascript block doesn't set default settings to Solarized-Dark-NerdFont" >&2; false)
+
+    # And STARTUP settings too (controls the profile a freshly-launched
+    # Terminal.app uses for its first window).
+    grep -q 'set startup settings to settings set "Solarized-Dark-NerdFont"' "$setup_apps_script" \
+      || (echo "ISSUE-024: osascript block doesn't set startup settings to Solarized-Dark-NerdFont" >&2; false)
+}

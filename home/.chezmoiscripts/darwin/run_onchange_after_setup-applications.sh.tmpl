@@ -90,6 +90,31 @@ if [[ -f "${TERMINAL_PROFILE}" ]]; then
     if open "${TERMINAL_PROFILE}" 2>/dev/null; then
         sleep 1
         echo "✅ Terminal.app profile imported (font cask is now available, glyphs should render)"
+
+        # Set "Solarized-Dark-NerdFont" as Terminal.app's default + startup
+        # profile via AppleScript IPC. The `defaults write "Default Window
+        # Settings"` calls in configure-macos-defaults.sh.tmpl handle the
+        # cold-start case (Terminal.app not running), but the walk runs
+        # install.sh INSIDE a Terminal.app window, so Terminal.app is
+        # already running when configure-macos-defaults writes those
+        # defaults — Terminal.app has its plist cached in memory and
+        # overwrites the disk-side write on quit with its (unchanged)
+        # "Basic" default. osascript reaches into the running Terminal.app
+        # and updates its in-memory state directly, so the preference
+        # persists on quit and new windows use our profile. See
+        # ~/.claude/rules/macos-app-config.md "Plist Caching Caveat".
+        # The `open` above just launched/imported into Terminal.app, so
+        # it's guaranteed running at this point.
+        if osascript <<'APPLE_EOF' 2>/dev/null; then
+tell application "Terminal"
+    set default settings to settings set "Solarized-Dark-NerdFont"
+    set startup settings to settings set "Solarized-Dark-NerdFont"
+end tell
+APPLE_EOF
+            echo "✅ Terminal.app default profile set to Solarized-Dark-NerdFont"
+        else
+            echo "⚠️  osascript default-profile set failed — new Terminal windows may still open with the Basic profile until you set it via Terminal → Settings → Profiles → (select Solarized-Dark-NerdFont) → 'Default'"
+        fi
     else
         echo "⚠️  Could not open Terminal profile (headless / no GUI session) — dot_zprofile will import on first Terminal.app launch"
     fi
