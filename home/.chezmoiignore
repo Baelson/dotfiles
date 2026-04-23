@@ -16,24 +16,15 @@
 **/*.swo
 **/*~
 
-# ── Editor project files ───────────────────────────
-.vscode/
-**/.vscode/
+# ── Editor project files (any depth) ────────────────
+**/{.vscode,.idea}
+**/{.vscode,.idea}/**
 *.code-workspace
-*.sublime-workspace
-**/*.sublime-workspace
-*.sublime-project
-**/*.sublime-project
-.idea/
-**/.idea/
+**/*.sublime-{workspace,project}
 
-# ── Cache directories ──────────────────────────────
-.cache
-.cache/**
-**/Cache/**
-**/Caches/**
-Library/Caches
-Library/Caches/**
+# ── Cache dirs (any depth, entry + contents) ────────
+**/{.cache,Cache,Caches}
+**/{.cache,Cache,Caches}/**
 
 # ── Shell history (rapidly changing, not config) ───
 .bash_history
