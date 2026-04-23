@@ -43,14 +43,10 @@ Brewfile
 .local/share/applications/**
 {{- end }}
 
-# ── Ephemeral environment exclusions ───────────────
+# ── Ephemeral environment (disposable containers, CI, VMs) ─
 {{ if .ephemeral -}}
 .ssh
 .ssh/**
-.gnupg
-.gnupg/**
-.config/age
-.config/age/**
 {{- end }}
 
 # ── Kurama-only files (primary Mac Studio) ────────
