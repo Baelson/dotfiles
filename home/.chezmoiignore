@@ -6,17 +6,10 @@
 **/.DS_Store
 **/._*
 
-# ── Repository metadata (don't deploy to ~/) ───────
-.git/**
-.github/**
-.gitignore
-.gitattributes
-README*
-LICENSE*
-CHANGELOG*
+# ── Repo metadata guards (root-level only) ─────────
+# Defensive against future accidental ~/README.md / ~/NOTES.txt additions.
 *.md
 *.txt
-
 
 # ── Editor temp files (any depth) ───────────────────
 **/*.swp
