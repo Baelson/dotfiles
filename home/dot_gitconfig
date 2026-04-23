@@ -22,6 +22,18 @@
 	required = true
 [init]
 	defaultBranch = main
+[push]
+	# Auto-track upstream on first push of a new branch (treats `git push` on
+	# an untracked branch as `git push --set-upstream origin <branch>`).
+	# Without this, new branches we create for private-repo work don't get
+	# upstream tracking, which then breaks `git pull` / `chezmoi update` /
+	# any "current branch against its upstream" operation until someone
+	# remembers to set the upstream manually. Global policy; see
+	# ~/.claude/rules/git-workflow.md "Branch upstream tracking".
+	autoSetupRemote = true
+	# Push the current branch to origin/<same-name>. Makes the upstream
+	# inferred by autoSetupRemote land where we expect it.
+	default = current
 [credential "https://github.com"]
 	helper =
 	helper = !/opt/homebrew/bin/gh auth git-credential
