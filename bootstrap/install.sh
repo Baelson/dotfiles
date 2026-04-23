@@ -157,10 +157,20 @@ unset TOKEN
 #   - key already present        → idempotent no-op
 #   - age binary missing         → warn + skip (shouldn't happen post-Step 3)
 #   - bootstrap/key.txt.age gone → warn + skip
-#   - stdin is not a TTY         → warn + skip (automated SSH-only regression)
+#   - no controlling terminal    → warn + skip (automated SSH-only regression)
 #   - age -d fails (bad passphrase) → rm partial, warn + continue
 # In all skip branches, encrypted files simply stay as stubs after apply;
 # the operator sees a clear warning and the rest of bootstrap still succeeds.
+#
+# TTY detection uses /dev/tty, NOT `[[ -t 0 ]]` on stdin. The canonical
+# bootstrap invocation is `curl ... | bash`, which makes bash's stdin the
+# pipe from curl — so `-t 0` falsely reports non-interactive even when the
+# user is sitting at a Terminal.app window. /dev/tty, by contrast, refers
+# to the *controlling terminal* and is accessible whenever install.sh was
+# launched from an interactive shell, piped or not. (age itself also reads
+# the passphrase from /dev/tty internally, bypassing stdin.) Non-interactive
+# contexts — SSH without `-t`, cron, launchd — have no /dev/tty at all, so
+# the open fails and we skip cleanly.
 # -----------------------------------------------------------------------------
 
 provision_age_key() {
@@ -182,15 +192,25 @@ provision_age_key() {
         log_warn "No encrypted age key at ${encrypted_key} — skipping (encrypted files will not deploy)"
         return 0
     fi
-    if [[ ! -t 0 ]]; then
-        log_warn "Non-interactive session — skipping age key provisioning (encrypted files will not deploy)"
+    # /dev/tty, not `-t 0`: the runbook invokes install.sh via
+    # `curl ... | bash`, which makes stdin the pipe from curl — `-t 0` then
+    # falsely reports non-interactive even when a real terminal is attached.
+    # /dev/tty is the controlling terminal and exists whenever the user
+    # launched install.sh from a shell window, pipe or no pipe.
+    if ! { : </dev/tty; } 2>/dev/null; then
+        log_warn "No controlling terminal (/dev/tty unavailable) — skipping age key provisioning (encrypted files will not deploy)"
         log_warn "Run install.sh from an interactive terminal to provision the key."
         return 0
     fi
 
     log_step "Provisioning age decryption key (passphrase-protected; one prompt below)"
     mkdir -p "${age_key_dir}"
-    if age -d -o "${age_key_file}" "${encrypted_key}"; then
+    # Redirect stdin from /dev/tty so the passphrase prompt works even when
+    # install.sh was invoked via `curl ... | bash` (bash's stdin is the
+    # pipe, but /dev/tty still points to the interactive terminal). age's
+    # internal passphrase reader also opens /dev/tty directly, but being
+    # explicit here avoids any ambiguity on platforms where it doesn't.
+    if age -d -o "${age_key_file}" "${encrypted_key}" </dev/tty; then
         chmod 600 "${age_key_file}"
         log_step "Age key provisioned at ${age_key_file}"
     else

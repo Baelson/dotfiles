@@ -378,13 +378,22 @@ setup_healthy_fakes() {
     [ "${ln_provision}" -lt "${ln_init_regen}" ]
     [ "${ln_init_regen}" -lt "${ln_apply}" ]
 
-    # Hard regression guards against the two known-bad forms:
+    # Hard regression guards against the three known-bad forms:
     #   - pre-ISSUE-022: "init --apply --exclude=encrypted,scripts" rendered
     #     config without [age]
     #   - pre-ISSUE-019 encrypted-apply fix: "apply --include=scripts" limited
     #     the pass to scripts only, never deploying encrypted files
+    #   - pre-ISSUE-022 hotfix: the `[[ -t 0 ]]` TTY gate falsely-skipped
+    #     provisioning under `curl ... | bash` (bash's stdin is the pipe, not
+    #     the terminal). The gate must check /dev/tty, not fd 0.
     ! grep -q -- "init --apply --exclude=encrypted,scripts" "${src}"
     ! grep -q -- "apply --include=scripts" "${src}"
+    # No `[[ ! -t 0 ]]` (or `[[ -t 0 ]]`) guards inside provision_age_key.
+    # Implementation uses `: </dev/tty` for detection instead. Matching on
+    # just `-t 0` catches both polarity variants.
+    ! awk '/^provision_age_key\(\)/,/^}/' "${src}" | grep -q -- "-t 0"
+    # Positive: the /dev/tty-based detection IS present.
+    awk '/^provision_age_key\(\)/,/^}/' "${src}" | grep -q -- "/dev/tty"
 }
 
 @test "ISSUE-022: runtime sequence is init-clone → provision → init-regen → apply --force" {
@@ -447,6 +456,77 @@ setup_healthy_fakes() {
     # (wrong passphrase) uses "continuing without encryption".
     [[ "${output}" == *"encrypted files will not deploy"* ]] || \
       [[ "${output}" == *"continuing without encryption"* ]]
+}
+
+@test "ISSUE-022 hotfix: stdin-as-pipe does NOT false-skip age provisioning" {
+    # Reproduction of the bug we shipped in Phase 2 and fixed here:
+    # the canonical invocation is `curl ... | bash`, which makes bash's
+    # stdin the pipe from curl. The previous `[[ -t 0 ]]` gate then falsely
+    # reported "non-interactive session" and skipped provisioning — leaving
+    # encrypted files undeployed. The fix uses /dev/tty, which IS accessible
+    # when launched from an interactive shell regardless of stdin.
+    #
+    # Skip this test cleanly if /dev/tty isn't available in the BATS runner
+    # (e.g. CI containers) — can't positively exercise provisioning without
+    # a controlling terminal. The source-level regression guard still
+    # enforces the invariant in that environment.
+    if ! { : </dev/tty; } 2>/dev/null; then
+        skip "no /dev/tty in this BATS runner — source-level guard covers the invariant"
+    fi
+
+    local chezmoi_log="${BATS_TEST_TMPDIR}/chezmoi.log"
+    local age_log="${BATS_TEST_TMPDIR}/age.log"
+    fake security '
+        for arg in "$@"; do
+            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
+        done
+        exit 0
+    '
+    fake brew '
+        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
+        exit 0
+    '
+    # age fake: succeed (exit 0) and write the key file wherever -o points.
+    # Also log that it was invoked — that's the key assertion.
+    fake age "
+        echo \"\$@\" >> \"${age_log}\"
+        if [[ \"\${1:-}\" == \"-d\" && \"\${2:-}\" == \"-o\" ]]; then
+            # Emulate successful decrypt.
+            echo 'AGE-SECRET-KEY-fake' > \"\${3}\"
+            exit 0
+        fi
+        exit 1
+    "
+    # chezmoi: the second `chezmoi init` needs to actually generate a config
+    # so nothing aborts; source-path returns a fake checkout with
+    # bootstrap/key.txt.age present so provision_age_key doesn't early-skip.
+    fake chezmoi "
+        echo \"\$@\" >> \"${chezmoi_log}\"
+        case \"\${1:-}\" in
+            source-path)
+                local fake_src=\"\${BATS_TEST_TMPDIR}/fake-source\"
+                mkdir -p \"\${fake_src}/.git\" \"\${fake_src}/../bootstrap\"
+                : > \"\${fake_src}/../bootstrap/key.txt.age\"
+                echo \"\${fake_src}\"
+                ;;
+        esac
+        exit 0
+    "
+    fake git 'exit 0'
+
+    # Simulate `curl ... | bash`: pipe the script into bash so stdin is a
+    # pipe, not a terminal. This is exactly the condition the old gate got
+    # wrong.
+    run bash -c "cat '${BOOTSTRAP_SCRIPT}' | bash 2>&1"
+
+    [ "${status}" -eq 0 ]
+    # The fix: age -d WAS called even though stdin is a pipe.
+    [ -f "${age_log}" ] || (echo "age was never invoked — TTY gate still false-skipping" >&2; false)
+    grep -q -- "^-d -o " "${age_log}" || \
+      (echo "age log does not show a decrypt call: $(cat "${age_log}")" >&2; false)
+    # And the false-skip warning is absent — this phrase should only appear
+    # when /dev/tty is genuinely unavailable.
+    [[ "${output}" != *"No controlling terminal"* ]]
 }
 
 @test "ISSUE-022: missing age binary warns and continues without aborting" {
