@@ -219,6 +219,8 @@ alias dcconfigs="pushd ~/Git/DuqueClan-Configs"                         # pushd 
 # git alias'
 alias gdd="git difftool --dir-diff --no-symlinks"
 alias grsa="git restore --staged ."
+alias glpp="git log --pretty=format:'%C(yellow)%h%C(reset) %<(60,trunc)%s %C(cyan)%cr%C(reset) (%C(cyan)%cd%C(reset)) %C(auto)%d%C(reset)' --abbrev-commit --decorate=short --date=format:'%Y-%m-%d @ %H:%m'"
+alias glppg="git log --graph --pretty=format:'%C(yellow)%h%C(reset) %<(60,trunc)%s %C(cyan)%cr%C(reset) (%C(cyan)%cd%C(reset)) %C(auto)%d%C(reset)' --abbrev-commit --decorate=short --date=format:'%Y-%m-%d @ %H:%m'"
 
 # claude-code alias'
 # claude-mem added by plug-in
@@ -238,10 +240,10 @@ alias cmapply="chezmoi apply"
 alias cmupdate="chezmoi update"
 alias cmstatus="echo '== Col1: last write vs. actual, Col2: actual vs. target ==\\n' && chezmoi status"
 alias cminit="echo '== chezmoi init ==\\n' && chezmoi init"
-alias cmdrupdate="echo '== [DRY RUN] chezmoi update ==' && chezmoi update --dry-run"
-alias cmdrapply="echo '== [DRY RUN] chezmoi apply ==' && chezmoi apply --dry-run"
-alias cmdradd="echo '== [DRY RUN] chezmoi add ==' && chezmoi add --dry-run"
-alias cmdrradd="echo '== [DRY RUN] chezmoi re-add ==' && chezmoi re-add --dry-run"
+alias cmdrupdate="echo '== [DRY RUN] chezmoi update ==\\n' && chezmoi update --dry-run --verbose"
+alias cmdrapply="echo '== [DRY RUN] chezmoi apply ==\\n' && chezmoi apply --dry-run --verbose"
+alias cmdradd="echo '== [DRY RUN] chezmoi add ==\\n' && chezmoi add --dry-run --verbose"
+alias cmdrradd="echo '== [DRY RUN] chezmoi re-add ==\\n' && chezmoi re-add --dry-run --verbose"
 
 ############################################
 ###             key bindings             ###
@@ -281,4 +283,3 @@ fi
 # Titan Builds and Bazel
 # source /Users/Baelson/.bazel/bin/bazel-complete.bash
 # alias gfa="cd ~/Git/Titan/apollo && git fetch gerrit"
-
