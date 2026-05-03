@@ -34,6 +34,9 @@ CLAUDE.local.md
 # Local VM infrastructure overrides
 infrastructure/vm/macos-matrix.local.json
 
+# Exported Claude Code conversations — engineering scratch, not for public repo
+docs/convos/
+
 # Node.js (if you use it)
 node_modules/
 npm-debug.log*
