@@ -190,11 +190,10 @@ check_local_workflow_scripts() {
         "${DOTFILES_ROOT}/scripts/test/test.sh"
         "${DOTFILES_ROOT}/scripts/test/run-critical-tests.sh"
         "${DOTFILES_ROOT}/scripts/test/validate-test-setup.sh"
-        "${DOTFILES_ROOT}/scripts/vm/init-matrix.sh"
-        "${DOTFILES_ROOT}/scripts/vm/vmctl.sh"
-        "${DOTFILES_ROOT}/scripts/vm/vm-matrix.sh"
         "${DOTFILES_ROOT}/scripts/tools/performance-check.sh"
     )
+    # vmctl.sh / vm-matrix.sh / init-matrix.sh removed in ISSUE-021;
+    # replacement run-e2e.sh lands via Phase 5x feature-branch merge.
 
     for script in "${workflow_scripts[@]}"; do
         if [[ -x "${script}" ]]; then

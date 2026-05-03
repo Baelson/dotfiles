@@ -146,10 +146,9 @@ main() {
             "scripts/test/test.sh"
             "scripts/test/run-critical-tests.sh"
             "scripts/tools/performance-check.sh"
-            "scripts/vm/init-matrix.sh"
-            "scripts/vm/vmctl.sh"
-            "scripts/vm/vm-matrix.sh"
         )
+        # vmctl.sh / vm-matrix.sh / init-matrix.sh removed in ISSUE-021;
+        # replacement run-e2e.sh lands via Phase 5x feature-branch merge.
         for script in "${required_scripts[@]}"; do
             if [[ -f "${script}" && -x "${script}" ]]; then
                 log_info "✓ Pre-commit script ready: ${script}"

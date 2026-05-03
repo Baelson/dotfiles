@@ -8,7 +8,8 @@
 #   - Trap cleans ~/.netrc on failure (no plaintext PAT left on disk).
 #   - Source-dir remote is flipped to SSH after a successful run.
 #
-# VM E2E (scripts/vm/vmctl.sh) is the authoritative integration test — this
+# VM E2E (scripts/vm/run-e2e.sh — landing via Phase 5x merge) is the
+# authoritative integration test — this
 # file is about isolated behavioral guarantees, using PATH-injected mocks for
 # security, brew, chezmoi, and git.
 #

@@ -88,22 +88,16 @@ brew bundle --file="home/Brewfile" --no-lock --help | sed -n '1,40p'
 brew bundle --file="$HOME/Brewfile"
 ```
 
-### Local VM End-to-End (Current + Beta)
-Run clean-room bootstrap testing in local macOS VMs:
+### Local VM End-to-End
 
-```bash
-# Initialize local matrix (gitignored)
-scripts/vm/init-matrix.sh
-
-# Validate host + matrix
-scripts/vm/vmctl.sh --action doctor
-
-# Plan and execute current + beta workflows
-scripts/vm/vm-matrix.sh --action plan
-scripts/vm/vm-matrix.sh --action run-e2e --dry-run
-```
-
-See `docs/VM_TESTING.md` for full details.
+The matrix-driven `vmctl.sh` / `vm-matrix.sh` / `init-matrix.sh` tooling
+was removed as part of ISSUE-021 (broken since the legacy `setup.sh`
+deletion in ISSUE-019). The replacement single-VM SSH-only orchestrator
+(`scripts/vm/run-e2e.sh`) lands as part of the Phase 5x feature-branch
+merge that follows this audit. Until then, the manual SSH-only recipe
+in `CLAUDE.md` (Build & Development Commands → Automated SSH-only
+regression) is the working flow. The `infrastructure/vm/verify-manifest.txt`
+assertion file is preserved for the new orchestrator to consume.
 
 ### Debug and Testing Modes
 
