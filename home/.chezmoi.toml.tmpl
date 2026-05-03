@@ -51,7 +51,7 @@ To override automatic detection, run:
 {{- $personal := true -}}
 {{- $work := false -}}
 {{- $mas := false -}}
-{{- $is_kurama := false -}}
+{{- $is_primary := false -}}
 {{- $skip_flaky_casks := false -}}
 
 {{/* Automatic Work Environment Detection */}}
@@ -61,11 +61,12 @@ To override automatic detection, run:
 {{-   $personal = false -}}
 {{- end -}}
 
-{{/* Primary-machine detection (Mac Studio "Kurama") — gates apps/configs
-     that should only land on the primary personal Mac, not on shared
-     family Macs (e.g. Jennifers-iMac, Jennifers-MacBook-Pro). */}}
+{{/* Primary-machine detection — gates apps/configs that should only land
+     on the primary personal Mac (Mac Studio, hostname "Kurama"), not on
+     shared family Macs. The hostname literal is the detection target;
+     fork users should change it to their own primary-Mac hostname. */}}
 {{- if eq $hostname "Kurama" -}}
-{{-   $is_kurama = true -}}
+{{-   $is_primary = true -}}
 {{- end -}}
 
 {{/* Interactive Prompts (only when connected to terminal) */}}
@@ -115,7 +116,7 @@ encryption = "age"
     personal = {{ $personal }}
     work = {{ $work }}
     mas = {{ $mas }}
-    is_kurama = {{ $is_kurama }}
+    is_primary = {{ $is_primary }}
     skip_flaky_casks = {{ $skip_flaky_casks }}
     hostname = {{ $hostname | quote }}
 

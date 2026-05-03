@@ -49,11 +49,11 @@ Brewfile
 .ssh/**
 {{- end }}
 
-# ── Kurama-only (primary Mac Studio) ───────────────
-# Non-Kurama Macs (Jennifers-iMac, Jennifers-MacBook-Pro) skip these.
-# Claude Desktop JSON is templated (private_claude_desktop_config.json.tmpl),
-# NOT ignored — softeria-m365 MCP entry drops out on non-Kurama only.
-{{ if not (and (hasKey . "is_kurama") .is_kurama) -}}
+# ── Primary-Mac-only (Mac Studio "Kurama") ─────────
+# Secondary Macs skip these. Claude Desktop JSON is templated
+# (private_claude_desktop_config.json.tmpl), NOT ignored — softeria-m365
+# MCP entry drops out on secondary Macs only.
+{{ if not (and (hasKey . "is_primary") .is_primary) -}}
 # LaunchAgents + wrapper scripts
 Library/LaunchAgents/com.duqueclan.ms365-mcp.plist
 .local/bin/{ms365-mcp-start.sh,ms365-mcp-stdio.sh,open-cursor-global-workspace.sh}

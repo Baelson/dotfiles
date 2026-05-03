@@ -126,8 +126,8 @@ teardown() {
 # ── FR-2.7: Package count meets 70+ requirement ─────────────
 
 @test "FR-2.7: Given personal full environment, when Brewfile renders, then at least 70 packages are defined" {
-    # Given (mas=true and is_kurama=true to include full package count)
-    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "mas=true" "is_kurama=true" "hostname=test-host"
+    # Given (mas=true and is_primary=true to include full package count)
+    assert_template_renders "Brewfile.tmpl" "ephemeral=false" "headless=false" "work=false" "personal=true" "mas=true" "is_primary=true" "hostname=test-host"
 
     # When
     local total

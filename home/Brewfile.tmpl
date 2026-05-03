@@ -12,9 +12,9 @@
 {{- /* Default mas to false if not provided (backwards-compatible with tests) */ -}}
 {{- $mas := false -}}
 {{- if hasKey . "mas" -}}{{- $mas = .mas -}}{{- end -}}
-{{- /* is_kurama gates apps/extensions that should only land on the primary Mac Studio */ -}}
-{{- $is_kurama := false -}}
-{{- if hasKey . "is_kurama" -}}{{- $is_kurama = .is_kurama -}}{{- end -}}
+{{- /* is_primary gates apps/extensions that should only land on the primary Mac Studio */ -}}
+{{- $is_primary := false -}}
+{{- if hasKey . "is_primary" -}}{{- $is_primary = .is_primary -}}{{- end -}}
 {{- /* skip_flaky_casks omits casks with unreliable downloads/installers in --no-graphics VMs: zoom PKG hangs; orbstack CDN times out */ -}}
 {{- $skip_flaky_casks := false -}}
 {{- if hasKey . "skip_flaky_casks" -}}{{- $skip_flaky_casks = .skip_flaky_casks -}}{{- end -}}
@@ -111,7 +111,7 @@ cask 'webex-meetings'       # Video communication and virtual meeting platform  
 cask 'zoom'                 # Video communication and virtual meeting platform                  -- https://www.zoom.us/
 {{- end }}
 
-{{- if $is_kurama }}
+{{- if $is_primary }}
 # Kurama-only development tools (primary Mac Studio)
 cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
 cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
@@ -124,13 +124,13 @@ cask 'sublime-merge'        # Git client                                        
 {{- if .personal }}
 # Personal applications
 cask 'softraid'             # Powerful and intuitive software RAID utility                      -- https://www.softraid.com/
-{{- if $is_kurama }}
+{{- if $is_primary }}
 cask 'discord'              # Voice and text chat software                                      -- https://discord.com/
 cask 'figma'                # Collaborative team software                                       -- https://www.figma.com/
 {{- end }}
 {{- end }}
 
-{{- if and .work $mas $is_kurama }}
+{{- if and .work $mas $is_primary }}
 # Work-specific applications (Kurama only, requires: CHEZMOI_MAS=true)
 mas 'Slack (4.45.64)', id: 803453959
 {{- end }}
@@ -153,7 +153,7 @@ mas 'OneDrive (25.140.0720)', id: 823766827
 mas 'Pages (14.4)', id: 409201541
 mas 'Pixelmator Pro (3.7)', id: 1289583905
 
-{{- if $is_kurama }}
+{{- if $is_primary }}
 
 # Kurama-only MAS apps (primary Mac Studio)
 mas 'Apple Configurator (2.18)', id: 1037126344
@@ -180,7 +180,7 @@ mas 'Xcode (16.4)', id: 497799835
 {{- end }}
 {{- end }}
 
-{{- if and (not .ephemeral) $is_kurama }}
+{{- if and (not .ephemeral) $is_primary }}
 # VS Code extensions (Kurama only)
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"
