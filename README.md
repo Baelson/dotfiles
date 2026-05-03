@@ -6,45 +6,29 @@ Transform a fresh macOS installation into a fully configured development environ
 
 ## 🚀 Quick Start
 
-### One-time prerequisite (private repo)
+### One-time prerequisite (per machine)
 
-The dotfiles repo is currently private, so the bootstrap needs a GitHub personal access token (PAT) with `repo` scope. Store it in the Keychain once per machine (see [PROJECT_INIT.md](PROJECT_INIT.md) for details):
+Stage the age decryption identity in the macOS Keychain so chezmoi can decrypt SSH keys, license files, and other encrypted secrets at apply time. (iCloud Keychain syncs the entry across signed-in Macs, so subsequent machines need no manual step.) See [PROJECT_INIT.md](PROJECT_INIT.md) for details and the no-iCloud-Keychain fallback.
 
 ```bash
-# Create a classic PAT with 'repo' scope at https://github.com/settings/tokens
-security add-generic-password -s github-pat -a "$USER" -w '<token>' -U
+# Stage the single-line AGE-SECRET-KEY-1... value (multi-line round-trips as hex)
+security add-generic-password -s dotfiles-age -a "$USER" \
+    -w "$(awk '/^AGE-SECRET-KEY/{print; exit}' ~/.config/chezmoi/key.txt)" -U
 ```
 
 ### Bootstrap
 
-Because the repo is still private, `raw.githubusercontent.com` returns 404 for unauthenticated requests. Fetch `install.sh` through GitHub's authenticated content API instead:
-
 ```bash
-# Fetch install.sh via GitHub's authenticated content API, then run it.
-# (Works on a completely bare macOS — no Xcode CLT, no Homebrew required.)
-TOKEN=$(security find-generic-password -s github-pat -a "$USER" -w) && \
-  curl -fsSL -H "Authorization: token ${TOKEN}" \
-       -H "Accept: application/vnd.github.v3.raw" \
-       "https://api.github.com/repos/Baelson/dotfiles/contents/bootstrap/install.sh?ref=main" \
-  | bash
-```
-
-Once the repo goes public (tracked in [ISSUE-021](docs/OPEN_ISSUES.md#issue-021-public-repo-readiness-audit)), the unauthenticated one-liner works and the PAT step disappears entirely:
-
-```bash
-# Future (post-ISSUE-021):
 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
 ```
 
 **What this does:**
-- Checks the Keychain for the PAT (fails fast if missing — no Homebrew install wasted)
-- Installs Homebrew non-interactively, which silently installs Xcode CLI Tools via `softwareupdate`
-- Installs `chezmoi` and `age`
-- Writes a short-lived `~/.netrc` (mode 0600) with the PAT so chezmoi can clone over HTTPS
-- Runs `chezmoi init --apply --exclude=encrypted,scripts`, then `chezmoi apply --force` (single pass: scripts provision the age key, then encrypted files decrypt and deploy)
-- After apply, flips the source-dir remote from HTTPS to SSH and scrubs `~/.netrc` (the PAT never persists past bootstrap)
+- Installs `chezmoi` to `~/.local/bin` (curl-installed from `get.chezmoi.io`)
+- Stages the age identity from Keychain to `~/.config/chezmoi/key.txt`
+- Runs `chezmoi init --apply` against this repo
+- Lifecycle scripts then install Xcode CLT (silently via `softwareupdate`), Homebrew (`NONINTERACTIVE=1`), and the rest of the configured environment
 
-See [docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md](docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md) for the design.
+See [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md) for the bootstrap architecture.
 
 **System Requirements:** macOS 12+ with internet connection and admin privileges
 
@@ -183,9 +167,9 @@ This project follows comprehensive documentation architecture with clear separat
 ## 💡 Key Features
 
 ### 🎯 Zero-Friction Setup
-- **One Command**: Complete environment setup with single curl command
+- **One Command**: Complete environment setup with a single curl command (post-ISSUE-021)
 - **Bare-Machine Ready**: Works on fresh macOS with no Xcode CLT, no Homebrew, no git (ISSUE-019)
-- **Keychain-Sourced Auth**: Short-lived `~/.netrc` is scrubbed after bootstrap; Keychain is the sole long-lived secret source
+- **Keychain-Sourced Secrets**: macOS Keychain is the sole long-lived secret source for the age identity; iCloud Keychain syncs across Macs
 
 ### 📦 Comprehensive Package Management
 - **CLI Tools** (24+): git, gh, uv, neovim, docker, kubectl, terraform
@@ -231,7 +215,7 @@ This system is designed for:
 # Check system status
 ./scripts/tools/health-check.sh --quick
 
-# Re-run bootstrap (safe — chezmoi apply is idempotent; install.sh trap scrubs netrc)
+# Re-run bootstrap (safe — chezmoi apply is idempotent)
 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
 
 # Preview current drift without making changes
