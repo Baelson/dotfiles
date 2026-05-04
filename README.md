@@ -80,7 +80,7 @@ deletion in ISSUE-019). The replacement single-VM SSH-only orchestrator
 (`scripts/vm/run-e2e.sh`) lands as part of the Phase 5x feature-branch
 merge that follows this audit. Until then, the manual SSH-only recipe
 in `CLAUDE.md` (Build & Development Commands → Automated SSH-only
-regression) is the working flow. The `infrastructure/vm/verify-manifest.txt`
+regression) is the working flow. The `tests/infrastructure/verify-manifest.txt`
 assertion file is preserved for the new orchestrator to consume.
 
 ### Debug and Testing Modes
@@ -130,7 +130,7 @@ dotfiles/
 ├── 🧪 scripts/test/                 # Test runners
 ├── 🔧 scripts/tools/                # Local utility workflows
 ├── 🖥️ scripts/vm/                   # Local VM IaC and E2E workflows
-├── ⚙️ infrastructure/vm/            # VM matrix configuration
+├── 🧪 tests/infrastructure/         # VM verification manifest (consumed by run-e2e.sh)
 ├── 📚 docs/                        # Comprehensive documentation
 │   ├── PRD.md                     # Product requirements and use cases
 │   ├── SYSTEM_DESIGN.md           # Technical architecture

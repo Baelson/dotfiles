@@ -165,7 +165,7 @@ check_repository_structure() {
         "${DOTFILES_ROOT}/.git"
         "${DOTFILES_ROOT}/README.md"
         "${DOTFILES_ROOT}/setup.sh"
-        "${DOTFILES_ROOT}/infrastructure/vm/macos-matrix.example.json"
+        "${DOTFILES_ROOT}/tests/infrastructure/verify-manifest.txt"
         "${CHEZMOI_SOURCE_DIR}/.chezmoi.toml.tmpl"
         "${CHEZMOI_SOURCE_DIR}/.chezmoiexternal.toml"
         "${CHEZMOI_SOURCE_DIR}/Brewfile.tmpl"
