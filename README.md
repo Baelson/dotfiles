@@ -19,7 +19,7 @@ security add-generic-password -s dotfiles-age -a "$USER" \
 ### Bootstrap
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 ```
 
 **What this does:**
@@ -125,7 +125,7 @@ chezmoi apply           # Execute
 dotfiles/
 ├── 📋 README.md                    # This file - project overview
 ├── 📋 PROJECT_INIT.md              # One-time prerequisites (GitHub PAT)
-├── 🏗️ bootstrap/install.sh          # Canonical bootstrap entrypoint (ISSUE-019)
+├── 🏗️ setup.sh          # Canonical bootstrap entrypoint (ISSUE-019)
 ├── 📦 home/Brewfile.tmpl            # 70+ packages (CLI tools, apps, MAS)
 ├── 🧪 scripts/test/                 # Test runners
 ├── 🔧 scripts/tools/                # Local utility workflows
@@ -216,7 +216,7 @@ This system is designed for:
 ./scripts/tools/health-check.sh --quick
 
 # Re-run bootstrap (safe — chezmoi apply is idempotent)
-curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 
 # Preview current drift without making changes
 chezmoi apply --dry-run --verbose

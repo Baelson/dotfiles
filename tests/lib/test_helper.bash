@@ -10,8 +10,8 @@
 export BATS_TEST_TIMEOUT=300  # 5 minutes per test
 export DOTFILES_ROOT="${BATS_TEST_DIRNAME%/tests/*}"
 export TESTS_DIR="${DOTFILES_ROOT}/tests"
-export BOOTSTRAP_DIR="${DOTFILES_ROOT}/bootstrap"
-export BOOTSTRAP_SCRIPT="${BOOTSTRAP_DIR}/install.sh"
+export BOOTSTRAP_DIR="${DOTFILES_ROOT}"  # setup.sh at repo root (Phase 5A); bootstrap/ removed
+export BOOTSTRAP_SCRIPT="${DOTFILES_ROOT}/setup.sh"
 export DOTFILES_SOURCE_DIR="${DOTFILES_ROOT}/home"  # Chezmoi source directory
 
 # Test execution modes

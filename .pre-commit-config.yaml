@@ -71,11 +71,11 @@ repos:
         language: system
         files: .*\.bash$  # Only validate .bash files
 
-      # Performance validation retired with setup.sh (ISSUE-019). The hook
-      # timed `./setup.sh --dry-run --debug-verbose`; bootstrap/install.sh
-      # has no equivalent custom dry-run (it's a thin wrapper around Homebrew
-      # install + chezmoi init/apply, both external tools with their own
-      # performance characteristics we don't control).
+      # Performance validation retired with the legacy setup.sh (ISSUE-019).
+      # The renamed setup.sh (Phase 5A) has no equivalent custom dry-run
+      # (it's a thin wrapper around Homebrew install + chezmoi init/apply,
+      # both external tools with their own performance characteristics we
+      # don't control).
 
   # Documentation and markdown
   - repo: https://github.com/igorshubovych/markdownlint-cli

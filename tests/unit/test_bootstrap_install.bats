@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# test_bootstrap_install.bats — Unit coverage for bootstrap/install.sh.
+# test_bootstrap_install.bats — Unit coverage for setup.sh.
 #
 # Focuses on the behaviors the ISSUE-019 design doc explicitly calls out:
 #   - Missing Keychain entry → fail-fast with a useful recovery hint.
@@ -19,7 +19,7 @@
 #     real brew/chezmoi/git; fakes cover every external command the script
 #     reaches under these scenarios.
 
-BOOTSTRAP_SCRIPT="${BATS_TEST_DIRNAME%/tests/*}/bootstrap/install.sh"
+BOOTSTRAP_SCRIPT="${BATS_TEST_DIRNAME%/tests/*}/setup.sh"
 
 setup() {
     export FAKE_BIN="${BATS_TEST_TMPDIR}/fake-bin"
@@ -144,12 +144,12 @@ setup_healthy_fakes() {
 # Static checks — no execution required
 # -----------------------------------------------------------------------------
 
-@test "bootstrap/install.sh: bash -n passes" {
+@test "setup.sh: bash -n passes" {
     run bash -n "${BOOTSTRAP_SCRIPT}"
     [ "${status}" -eq 0 ]
 }
 
-@test "bootstrap/install.sh: shellcheck --severity=warning passes" {
+@test "setup.sh: shellcheck --severity=warning passes" {
     # Restore system PATH for this static check; fakes aren't relevant here.
     local real_shellcheck
     real_shellcheck="$(PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin command -v shellcheck || true)"
@@ -160,7 +160,7 @@ setup_healthy_fakes() {
     [ "${status}" -eq 0 ]
 }
 
-@test "bootstrap/install.sh: has executable bit set" {
+@test "setup.sh: has executable bit set" {
     [ -x "${BOOTSTRAP_SCRIPT}" ]
 }
 

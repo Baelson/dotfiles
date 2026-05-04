@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# bootstrap/install.sh — Canonical one-shot bootstrap for a fresh macOS machine.
+# setup.sh — Canonical one-shot bootstrap for a fresh macOS machine.
 #
 # Resolves ISSUE-019: on a truly bare macOS install (no Xcode CLT), /usr/bin/git
 # is a stub that triggers the xcode-select GUI dialog, hanging over SSH. We
@@ -16,7 +16,7 @@
 # then `chezmoi apply --force` deploys everything in a single pass.
 #
 # Usage (from a fresh macOS shell, local or SSH):
-#   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/bootstrap/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 #
 # Precondition (one-time, human):
 #   security add-generic-password -s github-pat -a "$USER" -w '<PAT>' -U
