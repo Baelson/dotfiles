@@ -54,8 +54,8 @@ Brewfile
 # (private_claude_desktop_config.json.tmpl), NOT ignored — softeria-m365
 # MCP entry drops out on secondary Macs only.
 {{ if not (and (hasKey . "is_primary") .is_primary) -}}
-# LaunchAgents + wrapper scripts
-Library/LaunchAgents/com.duqueclan.ms365-mcp.plist
+# Wrapper scripts (ms365-mcp LaunchAgent removed in Phase 5A; pnp-m365
+# alternative runs via npx in claude_desktop_config.json.tmpl).
 .local/bin/{ms365-mcp-start.sh,ms365-mcp-stdio.sh,open-cursor-global-workspace.sh}
 
 # GUI apps (config dirs + app-support)

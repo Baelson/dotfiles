@@ -14,7 +14,7 @@
 # Script Behavior:
 # - Skipped in headless environments (no GUI)
 # - Configures system preferences: Dock, Finder, Trackpad, Screenshots
-# - Configures app preferences: Terminal.app, Moom, f.lux, iTerm2
+# - Configures app preferences: Terminal.app, Moom, iTerm2
 # - Disables unused macOS keyboard shortcuts
 # - Environment-specific settings (work vs personal)
 # - Restarts affected system applications
@@ -138,20 +138,6 @@ defaults write com.manytricks.Moom "Mouse Controls Grid: Rows" -int 8
 defaults write com.manytricks.Moom "Mouse Controls Include Custom Controls" -bool "true"
 defaults write com.manytricks.Moom "Mouse Controls Include Custom Controls: Show On Hover" -bool "true"
 defaults write com.manytricks.Moom "Target Window Highlight" -float 0.0
-
-{{- if not .work }}
-# f.lux screen color temperature (personal machines only)
-echo "🌅 Configuring f.lux..."
-defaults write org.herf.Flux "location" -string "95116"
-defaults write org.herf.Flux "locationTextField" -string "95116"
-defaults write org.herf.Flux "locationType" -string "Z"
-defaults write org.herf.Flux "lateColorTemp" -int 1900
-defaults write org.herf.Flux "nightColorTemp" -int 3400
-defaults write org.herf.Flux "darkTheme" -int 1
-defaults write org.herf.Flux "wakeTime" -int 360
-defaults write org.herf.Flux "steptime" -float 24
-defaults write org.herf.Flux "startAtLogin" -bool "false"
-{{- end }}
 
 # =============================================================================
 # RESTART AFFECTED SERVICES

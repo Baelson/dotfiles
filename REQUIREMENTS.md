@@ -25,8 +25,8 @@ shot:
   `is_primary` matches.
 - **macOS defaults** — Dock, Finder, Mission Control, Accessibility,
   Safari, Mail, etc. set by `run_onchange_after_configure-macos-defaults.sh.tmpl`.
-- **LaunchAgents** — generic plist-reload mechanism; ms365-mcp daemon
-  agent.
+- **LaunchAgents** — generic plist-reload mechanism (auto-discovers any
+  managed plists at runtime).
 - **Encrypted secrets** — SSH keys, app license files, etc. age-encrypted
   in the source tree, decrypted at apply time using the user's age
   identity.
