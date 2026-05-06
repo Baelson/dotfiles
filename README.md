@@ -6,19 +6,20 @@ defaults, encrypted secrets — all reproducible.
 
 ## Quick start
 
-> **Heads up — bootstrap is currently non-functional.** This branch is
-> mid-transition: the legacy passphrase-based age-key flow has been
-> removed but the Keychain-based replacement (which lives on a feature
-> branch) hasn't merged yet. Expect this section to start working once
-> the bootstrap-thin-wrapper merge lands. Until then, the rest of this
-> repo is browsable as a reference.
-
 ```bash
-# Public bootstrap (post-thin-wrapper-merge):
 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 ```
 
-Requirements: macOS 12+, admin privileges, internet.
+`setup.sh` is a thin wrapper: installs `chezmoi` to `~/.local/bin`, stages
+the age decryption identity from the macOS Keychain (if present, see
+[Forking and adapting](#forking-and-adapting) below), then hands off to
+`chezmoi init` + `chezmoi apply --force`. Everything else (Xcode CLT,
+Homebrew, packages, app config, encrypted-file decryption) runs inside
+chezmoi lifecycle scripts.
+
+Requirements: macOS 12+, admin privileges, internet. Absent age key is
+non-fatal — encrypted files stay as stubs and you can stage the key
+later.
 
 ## Forking and adapting
 
@@ -40,7 +41,7 @@ fork users will want to:
    machines need no manual step.
 
 2. **Replace the personal encrypted files** under
-   `home/private_dot_ssh/`, `home/private_Library/private_Application Support/{DaisyDisk,Many Tricks,Beyond Compare}/` —
+   `home/private_dot_ssh/`, `home/private_Library/private_Application Support/{Many Tricks,Beyond Compare}/` —
    those are encrypted to the original repo owner's age recipient; they
    won't decrypt with your key. You'll want to either remove them or
    re-encrypt your own equivalents with `chezmoi add --encrypt`.

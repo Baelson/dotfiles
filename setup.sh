@@ -1,38 +1,26 @@
 #!/bin/bash
 #
-# setup.sh — Canonical one-shot bootstrap for a fresh macOS machine.
+# setup.sh — Thin-wrapper bootstrap for a fresh macOS machine.
 #
-# Resolves ISSUE-019: on a truly bare macOS install (no Xcode CLT), /usr/bin/git
-# is a stub that triggers the xcode-select GUI dialog, hanging over SSH. We
-# sidestep that entirely by letting Homebrew's NONINTERACTIVE=1 installer handle
-# CLT via softwareupdate, then using real git for a chezmoi HTTPS clone
-# authenticated by a short-lived ~/.netrc sourced from the Keychain PAT.
+# Installs chezmoi to PATH, stages the age identity from the macOS Keychain,
+# then hands off to `chezmoi init` + `chezmoi apply --force`. Everything else
+# (Homebrew, Xcode CLT, age binary, packages, encrypted-file decryption, app
+# config) runs inside chezmoi lifecycle scripts and templates.
 #
-# Resolves ISSUE-022: chezmoi loads its config once per invocation and
-# .chezmoi.toml.tmpl stat-gates the [age] block on ~/.config/chezmoi/key.txt.
-# We clone first (config without [age]), decrypt the age key from
-# bootstrap/key.txt.age here in install.sh (interactive passphrase prompt),
-# then re-run `chezmoi init` so the config regenerates with [age] populated,
-# then `chezmoi apply --force` deploys everything in a single pass.
+# Repo is public — no PAT needed; clone is unauthenticated HTTPS.
 #
 # Usage (from a fresh macOS shell, local or SSH):
 #   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 #
-# Precondition (one-time, human):
-#   security add-generic-password -s github-pat -a "$USER" -w '<PAT>' -U
-#   (PAT scope: `repo` classic, or fine-grained read/write on Baelson/dotfiles.)
+# Precondition (one-time per machine; fork users replace with their own key):
+#   security add-generic-password -s dotfiles-age -a "$USER" \
+#       -w "$(awk '/^AGE-SECRET-KEY/{print; exit}' ~/.config/chezmoi/key.txt)" -U
 #
-# Optional env vars (passed through to chezmoi templates):
-#   EPHEMERAL=1   — minimal install for temporary/borrowed machines
-#   HEADLESS=1    — no desktop apps (servers, SSH-only systems)
+# Absent age key is non-fatal: encrypted files stay as stubs after apply,
+# operator can stage later and re-run `chezmoi apply --force`.
 #
-# After success:
-#   - ~/.netrc is scrubbed (trap-guaranteed even on failure)
-#   - Chezmoi source-dir remote is flipped HTTPS → SSH, so steady-state
-#     `chezmoi update` uses SSH + ssh-agent (no netrc required)
-#
-# See docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md (ISSUE-019)
-# and docs/plans/2026-04-22-issue-022-install-sh-age-key-ordering.md (ISSUE-022).
+# Optional env override:
+#   DOTFILES_BRANCH=<branch>   # clone a non-default branch (VM E2E for in-flight changes)
 
 set -euo pipefail
 
@@ -40,7 +28,9 @@ readonly REPO_OWNER="Baelson"
 readonly REPO_NAME="dotfiles"
 readonly REPO_HTTPS_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
 readonly REPO_SSH_URL="git@github.com:${REPO_OWNER}/${REPO_NAME}.git"
-readonly KEYCHAIN_SERVICE="github-pat"
+readonly AGE_KEYCHAIN_SERVICE="dotfiles-age"
+
+DOTFILES_BRANCH="${DOTFILES_BRANCH:-}"
 
 log_step() { echo "==> $*"; }
 log_warn() { echo "WARNING: $*" >&2; }
@@ -59,228 +49,85 @@ readonly ACCOUNT="${USER:-$(id -un)}"
 : "${ACCOUNT:?Unable to resolve current username}"
 
 # -----------------------------------------------------------------------------
-# Step 1: Pre-flight — confirm the PAT Keychain entry exists before we burn
-# minutes on Homebrew install. Checks presence only (no -w), so this does NOT
-# trigger a macOS "Allow access" dialog on first use.
-# -----------------------------------------------------------------------------
-
-log_step "Checking for Keychain entry (service=${KEYCHAIN_SERVICE}, account=${ACCOUNT})"
-if ! security find-generic-password -s "${KEYCHAIN_SERVICE}" -a "${ACCOUNT}" >/dev/null 2>&1; then
-    log_err "Missing Keychain entry for service=${KEYCHAIN_SERVICE}, account=${ACCOUNT}."
-    echo "Create a GitHub PAT with 'repo' scope at https://github.com/settings/tokens, then:" >&2
-    echo "  security add-generic-password -s ${KEYCHAIN_SERVICE} -a ${ACCOUNT} -w '<token>' -U" >&2
-    exit 1
-fi
-
-# -----------------------------------------------------------------------------
-# Step 2: Homebrew — also handles CLT via softwareupdate under NONINTERACTIVE=1
+# Step 1: Install chezmoi to ~/.local/bin if missing.
 #
-# `</dev/null` on every subprocess that might read FD 0. The canonical
-# invocation is `curl ... | bash`, which makes bash's stdin the pipe from
-# curl. Subprocesses inherit that stdin; if ANY of them reads from it,
-# they consume bytes meant for bash to execute LATER — silently truncating
-# our script and exiting 0 in the middle of bootstrap. The 2026-04-22 walk
-# reproduced this: `brew install chezmoi age` mid-pour ate the rest of
-# install.sh, bash hit EOF after Step 3, Steps 4–7 never ran, and neither
-# the age passphrase prompt nor `chezmoi init` fired.
+# `</dev/null` is load-bearing: under `curl ... | bash`, bash's stdin IS the
+# pipe from curl. Any subprocess that reads FD 0 eats the rest of the script.
+# Every external tool below redirects stdin from /dev/null.
 # -----------------------------------------------------------------------------
 
-if command -v brew >/dev/null 2>&1; then
-    log_step "Homebrew already installed ($(command -v brew))"
+if command -v chezmoi >/dev/null 2>&1; then
+    log_step "chezmoi already installed ($(command -v chezmoi))"
 else
-    log_step "Installing Homebrew (non-interactive; will also install Xcode CLT if missing)"
-    NONINTERACTIVE=1 /bin/bash -c \
-        "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
-        </dev/null
+    log_step "Installing chezmoi to ${HOME}/.local/bin via get.chezmoi.io"
+    mkdir -p "${HOME}/.local/bin"
+    sh -c "$(curl -fsSL https://get.chezmoi.io)" -- -b "${HOME}/.local/bin" </dev/null
+    export PATH="${HOME}/.local/bin:${PATH}"
 fi
 
-# Load brew shellenv. command -v works if brew is on PATH already (test envs,
-# already-bootstrapped machines). Fall back to known install paths for the
-# "just-installed" case where PATH hasn't been refreshed in this shell.
-if command -v brew >/dev/null 2>&1; then
-    eval "$(brew shellenv)"
-elif [[ -x /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -x /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
+# -----------------------------------------------------------------------------
+# Step 2: Stage the age identity from the macOS Keychain.
+#
+# Staged BEFORE `chezmoi init` so .chezmoi.toml.tmpl's stat-gated [age] block
+# renders on the first (and only) init. Absence is non-fatal — encrypted files
+# stay as stubs, operator can stage later and re-run `chezmoi apply --force`.
+# -----------------------------------------------------------------------------
+
+AGE_KEY_DIR="${HOME}/.config/chezmoi"
+AGE_KEY_FILE="${AGE_KEY_DIR}/key.txt"
+
+if [[ -f "${AGE_KEY_FILE}" ]]; then
+    log_step "Age key already present at ${AGE_KEY_FILE}"
+elif security find-generic-password -s "${AGE_KEYCHAIN_SERVICE}" -a "${ACCOUNT}" >/dev/null 2>&1; then
+    log_step "Staging age identity from Keychain (service=${AGE_KEYCHAIN_SERVICE}, account=${ACCOUNT})"
+    mkdir -p "${AGE_KEY_DIR}"
+    umask 077
+    security find-generic-password -s "${AGE_KEYCHAIN_SERVICE}" -a "${ACCOUNT}" -w > "${AGE_KEY_FILE}"
+    chmod 600 "${AGE_KEY_FILE}"
+
+    # macOS `security ... -w` outputs HEX (one long line of 0-9a-f) when the
+    # stored value isn't valid single-line UTF-8 — embedded newlines trigger
+    # this. If the operator staged with the full multi-line key.txt
+    # (`-w "$(cat key.txt)"`), retrieval gives back unparseable hex. Detect
+    # the breakage with an actionable error rather than letting `chezmoi
+    # apply` fail with cryptic "unknown identity type" at decrypt time.
+    if ! grep -q '^AGE-SECRET-KEY-' "${AGE_KEY_FILE}"; then
+        log_err "Staged ~/.config/chezmoi/key.txt does not contain an AGE-SECRET-KEY-1... line."
+        log_err "The Keychain entry probably stored a multi-line value that round-trips as hex."
+        log_err "Re-stage with just the secret key (single line):"
+        log_err "  KEY=\$(awk '/^AGE-SECRET-KEY/{print; exit}' ~/.config/chezmoi/key.txt)"
+        log_err "  security add-generic-password -s ${AGE_KEYCHAIN_SERVICE} -a \"\$USER\" -w \"\$KEY\" -U"
+        exit 1
+    fi
 else
-    log_err "brew not found on PATH or at /opt/homebrew/bin, /usr/local/bin after install"
-    exit 1
+    log_warn "No Keychain entry ${AGE_KEYCHAIN_SERVICE}:${ACCOUNT} — encrypted files will not decrypt."
+    log_warn "Stage with: KEY=\$(awk '/^AGE-SECRET-KEY/{print; exit}' ~/.config/chezmoi/key.txt) && \\"
+    log_warn "  security add-generic-password -s ${AGE_KEYCHAIN_SERVICE} -a ${ACCOUNT} -w \"\$KEY\" -U"
 fi
 
 # -----------------------------------------------------------------------------
-# Step 3: Install chezmoi + age
-# -----------------------------------------------------------------------------
-
-log_step "Installing chezmoi and age"
-# </dev/null protects against stdin consumption under `curl ... | bash`; see
-# the Step 2 comment above for the full explanation.
-brew install chezmoi age </dev/null
-
-# -----------------------------------------------------------------------------
-# Step 4: Fetch PAT from Keychain and write ~/.netrc (0600)
+# Step 3: chezmoi init — unauthenticated HTTPS clone (repo is public).
 #
-# Install the cleanup trap BEFORE writing netrc so any failure — including
-# right after the file is created — still scrubs the plaintext token. The
-# existence check in Step 1 already failed fast on a missing entry; at this
-# point an empty value means the Keychain was tampered with mid-run.
+# `--use-builtin-git=on` sidesteps the xcode-select git stub on bare macOS
+# (/usr/bin/git hangs over SSH trying to pop the CLT-install GUI dialog).
+# chezmoi's embedded go-git ignores ~/.netrc and credential helpers — fine
+# for our case since the public repo needs no auth at all.
 # -----------------------------------------------------------------------------
 
-log_step "Retrieving PAT value from Keychain"
-TOKEN="$(security find-generic-password -s "${KEYCHAIN_SERVICE}" -a "${ACCOUNT}" -w 2>/dev/null || true)"
-if [[ -z "${TOKEN}" ]]; then
-    log_err "Keychain entry ${KEYCHAIN_SERVICE}:${ACCOUNT} exists but returned an empty value."
-    exit 1
+if [[ -n "${DOTFILES_BRANCH}" ]]; then
+    log_step "chezmoi init --use-builtin-git=on --branch ${DOTFILES_BRANCH} ${REPO_HTTPS_URL}"
+    chezmoi init --use-builtin-git=on --branch "${DOTFILES_BRANCH}" "${REPO_HTTPS_URL}" </dev/null
+else
+    log_step "chezmoi init --use-builtin-git=on ${REPO_HTTPS_URL}"
+    chezmoi init --use-builtin-git=on "${REPO_HTTPS_URL}" </dev/null
 fi
 
-# Scrub the PAT value by truncating ~/.netrc rather than deleting it. The
-# dotfiles source tree contains `home/empty_private_dot_netrc` (chezmoi-managed
-# empty placeholder with mode 0600 via the `private_` prefix), so deleting the
-# file would leave chezmoi reporting drift on every subsequent apply.
-# Truncating removes the plaintext token while preserving chezmoi's "managed
-# empty file" invariant; the `private_` prefix ensures apply keeps ~/.netrc at
-# 0600 rather than relaxing it to the umask default 0644.
-cleanup_netrc() {
-    if [[ -f "${HOME}/.netrc" ]]; then
-        : > "${HOME}/.netrc" 2>/dev/null || true
-        chmod 600 "${HOME}/.netrc" 2>/dev/null || true
-    fi
-}
-trap cleanup_netrc EXIT INT TERM
-
-log_step "Writing short-lived ~/.netrc (mode 0600)"
-umask 077
-printf 'machine github.com\nlogin %s\npassword %s\n' "${ACCOUNT}" "${TOKEN}" > "${HOME}/.netrc"
-chmod 600 "${HOME}/.netrc"
-unset TOKEN
-
 # -----------------------------------------------------------------------------
-# Age-key provisioning helper (ISSUE-022)
+# Step 4: chezmoi apply --force.
 #
-# Decrypts the passphrase-protected bootstrap/key.txt.age into
-# ~/.config/chezmoi/key.txt so the subsequent `chezmoi init` renders a
-# config with the `[age]` block (stat-gated in .chezmoi.toml.tmpl).
-#
-# Must be called BETWEEN the two `chezmoi init` calls — the first init
-# clones the source dir so we can find bootstrap/key.txt.age, the second
-# init regenerates the config now that the key exists.
-#
-# Degrades gracefully when provisioning isn't possible:
-#   - key already present        → idempotent no-op
-#   - age binary missing         → warn + skip (shouldn't happen post-Step 3)
-#   - bootstrap/key.txt.age gone → warn + skip
-#   - no controlling terminal    → warn + skip (automated SSH-only regression)
-#   - age -d fails (bad passphrase) → rm partial, warn + continue
-# In all skip branches, encrypted files simply stay as stubs after apply;
-# the operator sees a clear warning and the rest of bootstrap still succeeds.
-#
-# TTY detection uses /dev/tty, NOT `[[ -t 0 ]]` on stdin. The canonical
-# bootstrap invocation is `curl ... | bash`, which makes bash's stdin the
-# pipe from curl — so `-t 0` falsely reports non-interactive even when the
-# user is sitting at a Terminal.app window. /dev/tty, by contrast, refers
-# to the *controlling terminal* and is accessible whenever install.sh was
-# launched from an interactive shell, piped or not. (age itself also reads
-# the passphrase from /dev/tty internally, bypassing stdin.) Non-interactive
-# contexts — SSH without `-t`, cron, launchd — have no /dev/tty at all, so
-# the open fails and we skip cleanly.
-# -----------------------------------------------------------------------------
-
-provision_age_key() {
-    local age_key_dir="${HOME}/.config/chezmoi"
-    local age_key_file="${age_key_dir}/key.txt"
-    local source_path
-    source_path="$(chezmoi source-path 2>/dev/null || true)"
-    local encrypted_key="${source_path}/../bootstrap/key.txt.age"
-
-    if [[ -f "${age_key_file}" ]]; then
-        log_step "Age key already present at ${age_key_file} — skipping provisioning"
-        return 0
-    fi
-    if ! command -v age >/dev/null 2>&1; then
-        log_warn "age not installed — skipping age key provisioning (encrypted files will not deploy)"
-        return 0
-    fi
-    if [[ ! -f "${encrypted_key}" ]]; then
-        log_warn "No encrypted age key at ${encrypted_key} — skipping (encrypted files will not deploy)"
-        return 0
-    fi
-    # /dev/tty, not `-t 0`: the runbook invokes install.sh via
-    # `curl ... | bash`, which makes stdin the pipe from curl — `-t 0` then
-    # falsely reports non-interactive even when a real terminal is attached.
-    # /dev/tty is the controlling terminal and exists whenever the user
-    # launched install.sh from a shell window, pipe or no pipe.
-    if ! { : </dev/tty; } 2>/dev/null; then
-        log_warn "No controlling terminal (/dev/tty unavailable) — skipping age key provisioning (encrypted files will not deploy)"
-        log_warn "Run install.sh from an interactive terminal to provision the key."
-        return 0
-    fi
-
-    log_step "Provisioning age decryption key (passphrase-protected; one prompt below)"
-    mkdir -p "${age_key_dir}"
-    # Redirect stdin from /dev/tty so the passphrase prompt works even when
-    # install.sh was invoked via `curl ... | bash` (bash's stdin is the
-    # pipe, but /dev/tty still points to the interactive terminal). age's
-    # internal passphrase reader also opens /dev/tty directly, but being
-    # explicit here avoids any ambiguity on platforms where it doesn't.
-    if age -d -o "${age_key_file}" "${encrypted_key}" </dev/tty; then
-        chmod 600 "${age_key_file}"
-        log_step "Age key provisioned at ${age_key_file}"
-    else
-        log_warn "Failed to decrypt age key (wrong passphrase?) — continuing without encryption"
-        rm -f "${age_key_file}"
-    fi
-}
-
-# -----------------------------------------------------------------------------
-# Step 4: chezmoi init — clone only (no --apply).
-#
-# At this point the age key doesn't exist yet, so .chezmoi.toml.tmpl's
-# stat-gated [age] block renders empty. We clone the source dir now so
-# bootstrap/key.txt.age is available on disk for Step 5, then re-run
-# `chezmoi init` in Step 6 to regenerate chezmoi.toml with [age] populated.
-#
-# Splitting init (clone) from apply (deploy) sidesteps chezmoi's
-# load-config-once-per-invocation semantics — the follow-up init picks up
-# the newly-provisioned key.
-# -----------------------------------------------------------------------------
-
-log_step "chezmoi init ${REPO_HTTPS_URL}"
-# </dev/null: chezmoi init spawns git subprocesses; under `curl ... | bash`
-# git would otherwise inherit our pipe and could consume bytes from the
-# remaining script. See Step 2 comment for context.
-chezmoi init "${REPO_HTTPS_URL}" </dev/null
-
-# -----------------------------------------------------------------------------
-# Step 5: Provision the age key (primary entry point per ISSUE-022 fix).
-#
-# The lifecycle script home/.chezmoiscripts/darwin/run_once_before_provision-age-key.sh
-# remains in-tree as a fallback for users who clone manually (`chezmoi init`
-# directly, not via install.sh), but it is NO LONGER on the critical path —
-# it relied on chezmoi's subprocess stdin which is detached in practice.
-# -----------------------------------------------------------------------------
-
-provision_age_key
-
-# -----------------------------------------------------------------------------
-# Step 6: chezmoi init — regenerate chezmoi.toml now that the key exists.
-#
-# The stat guard in .chezmoi.toml.tmpl will now emit `encryption = "age"` +
-# the [age] block, so Step 7's apply can decrypt encrypted files successfully
-# in a single pass. If Step 5 skipped (non-TTY, missing age, etc.), the
-# regen is a no-op and encrypted files will stay as stubs — that's the
-# expected degrade-gracefully behavior.
-# -----------------------------------------------------------------------------
-
-log_step "chezmoi init (regenerate config; emits [age] block if key provisioned)"
-chezmoi init </dev/null
-
-# -----------------------------------------------------------------------------
-# Step 7: chezmoi apply --force — full pass deploys files AND encrypted files.
-#
-# A lifecycle script may still fail (e.g. a flaky cask download timing out).
-# That failure is noted but does NOT short-circuit the remote-flip + netrc
-# scrub — those are independent of whether every package installed cleanly.
-# install.sh exits non-zero at the very end if apply failed.
+# Lifecycle failures (e.g. flaky cask downloads) are noted but do NOT
+# short-circuit Step 5's remote-flip. The apply exit code is propagated at
+# the very end.
 # -----------------------------------------------------------------------------
 
 log_step "chezmoi apply --force"
@@ -291,12 +138,15 @@ if [[ "${APPLY_EXIT}" -ne 0 ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Step 8: Flip source-dir remote to SSH and scrub ~/.netrc
+# Step 5: Flip source-dir remote to SSH.
+#
+# Ergonomic-only now that the clone URL contains no credentials: steady-state
+# `chezmoi update` uses ssh-agent rather than re-prompting for HTTPS credentials.
 # -----------------------------------------------------------------------------
 
 SRC="$(chezmoi source-path)"
-# chezmoi source-path returns the dir containing the source files. The git
-# checkout is one level up (the repo root), so check both locations.
+# chezmoi source-path returns the source dir; the git checkout is one level
+# up when .chezmoiroot is present. Check both.
 GIT_DIR=""
 if [[ -d "${SRC}/.git" ]]; then
     GIT_DIR="${SRC}"
@@ -310,20 +160,12 @@ else
     log_warn "chezmoi source-path (${SRC}) is not inside a git checkout — skipping remote flip"
 fi
 
-log_step "Scrubbing ~/.netrc"
-cleanup_netrc
-trap - EXIT INT TERM
-
-# Surface the apply failure now that cleanup + flip are done.
+# Surface the apply failure now that the remote flip is done.
 if [[ "${APPLY_EXIT}" -ne 0 ]]; then
     log_err "chezmoi apply failed (exit ${APPLY_EXIT}). Bootstrap partially succeeded."
     log_err "Fix the cause and re-run: chezmoi apply --force"
     exit "${APPLY_EXIT}"
 fi
-
-# -----------------------------------------------------------------------------
-# Done
-# -----------------------------------------------------------------------------
 
 cat <<'EOF'
 
@@ -333,6 +175,4 @@ Next steps:
   - Open a new shell (or `exec zsh -l`) so PATH updates take effect.
   - Run `chezmoi diff` to review drift; `chezmoi apply` to reconcile.
   - Run `chezmoi update` for steady-state sync (uses SSH + ssh-agent).
-
-See docs/plans/2026-04-20-issue-019-bootstrap-reconciliation.md for the design.
 EOF
