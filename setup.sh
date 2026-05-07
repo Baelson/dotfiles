@@ -163,11 +163,14 @@ fi
 if [[ "${KEY_PRESTAGED}" -eq 0 ]] && [[ -f "${AGE_KEY_FILE}" ]]; then
     log_step "Passphrase fallback provisioned key — re-running chezmoi init + apply"
     chezmoi init </dev/null
-    APPLY2_EXIT=0
-    chezmoi apply --force </dev/null || APPLY2_EXIT=$?
-    if [[ "${APPLY2_EXIT}" -ne 0 ]]; then
-        log_warn "chezmoi apply (second pass) exited ${APPLY2_EXIT}. Continuing."
-        APPLY_EXIT="${APPLY2_EXIT}"
+    # Second pass is authoritative: the first pass was expected to fail on
+    # `.age:` files because chezmoi loaded its config (no [age] block) at
+    # init time. Reset APPLY_EXIT so the final-check below reflects the
+    # actual end state, not the stale first-pass exit code.
+    APPLY_EXIT=0
+    chezmoi apply --force </dev/null || APPLY_EXIT=$?
+    if [[ "${APPLY_EXIT}" -ne 0 ]]; then
+        log_warn "chezmoi apply (second pass) exited ${APPLY_EXIT}. Continuing; will surface at end."
     fi
 fi
 
