@@ -25,9 +25,9 @@ repos:
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
-        exclude: '(\.md$|home/private_Library/private_Application Support/iTerm2/DynamicProfiles/)'
+        exclude: '(\.md$|home/private_Library/private_Application Support/iTerm2/DynamicProfiles/|home/dot_config/iterm2/)'
       - id: end-of-file-fixer
-        exclude: '(\.md$|home/private_Library/private_Application Support/iTerm2/DynamicProfiles/)'
+        exclude: '(\.md$|home/private_Library/private_Application Support/iTerm2/DynamicProfiles/|home/dot_config/iterm2/)'
       - id: check-yaml
         files: \.(yaml|yml)$
       - id: check-added-large-files
