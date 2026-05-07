@@ -103,7 +103,13 @@ To override automatic detection, run:
 {{-   $skip_flaky_casks = true -}}
 {{- end -}}
 
-{{- if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
+{{/* Prefer the private companion repo as sourceDir if it's checked out
+     alongside (Phase 5M overlay model: dotfiles-private holds private-only
+     content and symlinks back to dotfiles for shared files). Fall back to
+     the public peer for fork users who only clone Baelson/dotfiles. */ -}}
+{{- if stat "/Users/baelson/Git/Projects/Active/dotfiles-private" }}
+sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles-private"
+{{- else if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
 sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
 {{- end }}
 {{- if stat (joinPath .chezmoi.homeDir ".config/chezmoi/key.txt") }}
