@@ -51,7 +51,22 @@ if [[ -f "${AGE_KEY_FILE}" ]]; then
     exit 0
 fi
 
-# Skip if age is missing (install-homebrew lifecycle should have installed it).
+# Make brew + age discoverable. chezmoi runs each lifecycle script in its
+# own subprocess; the brew shellenv eval inside run_once_before_install-homebrew.sh
+# only affects THAT subprocess, not its siblings. On a fresh machine where
+# chezmoi was launched before brew existed, /opt/homebrew/bin is not yet on
+# the inherited PATH — so `command -v age` returns false even though the
+# previous lifecycle script just installed it. Load shellenv explicitly here.
+if ! command -v age >/dev/null 2>&1; then
+    if [[ -x /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+fi
+
+# Skip if age is still missing after shellenv (install-homebrew lifecycle
+# either failed or was skipped).
 if ! command -v age >/dev/null 2>&1; then
     echo "⚠️  age not installed — skipping age key provisioning"
     echo "💡 Install via: brew install age && chezmoi apply --force"
