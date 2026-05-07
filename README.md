@@ -10,16 +10,31 @@ defaults, encrypted secrets — all reproducible.
 curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 ```
 
-`setup.sh` is a thin wrapper: installs `chezmoi` to `~/.local/bin`, stages
-the age decryption identity from the macOS Keychain (if present, see
-[Forking and adapting](#forking-and-adapting) below), then hands off to
-`chezmoi init` + `chezmoi apply --force`. Everything else (Xcode CLT,
-Homebrew, packages, app config, encrypted-file decryption) runs inside
-chezmoi lifecycle scripts.
+`setup.sh` is a thin wrapper: installs `chezmoi` to `~/.local/bin`,
+provisions the age decryption identity, then hands off to `chezmoi
+init` + `chezmoi apply --force`. Everything else (Xcode CLT, Homebrew,
+packages, app config, encrypted-file decryption) runs inside chezmoi
+lifecycle scripts.
 
-Requirements: macOS 12+, admin privileges, internet. Absent age key is
-non-fatal — encrypted files stay as stubs and you can stage the key
-later.
+**Age key provisioning** has two paths, in priority order:
+
+1. **Keychain fast path** (no prompt). If a `dotfiles-age:$USER` entry
+   exists in the macOS login Keychain, it's staged to
+   `~/.config/chezmoi/key.txt` before `chezmoi init`. Useful on a
+   primary machine where you've already run the one-time
+   `security add-generic-password` step. Note: the login Keychain is
+   **not** iCloud-synced, so this isn't automatic across new Macs.
+2. **Passphrase fallback** (one prompt). If no Keychain entry, the
+   bootstrap decrypts `bootstrap/key.txt.age` (an age-passphrase-encrypted
+   copy of the key, safe to publish — security comes from the
+   passphrase) using a passphrase read from `/dev/tty`. Setup re-runs
+   `chezmoi init` + `chezmoi apply --force` after the fallback decrypt
+   so the `[age]` block lands in the regenerated config.
+
+Both absent → encrypted files stay as stubs (non-fatal); stage either
+later and re-run `chezmoi apply --force`.
+
+Requirements: macOS 12+, admin privileges, internet.
 
 ## Forking and adapting
 

@@ -2,22 +2,35 @@
 #
 # setup.sh — Thin-wrapper bootstrap for a fresh macOS machine.
 #
-# Installs chezmoi to PATH, stages the age identity from the macOS Keychain,
-# then hands off to `chezmoi init` + `chezmoi apply --force`. Everything else
-# (Homebrew, Xcode CLT, age binary, packages, encrypted-file decryption, app
-# config) runs inside chezmoi lifecycle scripts and templates.
+# Installs chezmoi to PATH, provisions the age decryption identity (Keychain
+# fast path or passphrase-encrypted-in-repo fallback), then hands off to
+# `chezmoi init` + `chezmoi apply --force`. Everything else (Homebrew, Xcode
+# CLT, age binary, packages, app config, encrypted-file decryption) runs
+# inside chezmoi lifecycle scripts and templates.
 #
 # Repo is public — no PAT needed; clone is unauthenticated HTTPS.
 #
 # Usage (from a fresh macOS shell, local or SSH):
 #   curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | bash
 #
-# Precondition (one-time per machine; fork users replace with their own key):
-#   security add-generic-password -s dotfiles-age -a "$USER" \
-#       -w "$(awk '/^AGE-SECRET-KEY/{print; exit}' ~/.config/chezmoi/key.txt)" -U
+# Age key provisioning — TWO paths, in priority order:
 #
-# Absent age key is non-fatal: encrypted files stay as stubs after apply,
-# operator can stage later and re-run `chezmoi apply --force`.
+#   1. Keychain fast path (no prompt). If `dotfiles-age:$USER` exists in the
+#      macOS login Keychain, setup.sh stages it to ~/.config/chezmoi/key.txt
+#      BEFORE `chezmoi init`. The .chezmoi.toml.tmpl stat-guard renders the
+#      [age] block on the first init, so a single apply decrypts everything.
+#      NOTE: the login Keychain is NOT iCloud-synced; this fast path requires
+#      a one-time `security add-generic-password` per machine.
+#
+#   2. Passphrase fallback (one prompt). If no Keychain entry was used, the
+#      `run_once_before_provision-age-key.sh` lifecycle script (running after
+#      Homebrew + age install) decrypts `bootstrap/key.txt.age` from the
+#      cloned source dir using a passphrase read from /dev/tty. setup.sh
+#      then re-runs `chezmoi init` + `chezmoi apply --force` to pick up
+#      the [age] block and decrypt files.
+#
+# Absent both → encrypted files stay as stubs after apply (non-fatal).
+# Operator can stage either later and re-run `chezmoi apply --force`.
 #
 # Optional env override:
 #   DOTFILES_BRANCH=<branch>   # clone a non-default branch (VM E2E for in-flight changes)
@@ -66,18 +79,16 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Step 2: Stage the age identity from the macOS Keychain.
-#
-# Staged BEFORE `chezmoi init` so .chezmoi.toml.tmpl's stat-gated [age] block
-# renders on the first (and only) init. Absence is non-fatal — encrypted files
-# stay as stubs, operator can stage later and re-run `chezmoi apply --force`.
+# Step 2: Stage age identity from Keychain (fast path).
 # -----------------------------------------------------------------------------
 
-AGE_KEY_DIR="${HOME}/.config/chezmoi"
-AGE_KEY_FILE="${AGE_KEY_DIR}/key.txt"
+readonly AGE_KEY_DIR="${HOME}/.config/chezmoi"
+readonly AGE_KEY_FILE="${AGE_KEY_DIR}/key.txt"
+KEY_PRESTAGED=0
 
 if [[ -f "${AGE_KEY_FILE}" ]]; then
     log_step "Age key already present at ${AGE_KEY_FILE}"
+    KEY_PRESTAGED=1
 elif security find-generic-password -s "${AGE_KEYCHAIN_SERVICE}" -a "${ACCOUNT}" >/dev/null 2>&1; then
     log_step "Staging age identity from Keychain (service=${AGE_KEYCHAIN_SERVICE}, account=${ACCOUNT})"
     mkdir -p "${AGE_KEY_DIR}"
@@ -99,10 +110,9 @@ elif security find-generic-password -s "${AGE_KEYCHAIN_SERVICE}" -a "${ACCOUNT}"
         log_err "  security add-generic-password -s ${AGE_KEYCHAIN_SERVICE} -a \"\$USER\" -w \"\$KEY\" -U"
         exit 1
     fi
+    KEY_PRESTAGED=1
 else
-    log_warn "No Keychain entry ${AGE_KEYCHAIN_SERVICE}:${ACCOUNT} — encrypted files will not decrypt."
-    log_warn "Stage with: KEY=\$(awk '/^AGE-SECRET-KEY/{print; exit}' ~/.config/chezmoi/key.txt) && \\"
-    log_warn "  security add-generic-password -s ${AGE_KEYCHAIN_SERVICE} -a ${ACCOUNT} -w \"\$KEY\" -U"
+    log_step "No Keychain entry ${AGE_KEYCHAIN_SERVICE}:${ACCOUNT} — will fall back to passphrase prompt during apply (if bootstrap/key.txt.age is present)"
 fi
 
 # -----------------------------------------------------------------------------
@@ -111,7 +121,7 @@ fi
 # `--use-builtin-git=on` sidesteps the xcode-select git stub on bare macOS
 # (/usr/bin/git hangs over SSH trying to pop the CLT-install GUI dialog).
 # chezmoi's embedded go-git ignores ~/.netrc and credential helpers — fine
-# for our case since the public repo needs no auth at all.
+# for a public repo.
 # -----------------------------------------------------------------------------
 
 if [[ -n "${DOTFILES_BRANCH}" ]]; then
@@ -123,25 +133,49 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Step 4: chezmoi apply --force.
+# Step 4: chezmoi apply --force (first pass).
+#
+# Installs Homebrew + age via run_once_before_install-homebrew.sh, then
+# (if KEY_PRESTAGED=0) the run_once_before_provision-age-key.sh lifecycle
+# script prompts for the passphrase and decrypts bootstrap/key.txt.age.
+#
+# Encrypted files in this same apply pass stay as stubs because chezmoi
+# loaded its config (with no [age] block) at init time. Step 5 re-applies
+# if a fallback decryption happened.
 #
 # Lifecycle failures (e.g. flaky cask downloads) are noted but do NOT
-# short-circuit Step 5's remote-flip. The apply exit code is propagated at
-# the very end.
+# short-circuit Step 5 / Step 6. The apply exit code is propagated at end.
 # -----------------------------------------------------------------------------
 
-log_step "chezmoi apply --force"
+log_step "chezmoi apply --force (first pass)"
 APPLY_EXIT=0
 chezmoi apply --force </dev/null || APPLY_EXIT=$?
 if [[ "${APPLY_EXIT}" -ne 0 ]]; then
-    log_warn "chezmoi apply exited ${APPLY_EXIT}. Continuing to remote-flip; investigate after bootstrap."
+    log_warn "chezmoi apply exited ${APPLY_EXIT}. Continuing; will surface at end."
 fi
 
 # -----------------------------------------------------------------------------
-# Step 5: Flip source-dir remote to SSH.
+# Step 5: If passphrase fallback decrypted the key during the first apply,
+# re-init + re-apply so the regenerated config emits the [age] block and
+# the encrypted files actually decrypt.
+# -----------------------------------------------------------------------------
+
+if [[ "${KEY_PRESTAGED}" -eq 0 ]] && [[ -f "${AGE_KEY_FILE}" ]]; then
+    log_step "Passphrase fallback provisioned key — re-running chezmoi init + apply"
+    chezmoi init </dev/null
+    APPLY2_EXIT=0
+    chezmoi apply --force </dev/null || APPLY2_EXIT=$?
+    if [[ "${APPLY2_EXIT}" -ne 0 ]]; then
+        log_warn "chezmoi apply (second pass) exited ${APPLY2_EXIT}. Continuing."
+        APPLY_EXIT="${APPLY2_EXIT}"
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# Step 6: Flip source-dir remote to SSH.
 #
-# Ergonomic-only now that the clone URL contains no credentials: steady-state
-# `chezmoi update` uses ssh-agent rather than re-prompting for HTTPS credentials.
+# Ergonomic only (no credentials in the clone URL): steady-state
+# `chezmoi update` uses ssh-agent rather than re-prompting for HTTPS creds.
 # -----------------------------------------------------------------------------
 
 SRC="$(chezmoi source-path)"
@@ -160,7 +194,7 @@ else
     log_warn "chezmoi source-path (${SRC}) is not inside a git checkout — skipping remote flip"
 fi
 
-# Surface the apply failure now that the remote flip is done.
+# Surface apply failure now that the remote flip is done.
 if [[ "${APPLY_EXIT}" -ne 0 ]]; then
     log_err "chezmoi apply failed (exit ${APPLY_EXIT}). Bootstrap partially succeeded."
     log_err "Fix the cause and re-run: chezmoi apply --force"
