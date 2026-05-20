@@ -191,8 +191,18 @@ elif [[ -d "${SRC}/../.git" ]]; then
     GIT_DIR="$(cd "${SRC}/.." && pwd)"
 fi
 if [[ -n "${GIT_DIR}" ]]; then
-    log_step "Flipping source-dir remote to SSH (${REPO_SSH_URL})"
-    git -C "${GIT_DIR}" remote set-url origin "${REPO_SSH_URL}"
+    CURRENT_ORIGIN="$(git -C "${GIT_DIR}" remote get-url origin 2>/dev/null || true)"
+    case "${CURRENT_ORIGIN}" in
+        "https://github.com/${REPO_OWNER}/${REPO_NAME}.git" \
+        | "git@github.com:${REPO_OWNER}/${REPO_NAME}.git" \
+        | "https://github.com/${REPO_OWNER}/${REPO_NAME}" )
+            log_step "Flipping source-dir remote to SSH (${REPO_SSH_URL})"
+            git -C "${GIT_DIR}" remote set-url origin "${REPO_SSH_URL}"
+            ;;
+        *)
+            log_warn "Source-dir origin is '${CURRENT_ORIGIN:-<unset>}', not the public ${REPO_OWNER}/${REPO_NAME} repo — SKIPPING remote-flip (refusing to repoint a non-public remote; dotfiles-private privacy hazard, 2026-05-19)."
+            ;;
+    esac
 else
     log_warn "chezmoi source-path (${SRC}) is not inside a git checkout — skipping remote flip"
 fi

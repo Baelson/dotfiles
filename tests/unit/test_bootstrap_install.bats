@@ -84,8 +84,52 @@ setup_healthy_fakes() {
         exit 0
     "
 
-    # git: record every invocation for remote-flip assertions.
-    fake git "echo \"\$@\" >> \"${GIT_LOG}\"; exit 0"
+    # git: record every invocation for remote-flip assertions, AND answer
+    # `git -C <dir> remote get-url origin` with the canonical public-dotfiles
+    # HTTPS URL so the Step 6 transport-flip guard (post-2026-05-19 P0 fix) is
+    # satisfied and the SSH flip proceeds. Per-test fakes that need a
+    # different origin override this with `fake_git_with_origin <url>` below.
+    fake git "
+        if [[ \"\${3:-}\" == 'remote' ]] && [[ \"\${4:-}\" == 'get-url' ]]; then
+            echo 'https://github.com/Baelson/dotfiles.git'
+            exit 0
+        fi
+        echo \"\$@\" >> \"${GIT_LOG}\"
+        exit 0
+    "
+}
+
+# Helper for the WS3 transport-flip guard tests (2026-05-19 P0 fix):
+# install a git fake that returns a specific URL for `remote get-url origin`,
+# logs everything else to ${GIT_LOG}. Pass an empty string to make get-url
+# fail (mimicking real git's behavior when origin is unset).
+fake_git_with_origin() {
+    local origin_url="$1"
+    fake git "
+        if [[ \"\${3:-}\" == 'remote' ]] && [[ \"\${4:-}\" == 'get-url' ]]; then
+            if [[ -n '${origin_url}' ]]; then
+                echo '${origin_url}'
+                exit 0
+            else
+                exit 1
+            fi
+        fi
+        echo \"\$@\" >> \"${GIT_LOG}\"
+        exit 0
+    "
+}
+
+# Helper for the WS3 transport-flip guard tests:
+# pre-stage a fake AGE_KEY_FILE so setup.sh Step 2 takes the "already present"
+# branch (line 89) and doesn't fail the AGE-SECRET-KEY format check that's
+# tripped by `setup_healthy_fakes`'s `security -w` returning a github token
+# for every -w query. This unblocks Step 6 (the guard under test) from
+# executing. NOT a behavioral assertion — purely harness setup.
+prestage_fake_age_key() {
+    mkdir -p "${HOME}/.config/chezmoi"
+    echo 'AGE-SECRET-KEY-1FAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKEFAKE' \
+        > "${HOME}/.config/chezmoi/key.txt"
+    chmod 600 "${HOME}/.config/chezmoi/key.txt"
 }
 
 # -----------------------------------------------------------------------------
@@ -322,7 +366,9 @@ setup_healthy_fakes() {
         esac
         exit 0
     "
-    fake git "echo \"\$@\" >> \"${GIT_LOG}\"; exit 0"
+    # Default to canonical public-dotfiles HTTPS origin so the post-2026-05-19
+    # Step 6 transport-flip guard allows the SSH flip. See WS3 tests below.
+    fake_git_with_origin 'https://github.com/Baelson/dotfiles.git'
 
     run bash "${BOOTSTRAP_SCRIPT}"
 
@@ -363,7 +409,9 @@ setup_healthy_fakes() {
         esac
         exit 0
     "
-    fake git "echo \"\$@\" >> \"${GIT_LOG}\"; exit 0"
+    # Default to canonical public-dotfiles HTTPS origin so the post-2026-05-19
+    # Step 6 transport-flip guard allows the SSH flip. See WS3 tests below.
+    fake_git_with_origin 'https://github.com/Baelson/dotfiles.git'
 
     run bash "${BOOTSTRAP_SCRIPT}"
 
@@ -372,6 +420,111 @@ setup_healthy_fakes() {
     grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
     # The -C path should be the checkout dir (parent of source-path), not the source-path itself
     grep -qE -- "-C [^ ]*fake-checkout remote set-url" "${GIT_LOG}"
+}
+
+# -----------------------------------------------------------------------------
+# 2026-05-19 P0 security fix — transport-flip guard on Step 6.
+#
+# setup.sh Step 6 used to unconditionally repoint `origin` of the chezmoi
+# source-dir to git@github.com:Baelson/dotfiles.git. Post-Phase-5M.1 the
+# sourceDir resolves to a sibling PRIVATE dotfiles-private checkout, so the
+# flip silently cross-repointed the private repo's origin to the public one.
+# A subsequent `git push origin main` on 2026-05-19 nearly leaked 399 private
+# commits; only GitHub's non-fast-forward rejection prevented the leak.
+#
+# The fix wraps the `remote set-url` in a transport-only guard: flip ONLY when
+# origin already resolves to one of the canonical public-Baelson/dotfiles URL
+# shapes. The four tests below assert the guarded behavior. They double as the
+# corrected rows 11/12/13 of the BATS public-bootstrap refactor handoff plus a
+# fifth shape (#11 from the [ESCALATE-A] Opus review) covering the most
+# security-critical non-match — an embedded-credential HTTPS URL.
+# -----------------------------------------------------------------------------
+
+@test "bootstrap (P0 guard): remote-flip is SKIPPED when origin is dotfiles-private" {
+    # The exact hazard this fix exists to prevent: source-path origin is the
+    # PRIVATE repo (post-5M.1 normal state); Step 6 must NOT repoint it.
+    setup_healthy_fakes
+    prestage_fake_age_key
+    fake_git_with_origin 'git@github.com:Baelson/dotfiles-private.git'
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    [ "${status}" -eq 0 ]
+    # Behavioral: no `remote set-url` was ever called.
+    # GIT_LOG may not exist in the SKIP path — the fake's `remote get-url`
+    # branch returns before logging, and no other git call follows. The grep
+    # against a missing file exits nonzero, which `!` converts to a pass.
+    ! grep -q -- 'remote set-url' "${GIT_LOG}" 2>/dev/null
+    # The skip path executed (warning surfaced — proves it wasn't silently noop):
+    [[ "${output}" =~ "SKIPPING remote-flip" ]]
+    [[ "${output}" =~ "dotfiles-private" || "${output}" =~ "non-public" ]]
+}
+
+@test "bootstrap (P0 guard): remote-flip ALLOWED when origin is public dotfiles HTTPS" {
+    # Fork-user happy path: cloned via HTTPS, Step 6 upgrades transport to SSH.
+    setup_healthy_fakes
+    prestage_fake_age_key
+    fake_git_with_origin 'https://github.com/Baelson/dotfiles.git'
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    [ "${status}" -eq 0 ]
+    [ -f "${GIT_LOG}" ]
+    grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
+}
+
+@test "bootstrap (P0 guard): remote-flip is SKIPPED when origin is a foreign repo" {
+    # Defense-in-depth: any third-party origin (e.g. a fork that re-pointed)
+    # must not be repointed by our installer.
+    setup_healthy_fakes
+    prestage_fake_age_key
+    fake_git_with_origin 'git@github.com:SomeOtherUser/somerepo.git'
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    [ "${status}" -eq 0 ]
+    # GIT_LOG may not exist in the SKIP path — the fake's `remote get-url`
+    # branch returns before logging, and no other git call follows. The grep
+    # against a missing file exits nonzero, which `!` converts to a pass.
+    ! grep -q -- 'remote set-url' "${GIT_LOG}" 2>/dev/null
+    [[ "${output}" =~ "SKIPPING remote-flip" ]]
+}
+
+@test "bootstrap (P0 guard): remote-flip is SKIPPED when origin is unset" {
+    # Real git exits non-zero when origin is unset; the fake_git_with_origin
+    # helper mimics that by exiting 1 when passed an empty URL.
+    setup_healthy_fakes
+    prestage_fake_age_key
+    fake_git_with_origin ''
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    [ "${status}" -eq 0 ]
+    # GIT_LOG may not exist in the SKIP path — the fake's `remote get-url`
+    # branch returns before logging, and no other git call follows. The grep
+    # against a missing file exits nonzero, which `!` converts to a pass.
+    ! grep -q -- 'remote set-url' "${GIT_LOG}" 2>/dev/null
+    [[ "${output}" =~ "SKIPPING remote-flip" ]]
+    [[ "${output}" =~ "<unset>" ]]
+}
+
+@test "bootstrap (P0 guard): remote-flip is SKIPPED when origin embeds basic-auth creds" {
+    # [ESCALATE-A] Opus-review shape #11: an HTTPS URL with embedded
+    # user:token@ MUST not be repointed — flipping would clobber a remote the
+    # user may have intentionally configured with credentials. The current
+    # case arms intentionally do not match this shape; this test pins that.
+    setup_healthy_fakes
+    prestage_fake_age_key
+    fake_git_with_origin 'https://user:token@github.com/Baelson/dotfiles.git'
+
+    run bash "${BOOTSTRAP_SCRIPT}"
+
+    [ "${status}" -eq 0 ]
+    # GIT_LOG may not exist in the SKIP path — the fake's `remote get-url`
+    # branch returns before logging, and no other git call follows. The grep
+    # against a missing file exits nonzero, which `!` converts to a pass.
+    ! grep -q -- 'remote set-url' "${GIT_LOG}" 2>/dev/null
+    [[ "${output}" =~ "SKIPPING remote-flip" ]]
 }
 
 # -----------------------------------------------------------------------------
