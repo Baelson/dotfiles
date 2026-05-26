@@ -101,5 +101,6 @@ Conventional commits — `feat(scope):`, `fix(scope):`, `docs(scope):`, `chore(s
 - Read `README.md`, `REQUIREMENTS.md`, and `TESTING.md` before significant work — they capture the adaptation path and test layers.
 - Verify with evidence — `chezmoi status`, `chezmoi apply --dry-run`, BATS output — not assertions.
 - Never delete git branches without explicit request. Trunk-based with short-lived `feat/*`, `fix/*`, `docs/*`, `chore/*` branches; `--no-ff` merges to `main`.
-- The pre-commit `run-critical-tests` hook runs a BATS subset; if a documented pre-existing failure trips it, bypass the *named* hook only (`SKIP=run-critical-tests git commit ...`) — never a blanket `--no-verify`.
+- The pre-commit `run-critical-tests` hook runs the full BATS suite (`tests/unit/` + `tests/integration/`); suite is currently clean. If a documented pre-existing failure trips it, bypass the *named* hook only (`SKIP=run-critical-tests git commit ...`) — never a blanket `--no-verify`.
+- New `.bats` files with shebangs require `chmod +x` AND `git add --chmod=+x` — a plain `chmod` alone won't update git's index mode on an untracked file, and the `check-shebang-scripts-are-executable` pre-commit hook will reject the commit.
 - This is a personal repo. Don't generalize package picks or encrypted files for reuse; the architecture is the shareable part (see `README.md` "Forking and adapting").
