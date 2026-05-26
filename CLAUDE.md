@@ -49,7 +49,7 @@ dotfiles/
 │   ├── setup/                     # bootstrap helpers
 │   ├── test/                      # test runners (run-critical-tests.sh, ...)
 │   └── tools/                     # dev tooling
-├── tests/                         # BATS: unit/ integration/ infrastructure/ lib/
+├── tests/                         # BATS: unit/ integration/ lib/; infrastructure/ — VM E2E manifest data (not a BATS suite)
 └── home/                          # chezmoi source root (.chezmoiroot points here)
     ├── .chezmoi.toml.tmpl         # environment detection + data variables
     ├── .chezmoiexternal.toml.tmpl # oh-my-zsh / antigen / dircolors externals
