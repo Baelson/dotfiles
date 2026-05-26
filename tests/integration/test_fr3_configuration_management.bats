@@ -149,14 +149,14 @@ teardown() {
     local private_dirs
     private_dirs=$(find "$DOTFILES_SOURCE_DIR" -maxdepth 2 -name "private_*" -type d)
 
-    # When/Then — at least SSH and Library are private
+    # When/Then — SSH keys must be private; private_Library moved to dotfiles-private (Phase 5M.1)
     [[ -n "$private_dirs" ]] || {
         echo "No private_ directories found in chezmoi source" >&2
         return 1
     }
 
-    echo "$private_dirs" | grep -q "private_Library" || {
-        echo "Expected private_Library directory for sensitive app data protection" >&2
+    echo "$private_dirs" | grep -q "private_dot_ssh" || {
+        echo "Expected private_dot_ssh directory for SSH key protection" >&2
         return 1
     }
 }

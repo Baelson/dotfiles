@@ -2,22 +2,22 @@
 #
 # test_bootstrap_install.bats — Unit coverage for setup.sh.
 #
-# Focuses on the behaviors the ISSUE-019 design doc explicitly calls out:
-#   - Missing Keychain entry → fail-fast with a useful recovery hint.
-#   - ~/.netrc is mode 0600 during the chezmoi init window.
-#   - Trap cleans ~/.netrc on failure (no plaintext PAT left on disk).
-#   - Source-dir remote is flipped to SSH after a successful run.
+# Focuses on the behaviors that the Phase-5L thin-wrapper architecture
+# explicitly calls out:
+#   - Subprocess stdin redirected to /dev/null (curl|bash pipe-consumption guard).
+#   - Age Keychain fast-path: present → staged; absent → non-fatal log + continue.
+#   - Source-dir remote is flipped to SSH after a successful run (transport only,
+#     guarded by the 2026-05-19 P0 fix — only when origin is the public dotfiles repo).
+#   - Step 6 remote-flip guard: skips when origin is not the canonical public repo.
+#   - ISSUE-022 ordering invariant: init-clone → apply → regen-init → apply.
 #
-# VM E2E (scripts/vm/run-e2e.sh — landing via Phase 5x merge) is the
-# authoritative integration test — this
-# file is about isolated behavioral guarantees, using PATH-injected mocks for
-# security, brew, chezmoi, and git.
+# VM E2E (run from a fresh machine or VM) is the authoritative end-to-end test;
+# this file covers isolated behavioral guarantees via PATH-injected mocks.
 #
 # Notes on hermeticity:
-#   - HOME is redirected to BATS_TEST_TMPDIR so real user netrc is untouched.
+#   - HOME is redirected to BATS_TEST_TMPDIR so real user files are untouched.
 #   - PATH is stripped to "${FAKE_BIN}:/usr/bin:/bin" to starve the script of
-#     real brew/chezmoi/git; fakes cover every external command the script
-#     reaches under these scenarios.
+#     real security/chezmoi/git; fakes cover every external command reached.
 
 BOOTSTRAP_SCRIPT="${BATS_TEST_DIRNAME%/tests/*}/setup.sh"
 
@@ -133,55 +133,37 @@ prestage_fake_age_key() {
 }
 
 # -----------------------------------------------------------------------------
-# Source-tree invariants — not execution-dependent
+# curl|bash stdin safety
 # -----------------------------------------------------------------------------
 
-@test "source tree: netrc placeholder uses private_ prefix (mode 0600 after apply)" {
-    # Regression guard for ISSUE-022 sub-defect (b). Without the `private_`
-    # prefix, chezmoi apply relaxes ~/.netrc from install.sh's 0600 back to
-    # the default umask 0644, leaving loose perms on a credential file.
-    local repo_root="${BATS_TEST_DIRNAME%/tests/*}"
-    [ -f "${repo_root}/home/empty_private_dot_netrc" ]
-    [ ! -f "${repo_root}/home/empty_dot_netrc" ]
-}
-
 @test "ISSUE-022 curl|bash-safety: every subprocess call redirects stdin to /dev/null" {
-    # Regression guard for the pipe-consumption bug reproduced in the
-    # 2026-04-22 walk. When install.sh is run via `curl ... | bash`, bash's
-    # stdin IS the pipe containing the remaining script bytes. Any subprocess
-    # that reads FD 0 consumes those bytes, truncating the rest of our script
-    # and causing bash to exit 0 mid-bootstrap. Homebrew's installer,
-    # `brew install`, and `chezmoi init`/`chezmoi apply` all spawn git etc.
-    # that can read stdin. Every such call MUST redirect stdin from /dev/null.
+    # Regression guard for the pipe-consumption bug. When setup.sh is run via
+    # `curl ... | bash`, bash's stdin IS the pipe containing the remaining
+    # script bytes. Any subprocess that reads FD 0 consumes those bytes,
+    # truncating the rest of the script and causing bash to exit 0 mid-bootstrap.
+    # chezmoi's embedded go-git, `chezmoi apply` lifecycle scripts, and the
+    # get.chezmoi.io installer can all read stdin. Every such call MUST redirect
+    # stdin from /dev/null.
     #
-    # This test enumerates the canonical call sites and asserts each is
-    # followed (possibly after a line continuation) by `</dev/null`.
+    # This test enumerates the canonical call sites in the Phase-5L thin-wrapper
+    # and asserts each has </dev/null.
     local src="${BOOTSTRAP_SCRIPT}"
 
-    # 1. Homebrew installer — `/bin/bash -c "$(...)"` with line continuation.
-    #    The `</dev/null` lands on the next line after the curl subcommand.
-    grep -qE '/bin/bash -c \\' "${src}"   || (echo "Homebrew-installer call not found in expected form" >&2; false)
-    # Look at the ~10 lines around the Homebrew install call and require
-    # </dev/null near it.
-    awk '/Installing Homebrew \(non-interactive/{flag=1} flag{print; if (/<\/dev\/null|\bfi\b/){exit}}' "${src}" \
-      | grep -q '</dev/null' \
-      || (echo "Homebrew installer call is missing </dev/null" >&2; false)
+    # 1. chezmoi installer via get.chezmoi.io (single-line call).
+    grep -qE 'get\.chezmoi\.io.*</dev/null' "${src}" \
+      || (echo "get.chezmoi.io installer is missing </dev/null" >&2; false)
 
-    # 2. brew install chezmoi age — single-line call.
-    grep -qE '^brew install chezmoi age </dev/null' "${src}" \
-      || (echo "brew install chezmoi age is missing </dev/null" >&2; false)
+    # 2. chezmoi init <URL>  (Step 3, clone with --use-builtin-git=on).
+    grep -qE 'chezmoi init --use-builtin-git=on.*</dev/null' "${src}" \
+      || (echo "chezmoi init --use-builtin-git=on <URL> is missing </dev/null" >&2; false)
 
-    # 3. chezmoi init <URL>  (Step 4, clone).
-    grep -qE '^chezmoi init "\$\{REPO_HTTPS_URL\}" </dev/null' "${src}" \
-      || (echo "chezmoi init <URL> is missing </dev/null" >&2; false)
-
-    # 4. chezmoi init         (Step 6, regen).
-    grep -qE '^chezmoi init </dev/null' "${src}" \
-      || (echo "chezmoi init (regen) is missing </dev/null" >&2; false)
-
-    # 5. chezmoi apply --force (Step 7, deploy).
-    grep -qE '^chezmoi apply --force </dev/null' "${src}" \
+    # 3. chezmoi apply --force (Steps 4 and 5 — same pattern, multiple occurrences).
+    grep -qE 'chezmoi apply --force </dev/null' "${src}" \
       || (echo "chezmoi apply --force is missing </dev/null" >&2; false)
+
+    # 4. chezmoi init (Step 5, regen — bare init with no URL).
+    grep -qE 'chezmoi init </dev/null' "${src}" \
+      || (echo "chezmoi init regen (Step 5) is missing </dev/null" >&2; false)
 }
 
 # -----------------------------------------------------------------------------
@@ -209,145 +191,33 @@ prestage_fake_age_key() {
 }
 
 # -----------------------------------------------------------------------------
-# Fail-fast: missing Keychain entry
+# Keychain behavior (Phase-5L: missing entry is non-fatal)
 # -----------------------------------------------------------------------------
 
-@test "bootstrap: missing Keychain entry exits non-zero with recovery hint" {
-    # Real `security` exits 44 when the item is absent — mirror that.
-    fake security 'echo "security: SecKeychainSearchCopyNext: not found" >&2; exit 44'
-
-    run bash "${BOOTSTRAP_SCRIPT}"
-
-    [ "${status}" -ne 0 ]
-    [[ "${output}" =~ "Missing Keychain entry" ]]
-    [[ "${output}" =~ "github-pat" ]]
-    [[ "${output}" =~ "security add-generic-password" ]]
-    [[ "${output}" =~ "testuser" ]]
-    # Fail-fast must happen BEFORE brew install — i.e., the Homebrew install
-    # banner text should not appear. We spell "Installing Homebrew" the way
-    # install.sh does, to catch accidental reordering later.
-    [[ ! "${output}" =~ "Installing Homebrew" ]]
-}
-
-@test "bootstrap: Keychain entry present but empty value exits non-zero" {
-    # Presence (no -w) → exit 0; value (-w) → empty
-    fake security '
-        for arg in "$@"; do
-            if [[ "${arg}" == "-w" ]]; then
-                # Nothing on stdout.
-                exit 0
-            fi
-        done
-        exit 0
-    '
-    # Make brew install and chezmoi no-op so the script reaches the PAT fetch.
-    fake brew '
-        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
-        exit 0
-    '
-
-    run bash "${BOOTSTRAP_SCRIPT}"
-
-    [ "${status}" -ne 0 ]
-    [[ "${output}" =~ "empty value" ]]
-}
-
-# -----------------------------------------------------------------------------
-# ~/.netrc lifecycle
-# -----------------------------------------------------------------------------
-
-@test "bootstrap: netrc is mode 0600 at the moment chezmoi init is called" {
+@test "bootstrap: missing Keychain entry is non-fatal — logs fallback message and continues" {
+    # Phase-5L change: the dotfiles-age Keychain entry is optional, not required.
+    # setup.sh logs a fallback message and continues with KEY_PRESTAGED=0.
+    # Age provisioning falls back to the lifecycle script (passphrase prompt).
     setup_healthy_fakes
+    # Override: presence check (no -w) exits 44 → entry absent.
+    fake security 'exit 44'
 
     run bash "${BOOTSTRAP_SCRIPT}"
 
     [ "${status}" -eq 0 ]
-    [ -f "${NETRC_SNAPSHOT}" ]
-    local mode
-    mode="$(cat "${NETRC_SNAPSHOT}")"
-    # stat -f '%Lp' on BSD/macOS returns just the permission bits, e.g. "600".
-    [ "${mode}" = "600" ]
-}
-
-@test "bootstrap: ~/.netrc is empty (scrubbed but not deleted) after a successful run" {
-    # home/empty_private_dot_netrc makes chezmoi own ~/.netrc as a 0600-mode
-    # empty file (the `private_` prefix ensures apply keeps the tight perms).
-    # Bootstrap must truncate, not delete, to avoid chezmoi drift on subsequent
-    # apply calls. We verify both: the file still exists AND has zero length.
-    setup_healthy_fakes
-
-    run bash "${BOOTSTRAP_SCRIPT}"
-
-    [ "${status}" -eq 0 ]
-    [ -f "${HOME}/.netrc" ]
-    [ ! -s "${HOME}/.netrc" ]
-    # Must also still be 0600 so a subsequent real PAT write inherits tight perms.
-    local mode
-    mode="$(stat -f '%Lp' "${HOME}/.netrc")"
-    [ "${mode}" = "600" ]
-}
-
-@test "bootstrap: trap scrubs ~/.netrc contents when chezmoi init fails mid-run" {
-    fake security '
-        for arg in "$@"; do
-            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
-        done
-        exit 0
-    '
-    fake brew '
-        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
-        exit 0
-    '
-    # chezmoi init fails; trap must fire.
-    fake chezmoi '
-        if [[ "${1:-}" == "init" ]]; then
-            echo "simulated init failure" >&2
-            exit 1
-        fi
-        exit 0
-    '
-    fake git 'exit 0'
-
-    run bash "${BOOTSTRAP_SCRIPT}"
-
-    [ "${status}" -ne 0 ]
-    # Trap must have truncated the file. Either absent (never written, e.g.
-    # init failed before Step 4) OR present-and-empty is acceptable; the
-    # invariant is "no plaintext token value survives".
-    if [[ -f "${HOME}/.netrc" ]]; then
-        [ ! -s "${HOME}/.netrc" ]
-    fi
+    [[ "${output}" =~ "will fall back to passphrase" ]]
 }
 
 # -----------------------------------------------------------------------------
 # Remote URL flip
 # -----------------------------------------------------------------------------
 
-@test "bootstrap: source-dir remote is set to SSH URL after successful run" {
-    setup_healthy_fakes
+@test "bootstrap: apply-with-scripts failure still flips remote to SSH" {
+    # Scenario: chezmoi apply exits non-zero (e.g., a flaky cask download).
+    # setup.sh must still do the remote-flip, then surface the apply exit code.
+    prestage_fake_age_key   # bypass AGE-key validation; KEY_PRESTAGED=1
 
-    run bash "${BOOTSTRAP_SCRIPT}"
-
-    [ "${status}" -eq 0 ]
-    [ -f "${GIT_LOG}" ]
-    grep -q -- "-C .* remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
-}
-
-@test "bootstrap: apply-with-scripts failure still flips remote to SSH and scrubs netrc" {
-    # Scenario: chezmoi apply --include=scripts exits non-zero (e.g., a flaky
-    # cask download). Install.sh must still do the remote-flip + netrc scrub,
-    # then surface the apply exit code at the end. This is the critical
-    # regression from the first E2E run on the bare VM.
-    fake security '
-        for arg in "$@"; do
-            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
-        done
-        exit 0
-    '
-    fake brew '
-        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
-        exit 0
-    '
+    fake brew 'if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi; exit 0'
     fake chezmoi "
         case \"\${1:-}\" in
             source-path)
@@ -355,49 +225,33 @@ prestage_fake_age_key() {
                 echo \"\${BATS_TEST_TMPDIR}/fake-source\"
                 ;;
             apply)
-                # This is the --include=scripts --force call. Fail it.
-                # (init is also 'chezmoi init', not 'apply', so we only fail 'apply'.)
                 echo 'simulated cask download timeout' >&2
                 exit 1
                 ;;
             init)
-                # init --apply succeeds quietly
                 ;;
         esac
         exit 0
     "
-    # Default to canonical public-dotfiles HTTPS origin so the post-2026-05-19
-    # Step 6 transport-flip guard allows the SSH flip. See WS3 tests below.
     fake_git_with_origin 'https://github.com/Baelson/dotfiles.git'
 
-    run bash "${BOOTSTRAP_SCRIPT}"
+    run bash -c "bash '${BOOTSTRAP_SCRIPT}' 2>&1"
 
-    # Exit code should match the apply failure (propagated at the end)
+    # Exit code propagates the apply failure
     [ "${status}" -ne 0 ]
-    # Output should note the partial-success state
-    [[ "${output}" =~ "partially succeeded" || "${output}" =~ "Continuing to remote-flip" ]]
     # Remote-flip MUST have happened even though apply failed
     [ -f "${GIT_LOG}" ]
     grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
-    # netrc must be truncated (or absent) — no plaintext PAT left on disk
-    if [[ -f "${HOME}/.netrc" ]]; then
-        [ ! -s "${HOME}/.netrc" ]
-    fi
+    # Partial-success warning and apply-failure message are surfaced
+    [[ "${output}" =~ "partially succeeded" || "${output}" =~ "Continuing; will surface at end" ]]
 }
 
 @test "bootstrap: remote-flip works when source-path is a child of the git checkout" {
     # chezmoi with .chezmoiroot puts the source at <checkout>/home, so .git
-    # lives one level up from source-path. Install.sh must find it either way.
-    fake security '
-        for arg in "$@"; do
-            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
-        done
-        exit 0
-    '
-    fake brew '
-        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
-        exit 0
-    '
+    # lives one level up from source-path. setup.sh must find it either way.
+    prestage_fake_age_key
+
+    fake brew 'if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi; exit 0'
     fake chezmoi "
         case \"\${1:-}\" in
             source-path)
@@ -409,8 +263,6 @@ prestage_fake_age_key() {
         esac
         exit 0
     "
-    # Default to canonical public-dotfiles HTTPS origin so the post-2026-05-19
-    # Step 6 transport-flip guard allows the SSH flip. See WS3 tests below.
     fake_git_with_origin 'https://github.com/Baelson/dotfiles.git'
 
     run bash "${BOOTSTRAP_SCRIPT}"
@@ -418,7 +270,7 @@ prestage_fake_age_key() {
     [ "${status}" -eq 0 ]
     [ -f "${GIT_LOG}" ]
     grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
-    # The -C path should be the checkout dir (parent of source-path), not the source-path itself
+    # The -C path should be the checkout dir (parent of source-path), not source-path itself
     grep -qE -- "-C [^ ]*fake-checkout remote set-url" "${GIT_LOG}"
 }
 
@@ -528,87 +380,63 @@ prestage_fake_age_key() {
 }
 
 # -----------------------------------------------------------------------------
-# ISSUE-022 fix — age-key ordering invariant
+# ISSUE-022 fix — ordering and runtime sequence invariants
 #
-# The bootstrap must call, in order:
-#   1. chezmoi init <URL>     (clone only; config rendered without [age] block)
-#   2. provision_age_key      (decrypt bootstrap/key.txt.age into ~/.config/chezmoi/key.txt
-#                              if TTY + age present; else skip with a warning)
-#   3. chezmoi init           (regen chezmoi.toml — [age] block now emitted if
-#                              the key was provisioned)
-#   4. chezmoi apply --force  (single-pass deploy of files, encrypted files,
-#                              and lifecycle scripts)
-# The older, pre-ISSUE-022 form (`chezmoi init --apply --exclude=encrypted,scripts`)
-# MUST NOT appear — it rendered the config without [age] and forced manual
-# recovery on the 2026-04-21 VM walk.
+# Phase-5L architecture: age key provisioning moved from a function inside
+# setup.sh into the chezmoi lifecycle script
+# `home/.chezmoiscripts/darwin/run_once_before_provision-age-key.sh`.
+# setup.sh's job is now: init-clone → apply (first pass, runs lifecycle
+# scripts) → [if key provisioned: regen-init + apply second pass] → SSH flip.
+# See test_provision_age_key.bats for lifecycle-script behavioral tests.
 # -----------------------------------------------------------------------------
 
-@test "ISSUE-022 regression guard: install.sh source encodes the age-key ordering invariant" {
-    # Static assertion against the script text: the order of operations
-    # (init clone → provision age key → init regen → apply) is enforced by
-    # the SOURCE order of these calls. If someone reverts the ordering
-    # (e.g. back to a single `chezmoi init --apply --exclude=encrypted,scripts`),
-    # this test fails regardless of runtime behavior.
+@test "ISSUE-022 regression guard: setup.sh source encodes init-clone→apply→regen-init order" {
+    # Static assertion against the script text: the ordering of the three
+    # anchor call sites must be init-clone < apply-first < regen-init.
+    # If someone reverts the ordering (e.g. back to a single
+    # `chezmoi init --apply --exclude=encrypted,scripts`), this test fails
+    # regardless of runtime behavior.
     local src="${BOOTSTRAP_SCRIPT}"
 
-    # Line numbers of the four anchor points.
-    local ln_init_clone ln_provision ln_init_regen ln_apply
-    ln_init_clone=$(grep -n 'chezmoi init "${REPO_HTTPS_URL}"' "${src}" | head -1 | cut -d: -f1)
-    ln_provision=$(grep -n '^provision_age_key$' "${src}" | head -1 | cut -d: -f1)
-    # Second `chezmoi init` has no URL — look for the bare invocation (with
-    # </dev/null stdin-safety redirect; pre-hotfix this was `^chezmoi init$`).
-    ln_init_regen=$(grep -nE '^chezmoi init </dev/null' "${src}" | head -1 | cut -d: -f1)
-    # Anchor on start-of-line so the docstring references (`# chezmoi apply --force`)
-    # don't beat the real invocation to the top of grep's output.
-    ln_apply=$(grep -n '^chezmoi apply --force' "${src}" | head -1 | cut -d: -f1)
+    local ln_init_clone ln_apply_first ln_init_regen
+    # Step 3: init with URL and --use-builtin-git=on
+    ln_init_clone=$(grep -nE 'chezmoi init --use-builtin-git=on.*REPO_HTTPS_URL' "${src}" | head -1 | cut -d: -f1)
+    # Step 4: first apply — anchor to column 0 to skip header-comment references
+    # (setup.sh header mentions `chezmoi apply --force` in its docstring; `^chezmoi`
+    # matches only real invocations at the start of the line, not comment lines).
+    ln_apply_first=$(grep -nE '^chezmoi apply --force' "${src}" | head -1 | cut -d: -f1)
+    # Step 5: regen init — bare `chezmoi init </dev/null` (no URL, inside the if block)
+    ln_init_regen=$(grep -nE '^\s+chezmoi init </dev/null' "${src}" | head -1 | cut -d: -f1)
 
-    [ -n "${ln_init_clone}" ]  || (echo "missing: chezmoi init clone line" >&2; false)
-    [ -n "${ln_provision}" ]   || (echo "missing: provision_age_key call line" >&2; false)
-    [ -n "${ln_init_regen}" ]  || (echo "missing: chezmoi init regen line" >&2; false)
-    [ -n "${ln_apply}" ]       || (echo "missing: chezmoi apply --force line" >&2; false)
+    [ -n "${ln_init_clone}" ]  || (echo "missing: chezmoi init --use-builtin-git=on clone" >&2; false)
+    [ -n "${ln_apply_first}" ] || (echo "missing: chezmoi apply --force first pass" >&2; false)
+    [ -n "${ln_init_regen}" ]  || (echo "missing: chezmoi init regen (Step 5)" >&2; false)
 
     # Strict ordering: each anchor appears strictly after the previous one.
-    [ "${ln_init_clone}" -lt "${ln_provision}" ]
-    [ "${ln_provision}" -lt "${ln_init_regen}" ]
-    [ "${ln_init_regen}" -lt "${ln_apply}" ]
+    [ "${ln_init_clone}" -lt "${ln_apply_first}" ]
+    [ "${ln_apply_first}" -lt "${ln_init_regen}" ]
 
     # Hard regression guards against the three known-bad forms:
     #   - pre-ISSUE-022: "init --apply --exclude=encrypted,scripts" rendered
     #     config without [age]
     #   - pre-ISSUE-019 encrypted-apply fix: "apply --include=scripts" limited
     #     the pass to scripts only, never deploying encrypted files
-    #   - pre-ISSUE-022 hotfix: the `[[ -t 0 ]]` TTY gate falsely-skipped
-    #     provisioning under `curl ... | bash` (bash's stdin is the pipe, not
-    #     the terminal). The gate must check /dev/tty, not fd 0.
     ! grep -q -- "init --apply --exclude=encrypted,scripts" "${src}"
     ! grep -q -- "apply --include=scripts" "${src}"
-    # No `[[ ! -t 0 ]]` (or `[[ -t 0 ]]`) guards inside provision_age_key.
-    # Implementation uses `: </dev/tty` for detection instead. Matching on
-    # just `-t 0` catches both polarity variants.
-    ! awk '/^provision_age_key\(\)/,/^}/' "${src}" | grep -q -- "-t 0"
-    # Positive: the /dev/tty-based detection IS present.
-    awk '/^provision_age_key\(\)/,/^}/' "${src}" | grep -q -- "/dev/tty"
 }
 
-@test "ISSUE-022: runtime sequence is init-clone → provision → init-regen → apply --force" {
+@test "ISSUE-022: runtime sequence is init-clone → apply → regen-init → apply (two-pass path)" {
     # Runtime assertion: fake chezmoi logs every invocation; verify the
-    # sequence of calls matches the ISSUE-022 ordering. BATS runs without
-    # a TTY on stdin by default, so provision_age_key skips gracefully with
-    # a warning — the init/apply sequence itself is independent of that skip.
+    # sequence matches the ISSUE-022 two-pass ordering. The regen path fires
+    # when KEY_PRESTAGED=0 AND the lifecycle script provisions key.txt during
+    # the first apply. We simulate that by having the chezmoi apply fake
+    # create key.txt — the regen condition then evaluates to true.
     local chezmoi_log="${BATS_TEST_TMPDIR}/chezmoi.log"
-    fake security '
-        for arg in "$@"; do
-            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
-        done
-        exit 0
-    '
-    fake brew '
-        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
-        exit 0
-    '
-    # age fake is present but should never be called under non-TTY;
-    # presence guards against command-not-found masking the TTY-skip path.
-    fake age 'echo "age should not be invoked under non-TTY" >&2; exit 2'
+
+    # KEY_PRESTAGED=0: no Keychain entry (security returns not-found, exit 44).
+    fake security 'exit 44'
+    fake brew 'if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi; exit 0'
+    fake age 'exit 0'
     fake chezmoi "
         echo \"\$@\" >> \"${chezmoi_log}\"
         case \"\${1:-}\" in
@@ -616,133 +444,36 @@ prestage_fake_age_key() {
                 mkdir -p \"\${BATS_TEST_TMPDIR}/fake-source/.git\"
                 echo \"\${BATS_TEST_TMPDIR}/fake-source\"
                 ;;
-        esac
-        exit 0
-    "
-    fake git 'exit 0'
-
-    # Capture stderr (log_warn writes there) alongside stdout so we can assert
-    # the non-TTY skip warning appeared. BATS `run` only captures stdout by
-    # default; wrapping in `bash -c` + `2>&1` merges the streams.
-    run bash -c "bash '${BOOTSTRAP_SCRIPT}' 2>&1"
-
-    [ "${status}" -eq 0 ]
-
-    # Explicit ordering via line numbers in the captured log. The chezmoi
-    # fake records every invocation as one line; we assert:
-    #   - line with `init https://...` appears first (clone)
-    #   - bare `init` appears second (regen)
-    #   - `apply --force` appears last
-    local first_init_line second_init_line apply_line
-    first_init_line=$(grep -n '^init https' "${chezmoi_log}" | head -1 | cut -d: -f1)
-    second_init_line=$(grep -n '^init$' "${chezmoi_log}" | head -1 | cut -d: -f1)
-    apply_line=$(grep -n '^apply --force' "${chezmoi_log}" | head -1 | cut -d: -f1)
-    [ -n "${first_init_line}" ]  || (cat "${chezmoi_log}" >&2; false)
-    [ -n "${second_init_line}" ] || (cat "${chezmoi_log}" >&2; false)
-    [ -n "${apply_line}" ]       || (cat "${chezmoi_log}" >&2; false)
-    [ "${first_init_line}" -lt "${second_init_line}" ]
-    [ "${second_init_line}" -lt "${apply_line}" ]
-
-    # provision_age_key must produce one of its documented diagnostics — any
-    # of its four early-exit branches is acceptable here. The common
-    # substring "encrypted files will not deploy" covers three skip branches
-    # (missing-age, missing-encrypted-key, non-TTY); the fourth branch
-    # (wrong passphrase) uses "continuing without encryption".
-    [[ "${output}" == *"encrypted files will not deploy"* ]] || \
-      [[ "${output}" == *"continuing without encryption"* ]]
-}
-
-@test "ISSUE-022 hotfix: stdin-as-pipe does NOT false-skip age provisioning" {
-    # Reproduction of the bug we shipped in Phase 2 and fixed here:
-    # the canonical invocation is `curl ... | bash`, which makes bash's
-    # stdin the pipe from curl. The previous `[[ -t 0 ]]` gate then falsely
-    # reported "non-interactive session" and skipped provisioning — leaving
-    # encrypted files undeployed. The fix uses /dev/tty, which IS accessible
-    # when launched from an interactive shell regardless of stdin.
-    #
-    # Skip this test cleanly if /dev/tty isn't available in the BATS runner
-    # (e.g. CI containers) — can't positively exercise provisioning without
-    # a controlling terminal. The source-level regression guard still
-    # enforces the invariant in that environment.
-    if ! { : </dev/tty; } 2>/dev/null; then
-        skip "no /dev/tty in this BATS runner — source-level guard covers the invariant"
-    fi
-
-    local chezmoi_log="${BATS_TEST_TMPDIR}/chezmoi.log"
-    local age_log="${BATS_TEST_TMPDIR}/age.log"
-    fake security '
-        for arg in "$@"; do
-            if [[ "${arg}" == "-w" ]]; then echo "ghp_faketoken"; exit 0; fi
-        done
-        exit 0
-    '
-    fake brew '
-        if [[ "${1:-}" == "shellenv" ]]; then echo ""; fi
-        exit 0
-    '
-    # age fake: succeed (exit 0) and write the key file wherever -o points.
-    # Also log that it was invoked — that's the key assertion.
-    fake age "
-        echo \"\$@\" >> \"${age_log}\"
-        if [[ \"\${1:-}\" == \"-d\" && \"\${2:-}\" == \"-o\" ]]; then
-            # Emulate successful decrypt.
-            echo 'AGE-SECRET-KEY-fake' > \"\${3}\"
-            exit 0
-        fi
-        exit 1
-    "
-    # chezmoi: the second `chezmoi init` needs to actually generate a config
-    # so nothing aborts; source-path returns a fake checkout with
-    # bootstrap/key.txt.age present so provision_age_key doesn't early-skip.
-    fake chezmoi "
-        echo \"\$@\" >> \"${chezmoi_log}\"
-        case \"\${1:-}\" in
-            source-path)
-                local fake_src=\"\${BATS_TEST_TMPDIR}/fake-source\"
-                mkdir -p \"\${fake_src}/.git\" \"\${fake_src}/../bootstrap\"
-                : > \"\${fake_src}/../bootstrap/key.txt.age\"
-                echo \"\${fake_src}\"
+            apply)
+                # Simulate lifecycle script provisioning the age key on first apply.
+                # Triggers the Step 5 regen condition (KEY_PRESTAGED=0 && key.txt exists).
+                mkdir -p \"\${HOME}/.config/chezmoi\"
+                echo 'AGE-SECRET-KEY-1FAKEFAKEFAKEFAKE' > \"\${HOME}/.config/chezmoi/key.txt\"
                 ;;
         esac
         exit 0
     "
-    fake git 'exit 0'
+    fake_git_with_origin 'https://github.com/Baelson/dotfiles.git'
 
-    # Simulate `curl ... | bash`: pipe the script into bash so stdin is a
-    # pipe, not a terminal. This is exactly the condition the old gate got
-    # wrong.
-    run bash -c "cat '${BOOTSTRAP_SCRIPT}' | bash 2>&1"
+    run bash -c "bash '${BOOTSTRAP_SCRIPT}' 2>&1"
 
     [ "${status}" -eq 0 ]
-    # The fix: age -d WAS called even though stdin is a pipe.
-    [ -f "${age_log}" ] || (echo "age was never invoked — TTY gate still false-skipping" >&2; false)
-    grep -q -- "^-d -o " "${age_log}" || \
-      (echo "age log does not show a decrypt call: $(cat "${age_log}")" >&2; false)
-    # And the false-skip warning is absent — this phrase should only appear
-    # when /dev/tty is genuinely unavailable.
-    [[ "${output}" != *"No controlling terminal"* ]]
-}
+    [ -f "${chezmoi_log}" ] || (echo "chezmoi was never called" >&2; false)
 
-@test "ISSUE-022: missing age binary warns and continues without aborting" {
-    # Negative path: if the 'age' tool is somehow absent (shouldn't happen
-    # post-Step 3, but guard against a broken Homebrew install), the
-    # provisioner must warn and let the rest of the bootstrap proceed.
-    setup_healthy_fakes
-    # Explicitly leave 'age' out of FAKE_BIN — it's not in the base system
-    # PATH either (/usr/bin:/bin), so `command -v age` will return non-zero.
+    # Verify init-clone → apply-first → regen-init → apply-second ordering
+    # via line numbers in the captured invocation log.
+    local ln_init_clone ln_apply_first ln_init_regen ln_apply_second
+    ln_init_clone=$(grep -n '^init --use-builtin-git=on https' "${chezmoi_log}" | head -1 | cut -d: -f1)
+    ln_apply_first=$(grep -n '^apply --force' "${chezmoi_log}" | head -1 | cut -d: -f1)
+    ln_init_regen=$(grep -n '^init$' "${chezmoi_log}" | head -1 | cut -d: -f1)
+    ln_apply_second=$(grep -n '^apply --force' "${chezmoi_log}" | tail -1 | cut -d: -f1)
 
-    run bash "${BOOTSTRAP_SCRIPT}"
+    [ -n "${ln_init_clone}" ]   || (cat "${chezmoi_log}" >&2; false)
+    [ -n "${ln_apply_first}" ]  || (cat "${chezmoi_log}" >&2; false)
+    [ -n "${ln_init_regen}" ]   || (cat "${chezmoi_log}" >&2; false)
+    [ -n "${ln_apply_second}" ] || (cat "${chezmoi_log}" >&2; false)
 
-    [ "${status}" -eq 0 ]
-    # The age-missing warning is a specific branch distinct from the
-    # non-TTY branch (the latter is what the other ISSUE-022 test exercises).
-    # If `age` isn't in FAKE_BIN AND stdin isn't a TTY, both conditions hold;
-    # the `age`-missing check in provision_age_key runs first, so that
-    # warning is the one we should see.
-    [[ "${output}" == *"age not installed"* ]] || \
-      [[ "${output}" == *"Non-interactive session"* ]]   # acceptable fallback
-    # Final apply still ran despite age being missing (encrypted files stay
-    # as stubs, but that's the documented degrade-gracefully behavior).
-    [ -f "${GIT_LOG}" ]
-    grep -q -- "remote set-url origin git@github.com:Baelson/dotfiles.git" "${GIT_LOG}"
+    [ "${ln_init_clone}" -lt "${ln_apply_first}" ]
+    [ "${ln_apply_first}" -lt "${ln_init_regen}" ]
+    [ "${ln_init_regen}" -lt "${ln_apply_second}" ]
 }
