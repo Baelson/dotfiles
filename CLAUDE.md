@@ -55,6 +55,7 @@ dotfiles/
     ├── .chezmoiexternal.toml.tmpl # oh-my-zsh / antigen / dircolors externals
     ├── .chezmoiignore
     ├── .chezmoiscripts/darwin/    # lifecycle scripts (run_once_*, run_onchange_*)
+    │   └── run_once_before_provision-age-key.sh  # age key fallback: prompts passphrase, writes ~/.config/chezmoi/key.txt
     ├── Brewfile.tmpl              # package manifest (templated)
     ├── dot_*                      # ~/.* dotfiles (zshrc, gitconfig, p10k, ...)
     ├── private_*                  # mode-0700 deploys (SSH keys, license files)
@@ -95,6 +96,7 @@ Conventional commits — `feat(scope):`, `fix(scope):`, `docs(scope):`, `chore(s
 - **run-onchange content-hash trigger** — `run_onchange_after_*` lifecycle scripts re-run only when their rendered content hash changes (package installs, macOS defaults, shell env).
 - **ShellCheck for chezmoi templates** — `.pre-commit-config.yaml` runs `shellcheck` on scripts plus a templates-aware variant on `.tmpl` script sources.
 - **iTerm2 shell integration** — installed automatically by a lifecycle script; iTerm2 prefs managed via `LoadPrefsFromCustomFolder`.
+- **Two-pass apply (ISSUE-022)** — when the Keychain fast-path is absent, `setup.sh` runs `chezmoi init → apply` (first pass, triggers lifecycle scripts including `provision-age-key.sh`), then if key.txt was provisioned, re-runs `chezmoi init` (picks up `[age]` config) + `apply --force` (second pass, decrypts encrypted files). Tests #13/#14 in `test_bootstrap_install.bats` guard this order.
 
 ## Best Practices
 
