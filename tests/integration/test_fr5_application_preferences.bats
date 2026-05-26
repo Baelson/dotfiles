@@ -1,5 +1,14 @@
 #!/usr/bin/env bats
 #
+# REHOME NOTE (2026-05-23): tests FR-5.1, FR-5.5, FR-5.9 were deleted from this
+# file when Phase 5M.1 (2026-05-07) moved home/private_Library/ off the public
+# peer into dotfiles-private. They test only private_Library content (VS Code
+# User settings, encrypted commercial-app licenses, Cursor User settings).
+# When dotfiles-private gains a tests/ directory, re-home them there pointing
+# at $DOTFILES_PRIVATE_SOURCE_DIR/private_Library. See:
+#   ~/Git/Projects/Active/dotfiles-private/docs/plans/next-session-prompts/
+#   2026-05-23-post-p0-cleanup-kickoff.md §WS2
+#
 # FR-5: Application Preferences Restoration — Behavioral Tests
 #
 # Proves that application configurations (VS Code, Git, iTerm2,
@@ -18,29 +27,6 @@ setup() {
 
 teardown() {
     cleanup_common
-}
-
-# ── FR-5.1: VS Code settings tracked by chezmoi ─────────────
-
-@test "FR-5.1: Given chezmoi source, when VS Code paths checked, then settings exist in private_Library" {
-    # Given
-    [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]
-
-    # When — look for VS Code User directory in source
-    local vscode_path
-    vscode_path=$(find "$DOTFILES_SOURCE_DIR/private_Library" -path "*Code*User*" -type d 2>/dev/null | head -1)
-
-    # Then — VS Code settings directory exists in chezmoi source
-    [[ -n "$vscode_path" ]] || {
-        echo "No VS Code User directory found in private_Library" >&2
-        return 1
-    }
-
-    # And — settings.json exists within it
-    find "$vscode_path" -name "settings.json" -type f | grep -q . || {
-        echo "VS Code User directory found but no settings.json inside" >&2
-        return 1
-    }
 }
 
 # ── FR-5.2: Git configuration has user identity ─────────────
@@ -93,23 +79,6 @@ teardown() {
 
     # Then — rendered script contains macOS defaults commands
     assert_rendered_contains "defaults write"
-}
-
-# ── FR-5.5: Encrypted licenses exist for commercial apps ─────
-
-@test "FR-5.5: Given private_Library, when encrypted files listed, then commercial app licenses are encrypted" {
-    # Given
-    [[ -d "$DOTFILES_SOURCE_DIR/private_Library" ]]
-
-    # When
-    local encrypted_licenses
-    encrypted_licenses=$(find "$DOTFILES_SOURCE_DIR/private_Library" -name "encrypted_*" -o -name "*.age" 2>/dev/null)
-
-    # Then — at least one encrypted license/config exists
-    [[ -n "$encrypted_licenses" ]] || {
-        echo "No encrypted files found in private_Library" >&2
-        return 1
-    }
 }
 
 # ── FR-5.6: No plaintext credentials in tracked configs ──────
@@ -169,22 +138,6 @@ teardown() {
     # no GUI-specific commands (VS Code, Docker, Alfred) would execute.
     assert_rendered_contains "exit 0"
     assert_rendered_contains "[Ss]kipping.*headless"
-}
-
-# ── FR-5.9: Cursor (VS Code fork) settings managed ──────────
-
-@test "FR-5.9: Given chezmoi source, when Cursor paths checked, then settings exist" {
-    # Given/When
-    local cursor_path
-    cursor_path=$(find "$DOTFILES_SOURCE_DIR/private_Library" -path "*Cursor*User*" -type d 2>/dev/null | head -1)
-
-    # Then
-    [[ -n "$cursor_path" ]] || skip "No Cursor configuration in chezmoi source"
-
-    find "$cursor_path" -name "settings.json" -type f | grep -q . || {
-        echo "Cursor User directory found but no settings.json inside" >&2
-        return 1
-    }
 }
 
 # ── FR-5.10: Dry-run doesn't modify application state ───────
