@@ -12,7 +12,7 @@
 {{- /* Default mas to false if not provided (backwards-compatible with tests) */ -}}
 {{- $mas := false -}}
 {{- if hasKey . "mas" -}}{{- $mas = .mas -}}{{- end -}}
-{{- /* is_primary gates apps/extensions that should only land on the primary Mac Studio */ -}}
+{{- /* is_primary gates apps/extensions that should only land on the primary Mac */ -}}
 {{- $is_primary := false -}}
 {{- if hasKey . "is_primary" -}}{{- $is_primary = .is_primary -}}{{- end -}}
 {{- /* skip_flaky_casks omits casks with unreliable downloads/installers in --no-graphics VMs: zoom PKG hangs; orbstack CDN times out */ -}}
@@ -104,14 +104,16 @@ cask 'obsidian'             # Knowledge base in local folder of plain text Markd
 cask 'postman'              # Collaboration platform for API development                        -- https://www.postman.com/
 cask 'sublime-text'         # Text editor for code, markup and prose                            -- https://www.sublimetext.com/
 cask 'visual-studio-code'   # Open-source code editor                                           -- https://code.visualstudio.com/
-cask 'webex-meetings'       # Video communication and virtual meeting platform                  -- https://www.webex.com/
+{{- if and .work $is_primary }}
+cask 'webex-meetings'       # Video communication and virtual meeting platform (work, primary host) -- https://www.webex.com/
+{{- end }}
 {{- if not $skip_flaky_casks }}
 cask 'orbstack'             # Fast, lightweight Docker & Linux on macOS (primary runtime)       -- https://orbstack.dev/
 cask 'zoom'                 # Video communication and virtual meeting platform                  -- https://www.zoom.us/
 {{- end }}
 
 {{- if $is_primary }}
-# Kurama-only development tools (primary Mac Studio)
+# your-primary-host-only development tools (primary Mac)
 cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
 cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
 cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
@@ -130,7 +132,7 @@ cask 'figma'                # Collaborative team software                       
 {{- end }}
 
 {{- if and .work $mas $is_primary }}
-# Work-specific applications (Kurama only, requires: CHEZMOI_MAS=true)
+# Work-specific applications (your-primary-host only, requires: CHEZMOI_MAS=true)
 mas 'Slack (4.45.64)', id: 803453959
 {{- end }}
 
@@ -154,7 +156,7 @@ mas 'Pixelmator Pro (3.7)', id: 1289583905
 
 {{- if $is_primary }}
 
-# Kurama-only MAS apps (primary Mac Studio)
+# your-primary-host-only MAS apps (primary Mac)
 mas 'Apple Configurator (2.18)', id: 1037126344
 mas 'Blackmagic Disk Speed Test (3.4.2)', id: 425264550
 mas 'Blurred (1.2.0)', id: 1497527363
@@ -180,7 +182,7 @@ mas 'Xcode (16.4)', id: 497799835
 {{- end }}
 
 {{- if and (not .ephemeral) $is_primary }}
-# VS Code extensions (Kurama only)
+# VS Code extensions (your-primary-host only)
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"
 vscode "ms-toolsai.jupyter"

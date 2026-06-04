@@ -200,7 +200,7 @@ if [[ -n "${GIT_DIR}" ]]; then
             git -C "${GIT_DIR}" remote set-url origin "${REPO_SSH_URL}"
             ;;
         *)
-            log_warn "Source-dir origin is '${CURRENT_ORIGIN:-<unset>}', not the public ${REPO_OWNER}/${REPO_NAME} repo — SKIPPING remote-flip (refusing to repoint a non-public remote; dotfiles-private privacy hazard, 2026-05-19)."
+            log_warn "Source-dir origin is '${CURRENT_ORIGIN:-<unset>}', not the public ${REPO_OWNER}/${REPO_NAME} repo — SKIPPING remote-flip (refusing to repoint a non-public remote; wrong-remote privacy guard)."
             ;;
     esac
 else

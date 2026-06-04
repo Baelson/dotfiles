@@ -45,6 +45,10 @@ readonly AGE_KEY_FILE="${AGE_KEY_DIR}/key.txt"
 
 CHEZMOI_SOURCE="$(chezmoi source-path 2>/dev/null || echo "${HOME}/.local/share/chezmoi/home")"
 ENCRYPTED_KEY="${CHEZMOI_SOURCE}/../bootstrap/key.txt.age"
+# Forker fallback: the PUBLISHED throwaway sample identity (Phase 3 pull-forward). Its passphrase and
+# private key are PUBLIC — used only so a forker's `chezmoi apply` decrypts the SAMPLE dotfiles content.
+SAMPLE_KEY="${CHEZMOI_SOURCE}/../bootstrap/sample-key.txt.age"
+readonly SAMPLE_PASSPHRASE="change-me-on-first-run"
 
 # Idempotent — skip if already provisioned.
 if [[ -f "${AGE_KEY_FILE}" ]]; then
@@ -73,8 +77,50 @@ if ! command -v age >/dev/null 2>&1; then
     exit 0
 fi
 
-# Skip if encrypted key is absent (fork user, deleted file, etc.).
+# Real key absent (fork user) — fall back to the PUBLISHED SAMPLE identity if present.
+# SECURITY POSTURE (deliberate): a HUMAN at a terminal must TYPE the passphrase — that friction is the
+# real mitigation (it forces awareness that this is a throwaway, publicly-decryptable identity). Only a
+# HEADLESS context (CI / VM E2E — no /dev/tty) auto-provisions, so a forker-scenario test gets a green
+# decrypt without silently installing a public identity on a real person's machine.
 if [[ ! -f "${ENCRYPTED_KEY}" ]]; then
+    if [[ -f "${SAMPLE_KEY}" ]]; then
+        echo ""
+        echo "############################################################################"
+        echo "#  ⚠️  PUBLISHED SAMPLE age identity (throwaway demo key).                  #"
+        echo "#  Its passphrase ('change-me-on-first-run') AND private key are PUBLIC —   #"
+        echo "#  anyone can decrypt anything encrypted to it. Encrypted dotfiles decrypt  #"
+        echo "#  to SAMPLE content. DO NOT store real secrets against it: generate your   #"
+        echo "#  own age key and re-encrypt before real use (see README).                 #"
+        echo "############################################################################"
+        echo ""
+        mkdir -p "${AGE_KEY_DIR}"
+        if { : </dev/tty; } 2>/dev/null; then
+            # Human at a terminal — require them to type the sample passphrase (friction = awareness).
+            echo "🔐 To provision the SAMPLE identity, enter its passphrase (it is: ${SAMPLE_PASSPHRASE}):"
+            if age -d -o "${AGE_KEY_FILE}" "${SAMPLE_KEY}" </dev/tty \
+               && age-keygen -y "${AGE_KEY_FILE}" >/dev/null 2>&1; then
+                chmod 600 "${AGE_KEY_FILE}"
+                echo "✅ SAMPLE age key provisioned — ROTATE before storing any real secret."
+            else
+                echo "❌ Not provisioned — encrypted files stay as stubs. Re-run \`chezmoi apply --force\` to retry."
+                rm -f "${AGE_KEY_FILE}"
+            fi
+        else
+            # Headless (CI / VM E2E only): age has no non-interactive passphrase input, so drive `age -d`
+            # through a pty via /usr/bin/script (always on macOS). Validate with `age-keygen -y` (prints the
+            # recipient iff valid) — avoids the literal age-secret-key prefix the privacy gate denies.
+            echo "ℹ️  Headless context — auto-provisioning the sample identity for this non-interactive run."
+            if printf '%s\n' "${SAMPLE_PASSPHRASE}" | script -q /dev/null age -d -o "${AGE_KEY_FILE}" "${SAMPLE_KEY}" >/dev/null 2>&1 \
+               && age-keygen -y "${AGE_KEY_FILE}" >/dev/null 2>&1; then
+                chmod 600 "${AGE_KEY_FILE}"
+                echo "✅ SAMPLE age key auto-provisioned (headless) — rotate before real use."
+            else
+                echo "❌ Failed to provision the sample age key — encrypted files stay as stubs."
+                rm -f "${AGE_KEY_FILE}"
+            fi
+        fi
+        exit 0
+    fi
     echo "⚠️  No encrypted age key at ${ENCRYPTED_KEY} — encrypted files will stay as stubs"
     exit 0
 fi

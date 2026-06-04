@@ -1,0 +1,67 @@
+# leak-check.yml — post-publish privacy backstop for the PUBLIC dotfiles repo.
+#
+# This file is authored in the private repo at .github/workflows-public/ so it
+# does NOT run on the private repo's Actions. The publish pipeline renames it to
+# .github/workflows/leak-check.yml in the public candidate (manifest `dest`).
+#
+# It is a BACKSTOP, not the primary defense — the deterministic pre-publish gates
+# in the private scrub pipeline (manifest-coverage + pattern-scan + gitleaks) are
+# what actually keep private content out of the candidate. This re-checks the
+# published result two ways that need NO privacy-revealing literals of their own:
+#   1. gitleaks — generic secret-format detection (age keys, tokens, etc.).
+#   2. private-artifact-absent — assert the scrub-pipeline files never shipped.
+# (A replicated denylist is deliberately NOT used: publishing the literal private
+# strings to grep for would itself leak them.)
+name: leak-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  leak-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: private scrub-pipeline artifacts must be absent
+        run: |
+          set -euo pipefail
+          # These files exist only in the private engineering tree; if any reaches
+          # the public repo the scrub mis-classified something. Checked by path
+          # (no privacy-revealing literal needs to appear in this workflow).
+          artifacts=(
+            ".publish-manifest.yml"
+            ".privacy-patterns.yml"
+            "scripts/publish-to-public.sh"
+            "scripts/check-manifest-coverage.sh"
+            "scripts/sanitizers"
+            "scripts/llm-review-allowlist.txt"
+            "bin/publish-llm-review.sh"
+            ".github/workflows-public"
+            "docs/public-templates"
+          )
+          rc=0
+          for a in "${artifacts[@]}"; do
+            if [ -e "${a}" ]; then
+              echo "::error file=${a}::private scrub-pipeline artifact present on public — leak"
+              rc=1
+            fi
+          done
+          if [ "${rc}" -ne 0 ]; then
+            echo "FAIL: one or more private artifacts reached the public repo."
+            exit 1
+          fi
+          echo "OK: no private scrub-pipeline artifacts present."

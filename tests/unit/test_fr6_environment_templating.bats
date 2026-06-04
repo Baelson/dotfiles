@@ -56,8 +56,10 @@ teardown() {
         fi
     done
 
-    # Look for template files that might indicate environment differentiation
-    if find "$DOTFILES_ROOT" -name "*.tmpl" 2>/dev/null | head -1 | xargs -r grep -q -E "(work|personal|hostname)"; then
+    # Look for template files that might indicate environment differentiation.
+    # NUL-delimited so source paths containing spaces (e.g. "private_Application
+    # Support/") don't word-split under xargs (macOS-safe; pre-existing bug).
+    if find "$DOTFILES_ROOT" -name "*.tmpl" -print0 2>/dev/null | xargs -0 grep -qE "(work|personal|hostname)" 2>/dev/null; then
         env_detection_found=true
     fi
 

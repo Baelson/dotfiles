@@ -62,12 +62,9 @@ To override automatic detection, run:
 {{- end -}}
 
 {{/* Primary-machine detection — gates apps/configs that should only land
-     on the primary personal Mac (Mac Studio, hostname "Kurama"), not on
+     on the primary personal Mac (Mac, hostname "your-primary-host"), not on
      shared family Macs. The hostname literal is the detection target;
      fork users should change it to their own primary-Mac hostname. */}}
-{{- if eq $hostname "Kurama" -}}
-{{-   $is_primary = true -}}
-{{- end -}}
 
 {{/* Interactive Prompts (only when connected to terminal) */}}
 {{/* Logic: Check for direct data override first, then prompt if interactive, otherwise default */}}
@@ -103,15 +100,7 @@ To override automatic detection, run:
 {{-   $skip_flaky_casks = true -}}
 {{- end -}}
 
-{{/* Prefer the private companion repo as sourceDir if it's checked out
-     alongside (Phase 5M overlay model: dotfiles-private holds private-only
-     content and symlinks back to dotfiles for shared files). Fall back to
-     the public peer for fork users who only clone Baelson/dotfiles. */ -}}
-{{- if stat "/Users/baelson/Git/Projects/Active/dotfiles-private" }}
-sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles-private"
-{{- else if stat "/Users/baelson/Git/Projects/Active/dotfiles" }}
-sourceDir = "/Users/baelson/Git/Projects/Active/dotfiles"
-{{- end }}
+sourceDir = "{{ .chezmoi.homeDir }}/.local/share/chezmoi"
 {{- if stat (joinPath .chezmoi.homeDir ".config/chezmoi/key.txt") }}
 encryption = "age"
 {{- end }}
@@ -130,7 +119,7 @@ encryption = "age"
 {{- if stat (joinPath .chezmoi.homeDir ".config/chezmoi/key.txt") }}
 [age]
     identity = "~/.config/chezmoi/key.txt"
-    recipient = "age1ss3dfd8sjf8lkped82c2yn3y88vrkm665d2ukh955p3e9xr7hfps3w5m7w"
+    recipient = "age15wzen05wsv5ar2lt90y3794em53zg24a8vg4hdjkgm6n6qpvcduqpgvfec"
 {{- end }}
 
 # Git settings

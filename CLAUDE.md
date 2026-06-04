@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **dotfiles** is a personal macOS dotfiles repository providing one-command bootstrap on a fresh machine via [chezmoi](https://www.chezmoi.io/). A thin `setup.sh` wrapper installs chezmoi, provisions the age decryption identity, then hands off to `chezmoi init` + `chezmoi apply --force`. Everything else — Xcode CLT, Homebrew, packages, app config, encrypted-file decryption — runs inside chezmoi lifecycle scripts. This is a personal reference repo, not a turnkey adoption template; read `README.md` "Forking and adapting" before reuse.
 
+> **Published derivative.** This repository is generated from a private working tree by a scrub pipeline. It lags the author's live config and ships a **published sample** age identity (`bootstrap/sample-key.txt.age`, passphrase `change-me-on-first-run`) plus **sample** encrypted files, so a fork can `chezmoi apply` to a coherent state without any real secret. Rotate the sample identity before storing anything real (`README.md` → "Forking and adapting").
+
 ## Build & Development Commands
 
 This is a chezmoi source dir, not a typical software project — there is no build step, no Makefile, no `package.json`, no `pyproject.toml`.
@@ -38,27 +40,22 @@ curl -fsSL https://raw.githubusercontent.com/Baelson/dotfiles/main/setup.sh | ba
 dotfiles/
 ├── setup.sh                       # bootstrap entry point (thin wrapper)
 ├── README.md                      # quick start + forking guide
-├── REQUIREMENTS.md                # what the repo provides + adaptation path
-├── TESTING.md                     # test layers + how to run them
 ├── .chezmoiroot                   # points chezmoi at `home/`
-├── .pre-commit-config.yaml        # shellcheck, BATS, markdownlint hooks
 ├── bootstrap/
-│   └── key.txt.age                # passphrase-encrypted age identity (safe to publish)
-├── .github/workflows/             # ci-testing, claude, claude-code-review
-├── scripts/
-│   ├── setup/                     # bootstrap helpers
-│   ├── test/                      # test runners (run-critical-tests.sh, ...)
-│   └── tools/                     # dev tooling
-├── tests/                         # BATS: unit/ integration/ lib/; infrastructure/ — VM E2E manifest data (not a BATS suite)
+│   └── sample-key.txt.age         # published throwaway sample age identity
+├── .github/workflows/
+│   └── leak-check.yml             # post-publish secret/artifact scan (gitleaks + absent-artifact)
+├── tests/                         # BATS: unit/ integration/
 └── home/                          # chezmoi source root (.chezmoiroot points here)
     ├── .chezmoi.toml.tmpl         # environment detection + data variables
     ├── .chezmoiexternal.toml.tmpl # oh-my-zsh / antigen / dircolors externals
     ├── .chezmoiignore
     ├── .chezmoiscripts/darwin/    # lifecycle scripts (run_once_*, run_onchange_*)
-    │   └── run_once_before_provision-age-key.sh  # age key fallback: prompts passphrase, writes ~/.config/chezmoi/key.txt
+    │   ├── run_once_before_provision-age-key.sh   # age key: sample-identity fallback (prompts passphrase)
+    │   └── run_once_before_warn-existing-ssh.sh   # create_ ~/.ssh heads-up (won't overwrite existing files)
     ├── Brewfile.tmpl              # package manifest (templated)
     ├── dot_*                      # ~/.* dotfiles (zshrc, gitconfig, p10k, ...)
-    ├── private_*                  # mode-0700 deploys (SSH keys, license files)
+    ├── private_dot_ssh/           # ~/.ssh (create_-managed; SAMPLE encrypted blobs)
     └── empty_*                    # zero-byte file stubs (.npmrc, .netrc, ...)
 ```
 
@@ -71,6 +68,7 @@ dotfiles/
 | `dot_` | Adds `.` prefix to target | `dot_zshrc` → `.zshrc` |
 | `private_` | mode 0600 (files) / 0700 (dirs) | `private_dot_ssh/` → `.ssh/` |
 | `encrypted_` | age-decrypted at apply time | `encrypted_private_key` |
+| `create_` | create-if-absent; never overwrites an existing target | `create_encrypted_private_id_ed25519.age` |
 | `executable_` | sets `+x` bit | `executable_script.sh` → `script.sh` |
 | `empty_` | creates zero-byte file | `empty_dot_npmrc` |
 | `.tmpl` | Go-template rendered | `Brewfile.tmpl` → `Brewfile` |
@@ -91,18 +89,15 @@ Conventional commits — `feat(scope):`, `fix(scope):`, `docs(scope):`, `chore(s
 
 ## Detected Patterns
 
-- **Native dry-run delegation** — verification leans on `chezmoi apply --dry-run --verbose` rather than a custom diff harness.
-- **Dual-path age provisioning** — Keychain fast path (`dotfiles-age:$USER`, no prompt) with a passphrase-fallback decrypt of `bootstrap/key.txt.age` (safe to publish; security is in the passphrase). Both absent → encrypted files stay as non-fatal stubs.
+- **Sample-identity age provisioning** — a Keychain fast path (`dotfiles-age:$USER`, no prompt) with a passphrase-fallback decrypt of `bootstrap/sample-key.txt.age` (a **published throwaway** identity, passphrase `change-me-on-first-run`; both passphrase and key are public). Both absent → encrypted files stay as non-fatal stubs. Rotate the sample identity before any real use.
+- **`create_ ~/.ssh` (create-if-absent)** — every `~/.ssh` file is managed with chezmoi's `create_` attribute, so `chezmoi apply` never overwrites an existing `~/.ssh` file (real keys are safe; a sample `authorized_keys` can't lock you out). `run_once_before_warn-existing-ssh.sh` announces any skip.
+- **Two-pass apply** — when the Keychain fast-path is absent, `setup.sh` runs `chezmoi init → apply` (first pass, triggers lifecycle scripts including the age-key provision), then if `key.txt` was provisioned, re-runs `chezmoi init` (picks up the `[age]` config) + `apply --force` (second pass, decrypts encrypted files).
 - **run-onchange content-hash trigger** — `run_onchange_after_*` lifecycle scripts re-run only when their rendered content hash changes (package installs, macOS defaults, shell env).
-- **ShellCheck for chezmoi templates** — `.pre-commit-config.yaml` runs `shellcheck` on scripts plus a templates-aware variant on `.tmpl` script sources.
-- **iTerm2 shell integration** — installed automatically by a lifecycle script; iTerm2 prefs managed via `LoadPrefsFromCustomFolder`.
-- **Two-pass apply (ISSUE-022)** — when the Keychain fast-path is absent, `setup.sh` runs `chezmoi init → apply` (first pass, triggers lifecycle scripts including `provision-age-key.sh`), then if key.txt was provisioned, re-runs `chezmoi init` (picks up `[age]` config) + `apply --force` (second pass, decrypts encrypted files). Tests #13/#14 in `test_bootstrap_install.bats` guard this order.
+- **iTerm2 shell integration** — installed automatically by a lifecycle script.
 
 ## Best Practices
 
-- Read `README.md`, `REQUIREMENTS.md`, and `TESTING.md` before significant work — they capture the adaptation path and test layers.
+- Read `README.md` before significant work — it captures the forking/adaptation path.
 - Verify with evidence — `chezmoi status`, `chezmoi apply --dry-run`, BATS output — not assertions.
 - Never delete git branches without explicit request. Trunk-based with short-lived `feat/*`, `fix/*`, `docs/*`, `chore/*` branches; `--no-ff` merges to `main`.
-- The pre-commit `run-critical-tests` hook runs the full BATS suite (`tests/unit/` + `tests/integration/`); suite is currently clean. If a documented pre-existing failure trips it, bypass the *named* hook only (`SKIP=run-critical-tests git commit ...`) — never a blanket `--no-verify`.
-- New `.bats` files with shebangs require `chmod +x` AND `git add --chmod=+x` — a plain `chmod` alone won't update git's index mode on an untracked file, and the `check-shebang-scripts-are-executable` pre-commit hook will reject the commit.
 - This is a personal repo. Don't generalize package picks or encrypted files for reuse; the architecture is the shareable part (see `README.md` "Forking and adapting").

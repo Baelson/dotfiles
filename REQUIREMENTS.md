@@ -89,7 +89,7 @@ chezmoi data variables (see `home/.chezmoi.toml.tmpl`):
 | `headless` | prompted | CLI-only environment (drops GUI casks, fonts, app config) |
 | `ephemeral` | prompted | Disposable container/CI/VM (drops persistent packages) |
 | `mas` | `false` | Mac App Store apps opt-in (env: `CHEZMOI_MAS=true`) |
-| `is_primary` | hostname == `Kurama` | Primary-Mac gate for additional apps and configs (fork users change the hostname literal in `home/.chezmoi.toml.tmpl`) |
+| `is_primary` | hostname == `your-primary-host` | Primary-Mac gate for additional apps and configs (fork users change the hostname literal in `home/.chezmoi.toml.tmpl`) |
 | `skip_flaky_casks` | `false` | Omit casks with unreliable installers in headless VMs (env: `CHEZMOI_SKIP_FLAKY_CASKS=true`) |
 
 ## Where to look next

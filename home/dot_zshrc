@@ -13,18 +13,19 @@ fi
 ###            shell options             ###
 ############################################
 # zsh options - https://zsh.sourceforge.io/Doc/Release/Options.html
-unsetopt autopushd
 setopt autocd
-setopt nocaseglob
+setopt badpattern
+setopt cdablevars
 setopt extendedglob
 setopt globdots
-setopt markdirs
-setopt rmstarwait
-setopt cdablevars
-setopt histignorealldups
-setopt pushdtohome
-setopt badpattern
 setopt globstarshort
+setopt histignorealldups
+setopt markdirs
+setopt nocaseglob
+setopt pushd_ignore_dups
+setopt pushdtohome
+setopt rmstarwait
+unsetopt autopushd
 
 autoload -Uz compinit
 compinit
@@ -52,7 +53,6 @@ fi
 export HISTSIZE="200000"
 export DIRSTACKSIZE="200"
 export DEFAULT_USER=Baelson
-# export OD_USERNAME=bduque
 
 
 ############################################
@@ -214,7 +214,7 @@ alias tree="tree -Csuh"    #  Nice alternative to "recursive ls" ...
 alias icloud="pushd ~/Library/Mobile\ Documents/com~apple~CloudDocs/"   # pushd to iCloud Drive
 alias box="pushd ~/Library/CloudStorage/Box-Box/"                       # pushd to Box Drive
 alias onedrive="pushd ~/Library/CloudStorage/OneDrive-Personal/"        # pushd to OneDrive
-alias dcconfigs="pushd ~/Git/DuqueClan-Configs"                         # pushd to DuqueClan Configs Repo
+alias gpa="pushd ~/Git/Projects/Active"                                 # pushd to active git projects
 
 # git alias'
 alias gdd="git difftool --dir-diff --no-symlinks"
@@ -223,8 +223,6 @@ alias glpp="git log --pretty=format:'%C(yellow)%h%C(reset) %<(60,trunc)%s %C(cya
 alias glppg="git log --graph --pretty=format:'%C(yellow)%h%C(reset) %<(60,trunc)%s %C(cyan)%cr%C(reset) (%C(cyan)%cd%C(reset)) %C(auto)%d%C(reset)' --abbrev-commit --decorate=short --date=format:'%Y-%m-%d @ %H:%m'"
 
 # claude-code alias'
-# claude-mem added by plug-in
-alias claude-mem='${BUN_INSTALL}/bin/bun "${HOME}/.claude/plugins/cache/thedotmack/claude-mem/10.5.2/scripts/worker-service.cjs"'
 # TODO: Inline commands to set `--name`. Default would be `cwd_YYYY-MM-DD_HH-mm-ss-TZ` in 24h current timezone
 alias ccd="claude --dangerously-skip-permissions --resume"
 alias ccad="claude --allow-dangerously-skip-permissions --permission-mode auto --resume"
@@ -263,23 +261,3 @@ fi
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 
-############################################
-###              Work Settings          ###
-############################################
-## Below only works in internal builds
-# PS1="$HC$FCYN\r\n\u@\h-$(/usr/local/bin/ypc2 -k RPlt | xxd -r -p) [\D{%a-%m/%d}] : \w\r\n$RS\A \$>"
-
-### Apple Stuff ###
-# alias InstallTigrisFullSDK="~uitools/bin/install-xcode --ios CurrentTigris --SDK-UI-internals --HomeDiags --xcode-internals --user bduque --delete-before-install --no-prompt"
-# alias InstallTigrisPR3="~uitools/bin/install-xcode --ios CurrentTigris --HomeDiags-only --user bduque --delete-previous-installs --no-prompt"
-# alias MountShares="~rc/bin/xbsmount --mode ios -od"
-# alias Clean="~rcdev/bin/cleanPreviousInstall"
-# alias BounceCR="launchctl unload /System/Library/LaunchAgents/com.apple.MDCrashReportd.plist; launchctl load /System/Library/LaunchAgents/com.apple.MDCrashReportd.plist"
-# alias CacheiPhone="~mwright/Public/cacheEmbedded.rb -d d22ap,n56ap, --destination ~/Builds/ -b"
-# alias CacheiPad="~mwright/Public/cacheEmbedded.rb -d j207ap,j72ap,j99aap,j97ap --destination ~/Builds/ -b"
-# alias CachewatchOS="~mwright/Public/cacheEmbedded.rb -d n28aap --destination ~/Builds/ -b"
-# alias CachetvOS="~mwright/Public/cacheEmbedded.rb -d j105aap,j42dap --destination ~/Builds/ -b"
-
-# Titan Builds and Bazel
-# source /Users/Baelson/.bazel/bin/bazel-complete.bash
-# alias gfa="cd ~/Git/Titan/apollo && git fetch gerrit"
