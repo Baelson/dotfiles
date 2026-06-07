@@ -30,7 +30,9 @@ load '../lib/test_helper'
 
 @test "Age-encrypted files actually exist in repository" {
   # Prove the security tests aren't vacuous — encrypted files must be present
-  run bash -c "find \"$DOTFILES_ROOT\" -name 'encrypted_*' -name '*.age' 2>/dev/null | wc -l | tr -d '[:space:]'"
+  # Match '*encrypted_*' (not 'encrypted_*'): all ssh blobs use the create_encrypted_* prefix
+  # (the create_ create-if-absent rename); a name-START glob 'encrypted_*' misses them.
+  run bash -c "find \"$DOTFILES_ROOT\" -name '*encrypted_*' -name '*.age' 2>/dev/null | wc -l | tr -d '[:space:]'"
   [ "$status" -eq 0 ]
   [[ "$output" -ge 1 ]]
 }

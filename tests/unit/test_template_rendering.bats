@@ -120,7 +120,7 @@ teardown() {
     # Should include GUI applications
     [[ "$output" =~ "cask 'visual-studio-code'" ]]
     [[ "$output" =~ "cask 'iterm2'" ]]
-    [[ "$output" =~ "cask 'docker'" ]]
+    [[ "$output" =~ "cask 'orbstack'" ]]   # the Docker runtime cask this Brewfile actually ships (not Docker Desktop)
     [[ "$output" =~ "cask 'cursor'" ]]
 
     # Should include VS Code extensions
@@ -162,7 +162,9 @@ teardown() {
 }
 
 @test "TEMPLATE-10: Brewfile includes work-specific apps in work environment" {
-    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true" "hostname=work-laptop"
+    # Work MAS apps are gated `{{ if and .work $mas $is_primary }}` — the render must
+    # supply mas=true + is_primary=true (mirrors TEMPLATE-9), else the block never emits.
+    test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true" "mas=true" "is_primary=true" "hostname=work-laptop"
     assert_chezmoi_success
 
     # Should include work-specific apps
