@@ -50,6 +50,76 @@
 
 set -euo pipefail
 
+# -----------------------------------------------------------------------------
+# brew_health_check — best-effort detection of a broken/stale/wrong-arch/
+# unwritable Homebrew, emitting ONE consolidated, actionable remediation block.
+#
+# The real partial-install failure (2026-06-09) was a stale Intel /usr/local
+# Homebrew under Rosetta on Apple Silicon + broken /usr/local ownership + too-old
+# CLT — ONE root cause that cascaded into ~25 errors and aborted the apply. This
+# detects that class of breakage and GUIDES the operator, but NEVER aborts: it
+# returns 1 (unhealthy) so the caller can skip brew installs and let the
+# dotfiles/config apply finish best-effort. (No `sudo` self-heal — that would
+# break `curl|bash` non-interactivity and is unsafe.)
+#
+# errexit-safe (no bare `cond && cmd`; every array expansion is guarded behind a
+# count check, so it is bash-3.2 + `set -u` safe) and zsh-safe (the real run is
+# zsh; the BATS lib-only source is bash).
+# -----------------------------------------------------------------------------
+brew_health_check() {
+    local prefix arch
+    local problems=()
+    prefix="$(brew --prefix 2>/dev/null || true)"
+    arch="$(uname -m 2>/dev/null || echo unknown)"
+
+    # 1) Does brew even run? A stale brew on a newer macOS throws
+    #    MacOSVersionError on every invocation.
+    if ! brew --version >/dev/null 2>&1; then
+        problems+=("Homebrew fails to run (often a stale brew that doesn't recognize this macOS). Fix:\n      (cd \"${prefix:-/usr/local}/Homebrew\" 2>/dev/null && git fetch --tags) ; brew update")
+    fi
+
+    # 2) Wrong-arch prefix: an Intel brew at /usr/local running under Rosetta on
+    #    an Apple-Silicon Mac. Install native arm64 brew at /opt/homebrew.
+    if [[ "${arch}" == "arm64" && "${prefix}" == "/usr/local" ]]; then
+        problems+=("You are on Apple Silicon (arm64) but Homebrew is the Intel build at /usr/local (Rosetta). Install native arm64 Homebrew at /opt/homebrew:\n      /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"")
+    fi
+
+    # 3) Unwritable prefix subdirs (the `rb_file_s_rename` / 'not writable'
+    #    cascade). Only flag dirs that actually exist.
+    if [[ -n "${prefix}" ]]; then
+        local d
+        local unwritable=()
+        for d in "" /Homebrew /Cellar /var/homebrew /lib /share /etc /bin; do
+            if [[ -e "${prefix}${d}" && ! -w "${prefix}${d}" ]]; then
+                unwritable+=("${prefix}${d}")
+            fi
+        done
+        if (( ${#unwritable[@]} > 0 )); then
+            problems+=("Homebrew prefix dirs are not writable by you. Fix:\n      sudo chown -R \"\$(whoami)\" ${unwritable[*]}")
+        fi
+    fi
+
+    if (( ${#problems[@]} > 0 )); then
+        echo "" >&2
+        echo "⚠️  Homebrew looks unhealthy — package installs will be skipped/partial this run." >&2
+        echo "    Fix the items below, then re-run:  chezmoi apply --force" >&2
+        local p
+        for p in "${problems[@]}"; do printf "  • %b\n" "${p}" >&2; done
+        echo "" >&2
+        return 1
+    fi
+    return 0
+}
+
+# Lib-only entry point: sourcing with CHEZMOI_INSTALL_HOMEBREW_LIB_ONLY=1 defines
+# the helpers above and returns WITHOUT running the install flow (mirrors
+# CHEZMOI_SYNC_LIB_ONLY in the chezmoi-sync hook). Used by
+# tests/unit/test_install_homebrew.bats to exercise brew_health_check directly.
+# Placed AFTER the function defs so a lib-only source still gets them.
+if [[ "${CHEZMOI_INSTALL_HOMEBREW_LIB_ONLY:-0}" == "1" ]]; then
+    return 0 2>/dev/null || exit 0
+fi
+
 echo "🍺 CLT + Homebrew + age lifecycle step"
 
 # -----------------------------------------------------------------------------
@@ -142,17 +212,31 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# Step 3: age — needed so the user can decrypt the keyed age identity manually
-# if they ever want to re-roll or audit. chezmoi itself uses built-in age
-# (`--use-builtin-age=auto`) for its own decrypts, but a user-facing `age`
-# binary is handy.
+# Step 3: brew-health preflight + age (best-effort, never aborts).
+#
+# Before installing age, probe Homebrew's health (writable prefix, runnable
+# brew, correct arch). On a broken/stale/wrong-arch brew (the 2026-06-09
+# partial-install root cause) print ONE remediation block and SKIP the age
+# install rather than aborting — chezmoi's built-in age still decrypts, and the
+# dotfiles/config apply finishes. `brew install age` is itself non-fatal.
+#
+# age is a convenience CLI (manual decrypt/audit); chezmoi uses built-in age
+# (`--use-builtin-age=auto`) for its own decrypts.
 # -----------------------------------------------------------------------------
 
-if command -v age >/dev/null 2>&1; then
-    echo "✅ age already installed at $(command -v age)"
+BREW_HEALTHY=1
+brew_health_check || BREW_HEALTHY=0
+
+if [[ "${BREW_HEALTHY}" -eq 1 ]]; then
+    if command -v age >/dev/null 2>&1; then
+        echo "✅ age already installed at $(command -v age)"
+    else
+        echo "🔐 Installing age"
+        brew install age </dev/null \
+            || echo "⚠️  'brew install age' failed — chezmoi uses built-in age for decrypts; install the age CLI manually later if you want it." >&2
+    fi
 else
-    echo "🔐 Installing age"
-    brew install age </dev/null
+    echo "⏭️  Skipping 'brew install age' (Homebrew unhealthy — see remediation above). chezmoi's built-in age still handles decrypts." >&2
 fi
 
 echo "✅ CLT + Homebrew + age lifecycle step complete"

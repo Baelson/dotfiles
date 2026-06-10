@@ -45,22 +45,34 @@ if [[ "${ICLOUD_ACCOUNT_COUNT}" -eq 0 ]]; then
     fi
 fi
 
-# Install packages from Brewfile
+# Install packages from Brewfile (best-effort: a failed formula must NOT abort
+# the whole apply — the dotfiles/config still need to land. The 2026-06-09
+# partial-install run had 25 deps fail under a broken Homebrew and the bare
+# `brew bundle` errexit killed the entire run).
 if [[ -f "${HOME}/Brewfile" ]]; then
-    echo "🍺 Running brew bundle..."
+    echo "🍺 Running brew bundle (best-effort)..."
     cd "${HOME}"
-    brew bundle
-    echo "✅ Package installation completed"
+    bundle_rc=0
+    brew bundle </dev/null || bundle_rc=$?
+    if [[ "${bundle_rc}" -ne 0 ]]; then
+        echo "⚠️  Some Brewfile entries failed (exit ${bundle_rc}). Bootstrap continues; dotfiles/config still applied." >&2
+        echo "    Re-run after fixing Homebrew:  brew bundle --file ~/Brewfile" >&2
+        # Surface which formulae are still missing (brew bundle already printed details above).
+        brew bundle check --file "${HOME}/Brewfile" </dev/null 2>/dev/null | grep -i 'need to be installed' >&2 || true
+    else
+        echo "✅ Package installation completed"
+    fi
 else
     echo "⚠️  Brewfile not found at ${HOME}/Brewfile"
     echo "💡 Make sure chezmoi has applied the Brewfile configuration"
 fi
 
 {{- if not .ephemeral }}
-# Clean up old packages and caches (not in ephemeral environments)
+# Clean up old packages and caches (not in ephemeral environments).
+# Non-fatal: a cleanup hiccup must not fail the apply.
 echo "🧹 Cleaning up..."
-brew cleanup
-brew autoremove
+brew cleanup </dev/null || true
+brew autoremove </dev/null || true
 {{- end }}
 
 echo "✅ Package management completed"
