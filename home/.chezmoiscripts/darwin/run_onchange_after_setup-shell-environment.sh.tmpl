@@ -9,7 +9,11 @@
 #
 # References: https://www.chezmoi.io/user-guide/manage-different-types-of-file/
 #
-# Config hash: {{ include "dot_zshrc" | sha256sum }}
+# The zshrc source is dot_zshrc here but create_dot_zshrc in the public
+# derivative (R4 create_ rename) — hash whichever exists so this template
+# renders in BOTH audiences; content is identical, so the hash (and the
+# run_onchange retrigger behavior) is too.
+# Config hash: {{ if stat (joinPath .chezmoi.sourceDir "dot_zshrc") }}{{ include "dot_zshrc" | sha256sum }}{{ else }}{{ include "create_dot_zshrc" | sha256sum }}{{ end }}
 
 {{- if .headless }}
 # Skip interactive shell setup in headless environments
