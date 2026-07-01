@@ -66,6 +66,17 @@ To override automatic detection, run:
      shared family Macs. The hostname literal is the detection target;
      fork users should change it to their own primary-Mac hostname. */}}
 
+{{/* Override + persistence for is_primary (mirrors the CHEZMOI_MAS pattern).
+     Precedence: existing config data / env seam beats hostname detection.
+     Set CHEZMOI_IS_PRIMARY=1 on the first `chezmoi init` to mark a machine as
+     the primary without renaming it; the value then persists in [data] and the
+     hasKey branch carries it forward on later inits. */}}
+{{- if hasKey . "is_primary" -}}
+{{-   $is_primary = .is_primary -}}
+{{- else if env "CHEZMOI_IS_PRIMARY" -}}
+{{-   $is_primary = true -}}
+{{- end -}}
+
 {{/* Interactive Prompts (only when connected to terminal) */}}
 {{/* Logic: Check for direct data override first, then prompt if interactive, otherwise default */}}
 {{- if hasKey . "ephemeral" -}}
@@ -92,6 +103,8 @@ To override automatic detection, run:
 {{-   $mas = .mas -}}
 {{- else if env "CHEZMOI_MAS" -}}
 {{-   $mas = true -}}
+{{- else -}}
+{{-   $mas = $is_primary -}}
 {{- end -}}
 
 {{- if hasKey . "skip_flaky_casks" -}}

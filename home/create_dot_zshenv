@@ -39,8 +39,8 @@ path+=("${BUN_INSTALL}/bin")
 ############################################
 ###     Shell Env Non-interactive        ###
 ############################################
-export EDITOR="antigravity --wait"
-export VISUAL="antigravity --wait"
+export EDITOR="${HOME}/.local/bin/editor-wrapper.sh"
+export VISUAL="${HOME}/.local/bin/editor-wrapper.sh"
 export MANPATH="/usr/local/man:${MANPATH}"
 
 # For gnutls -- https://www.topbug.net/blog/2013/04/14/install-and-use-gnu-command-line-tools-in-mac-os-x/

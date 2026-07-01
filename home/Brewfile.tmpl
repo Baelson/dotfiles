@@ -8,7 +8,7 @@
 # - Homebrew Bundle: https://github.com/Homebrew/homebrew-bundle
 # - chezmoi templating: https://www.chezmoi.io/user-guide/templating/
 # - Package management patterns: https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
-#
+
 {{- /* Default mas to false if not provided (backwards-compatible with tests) */ -}}
 {{- $mas := false -}}
 {{- if hasKey . "mas" -}}{{- $mas = .mas -}}{{- end -}}
@@ -18,14 +18,16 @@
 {{- /* skip_flaky_casks omits casks with unreliable downloads/installers in --no-graphics VMs: zoom PKG hangs; orbstack CDN times out */ -}}
 {{- $skip_flaky_casks := false -}}
 {{- if hasKey . "skip_flaky_casks" -}}{{- $skip_flaky_casks = .skip_flaky_casks -}}{{- end -}}
-#
+
+
 # Generated Configuration:
 # Environment: {{ if .work }}work{{ else if .personal }}personal{{ else }}unknown{{ end }}
 # Hostname: {{ .hostname }}
 # Ephemeral: {{ .ephemeral }} ({{ if .ephemeral }}minimal packages, no GUI apps{{ else }}full installation{{ end }})
 # Headless: {{ .headless }} ({{ if .headless }}CLI tools only{{ else }}includes GUI applications{{ end }})
-# MAS: {{ $mas }} ({{ if $mas }}Mac App Store apps included{{ else }}MAS apps skipped — use CHEZMOI_MAS=true to enable{{ end }})
-#
+# MAS: {{ $mas }} ({{ if $mas }}Mac App Store apps included{{ else }}MAS apps skipped — defaults true on your-primary-host; set CHEZMOI_MAS=true elsewhere{{ end }})
+
+
 # Package Categories:
 # - Core development tools (all environments)
 # - Shell and terminal enhancements
@@ -35,9 +37,13 @@
 # - Mac App Store applications (persistent, personal environments only)
 
 # Tap repositories
-tap 'cirruslabs/cli'
-tap 'steipete/tap'
-tap 'getsentry/xcodebuildmcp'
+tap 'cirruslabs/cli', trusted: true
+tap 'steipete/tap', trusted: true
+tap 'getsentry/xcodebuildmcp', trusted: true
+tap 'antoniorodr/memo', trusted: true
+tap 'rcmdnk/file', trusted: true
+tap 'xdevplatform/tap', trusted: true
+
 
 # Core development tools (all environments)
 brew 'chezmoi'          # Manage your dotfiles across multiple diverse machines, securely       -- https://github.com/twpayne/chezmoi
@@ -48,11 +54,21 @@ brew 'gzip'             # Popular GNU data compression programming              
 brew 'less'             # Pager program similar to more                                         -- https://github.com/gwsw/less
 brew 'make'             # Utility for directing compilation                                     -- https://git.savannah.gnu.org/git/make
 brew 'rsync'            # Utility that provides fast incremental file transfer                  -- https://rsync.samba.org/
+brew 'age'              # Modern encryption — used by chezmoi for SSH key blobs                 -- https://github.com/FiloSottile/age
+brew 'bats-core'        # Bash Automated Testing System — dotfiles test suite runner            -- https://github.com/bats-core/bats-core
+brew 'git-filter-repo'  # Quickly rewrite git repository history                                -- https://github.com/newren/git-filter-repo
+brew 'gitleaks'         # Secret/credential scanner — used in dotfiles scrub pipeline           -- https://github.com/gitleaks/gitleaks
+brew 'pre-commit'       # Multi-language pre-commit hook framework                              -- https://pre-commit.com/
+brew 'yq'               # Portable YAML/JSON/XML/TOML processor                                 -- https://github.com/mikefarah/yq
 
 # Shell and terminal enhancements
 brew 'antigen'          # Plugin manager for zsh, inspired by oh-my-zsh and vundle              -- https://github.com/zsh-users/antigen
 brew 'direnv'           # Load/unload environment variables based on $PWD                       -- https://github.com/direnv/direnv
+brew 'eza'              # Modern, maintained replacement for ls                                 -- https://github.com/eza-community/eza
+brew 'fd'               # Simple, fast and user-friendly alternative to find                    -- https://github.com/sharkdp/fd
 brew 'fzf'              # Command-line fuzzy finder written in Go                               -- https://github.com/junegunn/fzf
+brew 'ripgrep'          # Search tool like grep and The Silver Searcher                         -- https://github.com/BurntSushi/ripgrep
+brew 'tree'             # Display directories as trees (with optional color/HTML output)        -- http://mama.indstate.edu/users/ice/tree/
 {{- if not .headless }}
 brew 'tmux'             # Terminal multiplexer                                                  -- https://github.com/tmux/tmux
 brew 'steipete/tap/tmuxwatch'  # Live tmux dashboard with Bubble Tea UI                         -- https://github.com/steipete/tmuxwatch
@@ -65,12 +81,15 @@ brew 'pygments'         # Generic syntax highlighter                            
 brew 'python3'          # Interpreted, interactive, object-oriented programming language        -- https://www.python.org/
 brew 'ruby'             # Powerful, clean, object-oriented scripting language                   -- https://github.com/ruby/ruby
 brew 'uv'               # Extremely fast Python package installer and resolver                  -- https://github.com/astral-sh/uv
+brew 'xcodegen'         # Generate your Xcode project from a spec file                          -- https://github.com/yonaskolb/XcodeGen
 brew 'getsentry/xcodebuildmcp/xcodebuildmcp'    # MCP and CLI providing iOS/macOS dev tools to AI agents -- https://github.com/getsentry/XcodeBuildMCP
 
 # Text editors and utilities
 brew 'gawk'             # GNU awk utility                                                       -- https://git.savannah.gnu.org/git/gawk
 brew 'nano'             # Free (GNU) replacement for the Pico text editor                       -- https://www.nano-editor.org/
 brew 'neovim'           # Ambitious Vim-fork focused on extensibility and agility               -- https://github.com/neovim/neovim
+brew 'pandoc'           # Swiss-army knife of markup format conversion                          -- https://pandoc.org/
+brew 'shellcheck'       # Shell script static analysis tool                                     -- https://github.com/koalaman/shellcheck
 
 {{- if not .ephemeral }}
 # Media, system, and virtualization tools (persistent environments only)
@@ -87,6 +106,23 @@ brew 'mas'                 # Mac App Store command-line interface               
 
 
 brew 'rcmdnk/file/brew-file'  # Brewfile manager for Homebrew                                   -- https://github.com/rcmdnk/homebrew-file
+
+{{- if $is_primary }}
+# your-primary-host-only development tools (primary Mac)
+brew 'act'                  # Run your GitHub Actions locally                                       -- https://nektosact.com
+brew 'antoniorodr/memo/memo'    # CLI app to manage your Apple Notes and Apple reminders            -- https://github.com/antoniorodr/memo
+brew 'block-goose-cli'      # Open source, extensible AI agent that goes beyond code suggestions    -- https://goose-docs.ai/
+brew 'claude-cmd'           # Claude Code Commands Manager                                          -- https://github.com/kiliczsh/claude-cmd
+brew 'claude-hooks'         # Hook system for Claude Code                                           -- https://github.com/johnlindquist/claude-hooks
+brew 'create-dmg'           # Shell script to build fancy DMGs                                      -- https://github.com/create-dmg/create-dmg
+brew 'difftastic'           # Diff that understands syntax                                          -- https://difftastic.wilfred.me.uk/
+brew 'go'                   # Open source programming language to build simple/reliable/efficient software  -- https://go.dev/
+brew 'monolith'             # CLI tool for saving complete web pages as a single HTML file          -- https://github.com/Y2Z/monolith
+brew 'opencode'             # AI coding agent, built for the terminal                               -- https://opencode.ai
+brew 'pkgconf'              # Package compiler and linker metadata toolkit                          -- https://github.com/pkgconf/pkgconf
+brew 'sevenzip'             # 7-Zip is a file archiver with a high compression ratio                -- https://7-zip.org
+brew 'summarize'            # Multi-modal AI tool to extract and summarize content                  -- https://summarize.sh
+{{- end }}
 
 {{- if not .headless }}
 # GUI Applications (non-headless environments)
@@ -111,15 +147,18 @@ cask 'webex-meetings'       # Video communication and virtual meeting platform (
 cask 'orbstack'             # Fast, lightweight Docker & Linux on macOS (primary runtime)       -- https://orbstack.dev/
 cask 'zoom'                 # Video communication and virtual meeting platform                  -- https://www.zoom.us/
 {{- end }}
+cask 'libreoffice'          # Free cross-platform office suite                                 -- https://www.libreoffice.org/
+cask 'tailscale-app'        # Mesh VPN based on WireGuard                                      -- https://tailscale.com/
 
 {{- if $is_primary }}
 # your-primary-host-only development tools (primary Mac)
 cask 'alfred'               # Application launcher and productivity software                    -- https://www.alfredapp.com/
 cask 'codex'                # OpenAI's coding agent that runs in your terminal                  -- https://github.com/openai/codex
-cask 'cursor'               # Write, edit, and chat about your code with AI                     -- https://www.cursor.com/
 cask 'github'               # Desktop client for GitHub repositories                            -- https://desktop.github.com/
 cask 'menuwhere'            # Access the menu from anywhere                                     -- https://manytricks.com/menuwhere/
 cask 'sublime-merge'        # Git client                                                        -- https://www.sublimemerge.com/
+cask 'openusage'            # AI usage tracker for Cursor, Claude Code, Codex, Copilot and more -- https://www.openusage.ai/
+cask 'xdevplatform/tap/xurl' # Auth-enabled curl-like CLI for the X API                          -- https://github.com/xdevplatform/xurl
 {{- end }}
 
 {{- if .personal }}
@@ -141,18 +180,26 @@ mas 'Slack (4.45.64)', id: 803453959
 {{- if .personal }}
 # Cross-machine MAS apps
 mas 'Amphetamine (5.3.2)', id: 937984704
-mas 'Canva (1.112.1)', id: 897446215
+# mas 'Canva (1.112.1)', id: 897446215
 mas 'iMovie (10.4.3)', id: 408981434
-mas 'Keynote (14.4)', id: 409183694
+mas 'Keynote (14.4)', id: 361285480
 mas 'Microsoft Excel (16.100)', id: 462058435
 mas 'Microsoft OneNote (16.100)', id: 784801555
 mas 'Microsoft PowerPoint (16.100)', id: 462062816
 mas 'Microsoft Word (16.98)', id: 462054704
-mas 'Numbers (14.4)', id: 409203825
+mas 'Numbers (14.4)', id: 361304891
 mas 'OmniFocus (4.6.1)', id: 1542143627
 mas 'OneDrive (25.140.0720)', id: 823766827
-mas 'Pages (14.4)', id: 409201541
-mas 'Pixelmator Pro (3.7)', id: 1289583905
+mas 'Pages (14.4)', id: 361309726
+# mas 'Pixelmator Pro (3.7)', id: 1289583905
+mas 'Boop (1.4.0)', id: 1518425043
+mas 'iA Writer (7.2.15)', id: 775737590
+mas 'Keka (1.4.15)', id: 470158793
+mas 'MacFamilyTree 10 (10.4)', id: 1567970985
+mas 'Messenger (518.0.0)', id: 1480068668
+# mas 'MindNode (2023.7)', id: 1289197285
+mas 'Noir (2025.1.6)', id: 1592917505
+mas 'TestFlight (3.7.0)', id: 899247664
 
 {{- if $is_primary }}
 
@@ -169,15 +216,10 @@ mas 'Hidden Bar (1.8)', id: 1452453066
 mas 'Streaks (10.4.13)', id: 963034692
 mas 'Swift Playground (4.6.4)', id: 1496833156
 mas 'Xcode (16.4)', id: 497799835
+mas 'Key Codes', id: 414568915
+mas 'Obsidian Web Clipper', id: 6720708363
 {{- end }}
 
-## 2026-03-18: Disabling MacFamilyTree and Messenger since it's failing
-# mas 'MacFamilyTree 10 (10.4)', id: 1567970985
-# mas 'Messenger (518.0.0)', id: 1480068668
-# mas 'iA Writer (7.2.15)', id: 775737590
-# mas 'MindNode (2023.7)', id: 1289197285
-# mas 'Noir (2025.1.6)', id: 1592917505
-# mas 'OmniPlan (4.9.6)', id: 1460319993
 {{- end }}
 {{- end }}
 

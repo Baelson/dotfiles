@@ -111,14 +111,36 @@ defaults write com.apple.Terminal "Default Window Settings" -string "Solarized-D
 defaults write com.apple.Terminal "Startup Window Settings" -string "Solarized-Dark-NerdFont"
 defaults write com.apple.Terminal "SecureKeyboardEntry" -bool "false"
 
-# iTerm2 preferences — load settings from chezmoi-managed plist
-# chezmoi deploys the full plist to ~/.config/iterm2/com.googlecode.iterm2.plist.
-# iTerm2 reads/writes from this custom folder, and the chezmoi-sync stop hook
-# syncs changes back to the chezmoi source automatically.
+# iTerm2 preferences — load settings from the chezmoi-managed plist.
+# chezmoi deploys the templated plist to ~/.config/iterm2/com.googlecode.iterm2.plist
+# (machine-specific $HOME paths are rendered from {{ "{{ .chezmoi.homeDir }}" }}); iTerm2
+# LOADS from this custom folder.
 echo "🖥️  Configuring iTerm2..."
 # shellcheck disable=SC2088  # iTerm2 expands ~ internally for PrefsCustomFolder
 defaults write com.googlecode.iterm2 "PrefsCustomFolder" -string "~/.config/iterm2"
 defaults write com.googlecode.iterm2 "LoadPrefsFromCustomFolder" -bool "true"
+# iTerm2 save-on-quit mode — SINGLE-MASTER so the custom-folder plist stops drifting
+# across machines (it was "wrong on every Mac but the last one to sync"). The remembered
+# key NoSyncNeverRemindPrefsChangesLostForFile_selection is iTermPreferenceSavePrefsMode:
+#   0 = OnQuit/Copy   1 = Never/"Lose Changes" (the default)   2 = Always (auto-save)
+# (verified: iTermPreferences.h enum + applicationWillTerminate/shouldSaveAutomatically in
+# iTermRemotePreferences.m). The bare key (HaveSelection) silences the on-quit "Copy to
+# folder?" reminder so the chosen mode applies without a dialog. (is_primary defaults to
+# non-primary/read-only when the key is absent from the render context — e.g. unit-test
+# env combos — via dig, mirroring Brewfile.tmpl's defensive hasKey handling.)
+defaults write com.googlecode.iterm2 "NoSyncNeverRemindPrefsChangesLostForFile" -bool true
+{{- if (dig "is_primary" false .) }}
+# The primary Mac (.is_primary) = the single WRITER. Always(2): GUI edits auto-save to the folder
+# on quit. To propagate to the other Macs: chezmoi re-add the live plist, then re-templatize
+# the $HOME paths (sed '/Users/<you>' -> {{ "{{ .chezmoi.homeDir }}" }}) and commit.
+defaults write com.googlecode.iterm2 "NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 2
+{{- else }}
+# Other Macs = read-only CONSUMERS. Never(1): silenced + "Lose Changes" remembered, so iTerm2
+# silently discards any local edits on quit and never writes the custom folder. chezmoi fully
+# owns the live file → no last-writer-wins drift. (Edit settings here and they vanish on quit;
+# author on the primary Mac.)
+defaults write com.googlecode.iterm2 "NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 1
+{{- end }}
 
 # Moom window manager preferences
 echo "🪟 Configuring Moom..."

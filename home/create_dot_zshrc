@@ -214,7 +214,7 @@ alias tree="tree -Csuh"    #  Nice alternative to "recursive ls" ...
 alias icloud="pushd ~/Library/Mobile\ Documents/com~apple~CloudDocs/"   # pushd to iCloud Drive
 alias box="pushd ~/Library/CloudStorage/Box-Box/"                       # pushd to Box Drive
 alias onedrive="pushd ~/Library/CloudStorage/OneDrive-Personal/"        # pushd to OneDrive
-alias gpa="pushd ~/Git/Projects/Active"                                 # pushd to active git projects
+alias aia="pushd ~/Git/Work/AI-Agents"                                  # pushd to AI-Agents MO projects
 
 # git alias'
 alias gdd="git difftool --dir-diff --no-symlinks"

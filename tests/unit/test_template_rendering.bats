@@ -257,6 +257,30 @@ teardown() {
     [[ "$output" =~ "personal" ]] || [[ "$output" =~ "Personal" ]]
 }
 
+@test "TEMPLATE-22: macOS defaults — iTerm2 save-on-quit is gated by is_primary (single-master)" {
+    # primary Mac = single WRITER (Always/2)
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "is_primary=true"
+    assert_chezmoi_success
+    local primary_out="$output"
+
+    # non-primary Mac = read-only CONSUMER (Never/1)
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "is_primary=false"
+    assert_chezmoi_success
+    local nonprimary_out="$output"
+
+    # is_primary ABSENT must default to read-only (Never/1) via dig — the exact missing-key
+    # case that regressed TEMPLATE-14/15/16/21 when the gate was a bare {{ if .is_primary }}.
+    test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_configure-macos-defaults.sh.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false"
+    assert_chezmoi_success
+    local absent_out="$output"
+
+    # ONE &&-chained final command (testing.md: avoids vacuous intermediate-assert passes)
+    [[ "$primary_out" == *'NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 2'* ]] \
+        && [[ "$primary_out" != *'_selection" -int 1'* ]] \
+        && [[ "$nonprimary_out" == *'NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 1'* ]] \
+        && [[ "$absent_out" == *'NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 1'* ]]
+}
+
 @test "TEMPLATE-17: Shell environment script skips in headless environment" {
     test_template_rendering ".chezmoiscripts/darwin/run_onchange_after_setup-shell-environment.sh.tmpl" "ephemeral=false" "headless=true" "personal=false" "work=false"
     assert_chezmoi_success

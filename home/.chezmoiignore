@@ -8,8 +8,15 @@
 
 # ── Repo metadata guards (root-level only) ─────────
 # Defensive against future accidental ~/README.md / ~/NOTES.txt additions.
+# NB doublestar: a leading `*` does NOT cross `/`, so these match ONLY ~/*.md
+# and ~/*.txt — nested managed .md/.txt (e.g. .claude/rules/*.md) are unaffected.
 *.md
 *.txt
+
+# Source-tree doc co-located with the Claude Desktop config (explains how those
+# templated/plain files are managed). Nested, so the root-only *.md above misses
+# it — exclude by exact target path so it never lands in ~/Library/.../Claude/.
+Library/Application Support/Claude/README.md
 
 # ── Editor temp files (any depth) ───────────────────
 **/*.swp
@@ -54,9 +61,9 @@ Brewfile
 # (private_claude_desktop_config.json.tmpl), NOT ignored — softeria-m365
 # MCP entry drops out on secondary Macs only.
 {{ if not (and (hasKey . "is_primary") .is_primary) -}}
-# Wrapper scripts (ms365-mcp LaunchAgent removed in Phase 5A; pnp-m365
-# alternative runs via npx in claude_desktop_config.json.tmpl).
-.local/bin/{ms365-mcp-start.sh,ms365-mcp-stdio.sh,open-cursor-global-workspace.sh}
+# open-cursor-global-workspace.sh references the local ~/Git layout (primary-only).
+# (ms365-mcp wrappers fully retired 2026-06-12 — the softeria-m365 MCP was removed.)
+.local/bin/open-cursor-global-workspace.sh
 
 # GUI apps (config dirs + app-support)
 {.cursor,.gitkraken}
