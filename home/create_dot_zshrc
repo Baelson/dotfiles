@@ -58,7 +58,11 @@ export DEFAULT_USER=Baelson
 ############################################
 ###           Terminal colors            ###
 ############################################
-export TERM="xterm-256color" CLICOLOR=1
+# Only set TERM outside tmux — inside a pane tmux hands us tmux-256color
+# (via `default-terminal` in tmux.conf); clobbering it to xterm* breaks
+# key/scroll/capability detection (tmux FAQ warns against xterm* inside tmux).
+[[ -z "$TMUX" ]] && export TERM="xterm-256color"
+export CLICOLOR=1
 export LESS_TERMCAP_mb=$(printf "\e[1;31m")    # blink
 export LESS_TERMCAP_md=$(printf "\e[1;31m")    # bold
 export LESS_TERMCAP_me=$(printf "\e[0m")       # end bold, blink and underline

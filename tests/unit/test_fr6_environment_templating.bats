@@ -26,7 +26,7 @@ teardown() {
 # FR-6.1: Template file support infrastructure
 @test "FR-6.1: Chezmoi template infrastructure exists" {
     # Check for chezmoi configuration that supports templating (can be implicit)
-    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
+    [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl" || -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" || -f "$DOTFILES_SOURCE_DIR/.chezmoiexternal.toml.tmpl" ]]
 
     # Template files use .tmpl extension
     template_count=$(find "$DOTFILES_ROOT" -name "*.tmpl" 2>/dev/null | wc -l | tr -d ' ')
@@ -40,8 +40,8 @@ teardown() {
     env_detection_found=false
 
     # Look for environment detection in chezmoi config
-    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]]; then
-        if grep -q -E "(work|personal|hostname|domain)" "$DOTFILES_SOURCE_DIR/.chezmoi.yaml"; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl" ]]; then
+        if grep -q -E "(work|personal|hostname|domain)" "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl"; then
             env_detection_found=true
         fi
     fi
@@ -64,7 +64,7 @@ teardown() {
     fi
 
     # Test passes if infrastructure exists (even if not fully implemented)
-    [[ "$env_detection_found" == "true" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]
+    [[ "$env_detection_found" == "true" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]
 }
 
 @test "FR-6.3: Template variable system" {
@@ -77,8 +77,8 @@ teardown() {
     fi
 
     # Check chezmoi config for data/variables
-    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]]; then
-        if grep -q -E "(data:|variables:|\.)" "$DOTFILES_SOURCE_DIR/.chezmoi.yaml"; then
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl" ]]; then
+        if grep -q -E "(data:|variables:|\.)" "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl"; then
             template_vars_found=true
         fi
     fi
@@ -197,7 +197,7 @@ teardown() {
     sync_ready=false
 
     # Requires both git (for sync) and chezmoi (for apply)
-    [[ -d "$DOTFILES_ROOT/.git" ]]
+    [[ -d "$DOTFILES_ROOT/.git" ]] || return 1
     command -v chezmoi &> /dev/null
 }
 
@@ -231,20 +231,37 @@ teardown() {
     required_components=0
 
     # Chezmoi configuration
-    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.yaml" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]; then
-        ((++required_components))
+    if [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml.tmpl" ]] || [[ -f "$DOTFILES_SOURCE_DIR/.chezmoi.toml" ]]; then
+        ((++required_components)) || return 1
     fi
 
     # Git configuration (ready for templating)
     if [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig" ]] || [[ -f "$DOTFILES_SOURCE_DIR/dot_gitconfig.tmpl" ]]; then
-        ((++required_components))
+        ((++required_components)) || return 1
     fi
 
     # Package management (ready for environment differentiation)
     if [[ -f "$DOTFILES_SOURCE_DIR/Brewfile" ]] || [[ -f "$DOTFILES_SOURCE_DIR/Brewfile.tmpl" ]]; then
-        ((++required_components))
+        ((++required_components)) || return 1
     fi
 
-    # Should have at least 2 of 3 required components ready
-    [[ $required_components -ge 2 ]]
+    # All 3 must be ready. This asserted >=2 while the config check pointed at
+    # a `.chezmoi.yaml` this repo has never had — so the config component was
+    # silently never counted, 2/3 passed, and the threshold hid the miscount
+    # (FLP-003). With the check repointed at the real `.chezmoi.toml.tmpl` all
+    # three exist, so >=3 is the honest bar and a regression now fails.
+    [[ $required_components -ge 3 ]]
+}
+
+@test "FR-6.9: environment detection has an explicit manual override" {
+    # The gap FLP-002/FLP-003 were paired on. Hostname-based detection alone is
+    # insufficient: `work` is derived from a hostname pattern, so a machine that
+    # does not match has no way to declare itself a work machine. The override
+    # is a round trip and BOTH halves are load-bearing — the config template
+    # must read a caller-supplied `work` back in AND emit it into rendered
+    # [data], or `chezmoi init --data work=true` silently does nothing.
+    local cfg="${DOTFILES_SOURCE_DIR}/.chezmoi.toml.tmpl"
+
+    grep -q 'hasKey . "work"' "${cfg}" \
+        && grep -qE '^[[:space:]]*work = \{\{ \$work \}\}' "${cfg}"
 }

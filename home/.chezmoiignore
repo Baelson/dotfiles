@@ -56,6 +56,26 @@ Brewfile
 .ssh/**
 {{- end }}
 
+# ── Compiled binaries in ~/.local/bin — NEVER chezmoi-managed ──────────────
+# A dotfiles repo tracks CONFIG, not build output. `agy` is a 137 MB Mach-O
+# arm64 executable (plus a 136 MB stale `.old` backup chezmoi also adopted);
+# together they exceeded GitHub's 100 MB/file limit and hard-BLOCKED every push
+# to this repo (pre-receive hook declined, GH001), stranding unrelated commits.
+# They are also arch-specific, so they would be wrong on a non-arm64 machine.
+# Reinstall the tool per its own installer instead of syncing the binary.
+# NB if anything automatically re-adds ~/.local/bin (a wrapper, an editor task, a
+# git hook), a bare `chezmoi forget` is NOT enough — it gets re-adopted on the
+# next run. This ignore is what makes the removal stick.
+.local/bin/agy
+.local/bin/agy.*.old
+
+# Python bytecode caches — build output, never config. A `python3` that imports
+# a script under ~/.local/bin (a measurement harness, a test) drops a
+# __pycache__/ beside it, which the sync hook then adopts. Same rule as the
+# binaries above: `forget` alone does not stick without the ignore.
+.local/bin/__pycache__
+.local/bin/**/__pycache__
+
 # ── Primary-Mac-only (Mac "your-primary-host") ─────────
 # Secondary Macs skip these. Claude Desktop JSON is templated
 # (private_claude_desktop_config.json.tmpl), NOT ignored — softeria-m365

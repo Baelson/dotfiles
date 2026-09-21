@@ -95,7 +95,16 @@ brew_health_check() {
             fi
         done
         if (( ${#unwritable[@]} > 0 )); then
-            problems+=("Homebrew prefix dirs are not writable by you. Fix:\n      sudo chown -R \"\$(whoami)\" ${unwritable[*]}")
+            # Quote each path individually: a space-bearing prefix would otherwise
+            # render a copy-paste-broken `sudo chown` (FLP-011). Display-only — the
+            # script never executes this string — but a broken suggestion is worse
+            # than none, because the operator runs it verbatim.
+            local quoted=""
+            local u
+            for u in "${unwritable[@]}"; do
+                quoted="${quoted}\"${u}\" "
+            done
+            problems+=("Homebrew prefix dirs are not writable by you. Fix:\n      sudo chown -R \"\$(whoami)\" ${quoted% }")
         fi
     fi
 

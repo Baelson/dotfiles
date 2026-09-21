@@ -61,8 +61,19 @@ fi
 # chezmoi was launched before brew existed, /opt/homebrew/bin is not yet on
 # the inherited PATH — so `command -v age` returns false even though the
 # previous lifecycle script just installed it. Load shellenv explicitly here.
+#
+# CHEZMOI_AGE_BREW_PREFIX is a TEST SEAM (FLP-023), never set in production.
+# Both brew paths below are absolute, so a test that strips `age` from PATH
+# still reaches the host's real brew — whose shellenv puts `age` straight back.
+# That made the "age is missing" branch below UNREACHABLE on any machine with
+# Homebrew, so its test asserted a warning that never printed and passed anyway.
+# Pointing this at a prefix with no brew is the only way to exercise the degrade.
 if ! command -v age >/dev/null 2>&1; then
-    if [[ -x /opt/homebrew/bin/brew ]]; then
+    if [[ -n "${CHEZMOI_AGE_BREW_PREFIX:-}" ]]; then
+        if [[ -x "${CHEZMOI_AGE_BREW_PREFIX}/bin/brew" ]]; then
+            eval "$("${CHEZMOI_AGE_BREW_PREFIX}/bin/brew" shellenv)"
+        fi
+    elif [[ -x /opt/homebrew/bin/brew ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     elif [[ -x /usr/local/bin/brew ]]; then
         eval "$(/usr/local/bin/brew shellenv)"

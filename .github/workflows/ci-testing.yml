@@ -39,12 +39,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies (brew, bats, python for pre-commit)
+      - name: Install dependencies (brew, bats, chezmoi, python for pre-commit)
         run: |
           brew update
-          brew install bats-core pre-commit || true
+          # chezmoi is REQUIRED here, not optional: this job runs the whole bats
+          # suite via scripts/test/test.sh, and the template-rendering tests
+          # (test_template_rendering, test_fr6_environment_templating,
+          # test_security_secrets) shell out to `chezmoi execute-template`.
+          # Without it they died with `command not found: chezmoi` (exit 127) —
+          # the sibling matrix jobs install it, this one never did.
+          brew install bats-core pre-commit chezmoi || true
           pre-commit --version || true
           bats --version
+          # Fail loudly here rather than 127 lines deep in a test: a missing
+          # chezmoi makes every template assertion meaningless, and `|| true`
+          # above means the install step itself cannot report it.
+          chezmoi --version
 
       - name: Run pre-commit on all files
         run: pre-commit run --all-files
@@ -351,7 +361,12 @@ jobs:
           fi
 
       - name: Comment PR with results
-        if: always()
+        # `always()` alone ran this on workflow_dispatch too, where there is no
+        # PR to comment on, so the step errored and reddened an otherwise green
+        # manual run. This workflow's push/pull_request triggers are commented
+        # out, so today it is manual-dispatch only — meaning the PR-comment step
+        # was failing on EVERY run it ever had.
+        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |

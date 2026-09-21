@@ -56,7 +56,7 @@ dotfiles/
     ├── Brewfile.tmpl              # package manifest (templated)
     ├── dot_*                      # ~/.* dotfiles (zshrc, gitconfig, p10k, ...)
     ├── private_dot_ssh/           # ~/.ssh (create_-managed; SAMPLE encrypted blobs)
-    └── empty_*                    # zero-byte file stubs (.npmrc, .netrc, ...)
+    └── empty_*                    # zero-byte file stubs (.netrc, .wget-hsts)
 ```
 
 ## Code Conventions
@@ -70,7 +70,7 @@ dotfiles/
 | `encrypted_` | age-decrypted at apply time | `encrypted_private_key` |
 | `create_` | create-if-absent; never overwrites an existing target | `create_encrypted_private_id_ed25519.age` |
 | `executable_` | sets `+x` bit | `executable_script.sh` → `script.sh` |
-| `empty_` | creates zero-byte file | `empty_dot_npmrc` |
+| `empty_` | creates zero-byte file | `empty_dot_wget-hsts` |
 | `.tmpl` | Go-template rendered | `Brewfile.tmpl` → `Brewfile` |
 | `run_once_before_` | runs once, before main apply | `run_once_before_install-homebrew.sh` |
 | `run_onchange_after_` | re-runs when content hash changes | `run_onchange_after_install-packages.sh.tmpl` |

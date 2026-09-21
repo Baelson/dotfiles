@@ -27,22 +27,22 @@ teardown() {
 
     # Should have correct data section
     # Use glob for safety against whitespace/newlines
-    [[ "$output" == *"[data]"* ]]
-    [[ "$output" =~ "ephemeral = false" ]]
-    [[ "$output" =~ "headless = false" ]]
-    [[ "$output" =~ "personal = true" ]]
-    [[ "$output" =~ "work = false" ]]
+    [[ "$output" == *"[data]"* ]] || return 1
+    [[ "$output" =~ "ephemeral = false" ]] || return 1
+    [[ "$output" =~ "headless = false" ]] || return 1
+    [[ "$output" =~ "personal = true" ]] || return 1
+    [[ "$output" =~ "work = false" ]] || return 1
 
     # Hostname might be overridden by system hostname, just check key exists
-    [[ "$output" =~ "hostname =" ]]
+    [[ "$output" =~ "hostname =" ]] || return 1
 
     # Should have age encryption settings
-    [[ "$output" == *"[age]"* ]]
-    [[ "$output" =~ "identity" ]]
-    [[ "$output" =~ "recipient" ]]
+    [[ "$output" == *"[age]"* ]] || return 1
+    [[ "$output" =~ "identity" ]] || return 1
+    [[ "$output" =~ "recipient" ]] || return 1
 
     # Should have git settings
-    [[ "$output" == *"[git]"* ]]
+    [[ "$output" == *"[git]"* ]] || return 1
     [[ "$output" =~ "autoCommit" ]]
 }
 
@@ -50,8 +50,8 @@ teardown() {
     test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true" "hostname=work-laptop"
     assert_chezmoi_success
 
-    [[ "$output" == *"work = true"* ]]
-    [[ "$output" == *"personal = false"* ]]
+    [[ "$output" == *"work = true"* ]] || return 1
+    [[ "$output" == *"personal = false"* ]] || return 1
     [[ "$output" =~ "hostname =" ]]
 }
 
@@ -59,9 +59,9 @@ teardown() {
     test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=true" "headless=false" "personal=false" "work=false" "hostname=ci-runner"
     assert_chezmoi_success
 
-    [[ "$output" == *"ephemeral = true"* ]]
-    [[ "$output" == *"headless = false"* ]]
-    [[ "$output" == *"personal = false"* ]]
+    [[ "$output" == *"ephemeral = true"* ]] || return 1
+    [[ "$output" == *"headless = false"* ]] || return 1
+    [[ "$output" == *"personal = false"* ]] || return 1
     [[ "$output" == *"work = false"* ]]
 }
 
@@ -69,7 +69,7 @@ teardown() {
     test_template_rendering ".chezmoi.toml.tmpl" "ephemeral=false" "headless=true" "personal=false" "work=false" "hostname=server-01"
     assert_chezmoi_success
 
-    [[ "$output" =~ "headless = true" ]]
+    [[ "$output" =~ "headless = true" ]] || return 1
     [[ "$output" =~ "ephemeral = false" ]]
 }
 
@@ -81,20 +81,20 @@ teardown() {
     assert_chezmoi_success
 
     # Should always include core development tools
-    [[ "$output" =~ "brew 'chezmoi'" ]]
-    [[ "$output" =~ "brew 'coreutils'" ]]
-    [[ "$output" =~ "brew 'gh'" ]]
-    [[ "$output" =~ "brew 'git'" ]]
-    [[ "$output" =~ "brew 'make'" ]]
+    [[ "$output" =~ "brew 'chezmoi'" ]] || return 1
+    [[ "$output" =~ "brew 'coreutils'" ]] || return 1
+    [[ "$output" =~ "brew 'gh'" ]] || return 1
+    [[ "$output" =~ "brew 'git'" ]] || return 1
+    [[ "$output" =~ "brew 'make'" ]] || return 1
 
     # Should include shell enhancements
-    [[ "$output" =~ "brew 'antigen'" ]]
-    [[ "$output" =~ "brew 'direnv'" ]]
-    [[ "$output" =~ "brew 'fzf'" ]]
+    [[ "$output" =~ "brew 'antigen'" ]] || return 1
+    [[ "$output" =~ "brew 'direnv'" ]] || return 1
+    [[ "$output" =~ "brew 'fzf'" ]] || return 1
 
     # Should include programming languages
-    [[ "$output" =~ "brew 'node'" ]]
-    [[ "$output" =~ "brew 'python3'" ]]
+    [[ "$output" =~ "brew 'node'" ]] || return 1
+    [[ "$output" =~ "brew 'python3'" ]] || return 1
     [[ "$output" =~ "brew 'uv'" ]]
 }
 
@@ -103,13 +103,13 @@ teardown() {
     assert_chezmoi_success
 
     # Should NOT include GUI applications
-    [[ ! "$output" =~ "cask" ]]
-    [[ ! "$output" =~ "visual-studio-code" ]]
-    [[ ! "$output" =~ "iterm2" ]]
-    [[ ! "$output" =~ "docker" ]]
+    [[ ! "$output" =~ "cask" ]] || return 1
+    [[ ! "$output" =~ "visual-studio-code" ]] || return 1
+    [[ ! "$output" =~ "iterm2" ]] || return 1
+    [[ ! "$output" =~ "docker" ]] || return 1
 
     # Should still include CLI tools
-    [[ "$output" =~ "brew 'chezmoi'" ]]
+    [[ "$output" =~ "brew 'chezmoi'" ]] || return 1
     [[ "$output" =~ "brew 'neovim'" ]]
 }
 
@@ -117,14 +117,18 @@ teardown() {
     test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=true" "work=false" "hostname=desktop" "is_primary=true"
     assert_chezmoi_success
 
-    # Should include GUI applications
-    [[ "$output" =~ "cask 'visual-studio-code'" ]]
-    [[ "$output" =~ "cask 'iterm2'" ]]
-    [[ "$output" =~ "cask 'orbstack'" ]]   # the Docker runtime cask this Brewfile actually ships (not Docker Desktop)
-    [[ "$output" =~ "cask 'cursor'" ]]
-
-    # Should include VS Code extensions
-    [[ "$output" =~ "vscode" ]]
+    # Should include GUI applications.
+    #
+    # Chained with && so EVERY assertion is load-bearing. bats 1.14.0 here runs
+    # last-line semantics (BATS_TEST_TIMEOUT unset): a failing intermediate
+    # `[[ ]]` is silently ignored and only the final command decides pass/fail.
+    # That is how this test kept asserting `cask 'cursor'` — removed from the
+    # Brewfile in 73fb292 (2026-06-30, "not used enough") — and stayed green
+    # for weeks while checking nothing. Do not un-chain these (FLP-022).
+    [[ "$output" =~ "cask 'visual-studio-code'" ]] \
+        && [[ "$output" =~ "cask 'iterm2'" ]] \
+        && [[ "$output" =~ "cask 'orbstack'" ]] \
+        && [[ "$output" =~ "vscode" ]]
 }
 
 @test "TEMPLATE-8: Brewfile excludes persistent packages in ephemeral environment" {
@@ -132,13 +136,13 @@ teardown() {
     assert_chezmoi_success
 
     # Should NOT include media utilities and persistent tools
-    [[ ! "$output" =~ "brew 'ddrescue'" ]]
-    [[ ! "$output" =~ "brew 'ffmpeg'" ]]
-    [[ ! "$output" =~ "brew 'mas'" ]]
-    [[ ! "$output" =~ "mas.*'" ]]  # No Mac App Store apps
+    [[ ! "$output" =~ "brew 'ddrescue'" ]] || return 1
+    [[ ! "$output" =~ "brew 'ffmpeg'" ]] || return 1
+    [[ ! "$output" =~ "brew 'mas'" ]] || return 1
+    [[ ! "$output" =~ "mas.*'" ]]  # No Mac App Store apps || return 1
 
     # Should still include core development tools
-    [[ "$output" =~ "brew 'chezmoi'" ]]
+    [[ "$output" =~ "brew 'chezmoi'" ]] || return 1
     [[ "$output" =~ "brew 'git'" ]]
 }
 
@@ -147,14 +151,14 @@ teardown() {
     assert_chezmoi_success
 
     # Should include Mac App Store apps
-    [[ "$output" =~ "mas 'Amphetamine" ]]
-    [[ "$output" =~ "mas 'Final Cut Pro" ]]
-    [[ "$output" =~ "mas 'Xcode" ]]
-    [[ "$output" =~ "mas 'Microsoft Excel" ]]
+    [[ "$output" =~ "mas 'Amphetamine" ]] || return 1
+    [[ "$output" =~ "mas 'Final Cut Pro" ]] || return 1
+    [[ "$output" =~ "mas 'Xcode" ]] || return 1
+    [[ "$output" =~ "mas 'Microsoft Excel" ]] || return 1
 
     # Should include personal apps
-    [[ "$output" =~ "cask 'discord'" ]]
-    [[ "$output" =~ "cask 'figma'" ]]
+    [[ "$output" =~ "cask 'discord'" ]] || return 1
+    [[ "$output" =~ "cask 'figma'" ]] || return 1
 
     # Should include personal VS Code extensions
     # Check for extension ID presence (exact format varies)
@@ -168,14 +172,14 @@ teardown() {
     assert_chezmoi_success
 
     # Should include work-specific apps
-    [[ "$output" =~ "mas 'Slack" ]]
+    [[ "$output" =~ "mas 'Slack" ]] || return 1
 
     # Should NOT include personal apps
-    [[ ! "$output" =~ "cask 'discord'" ]]
-    [[ ! "$output" =~ "cask 'figma'" ]]
+    [[ ! "$output" =~ "cask 'discord'" ]] || return 1
+    [[ ! "$output" =~ "cask 'figma'" ]] || return 1
 
     # Should NOT include personal VS Code extensions
-    [[ ! "$output" =~ "vscode.*openai" ]]
+    [[ ! "$output" =~ "vscode.*openai" ]] || return 1
 
     # Should still include core productivity apps
     [[ "$output" =~ "cask 'visual-studio-code'" ]]
@@ -187,16 +191,16 @@ teardown() {
     assert_chezmoi_success
 
     # Should show environment in comments
-    [[ "$output" =~ "Environment: personal" ]]
-    [[ "$output" =~ "Hostname:" ]]
-    [[ "$output" =~ "Ephemeral: false" ]]
-    [[ "$output" =~ "Headless: false" ]]
+    [[ "$output" =~ "Environment: personal" ]] || return 1
+    [[ "$output" =~ "Hostname:" ]] || return 1
+    [[ "$output" =~ "Ephemeral: false" ]] || return 1
+    [[ "$output" =~ "Headless: false" ]] || return 1
 
     # Test work environment
     test_template_rendering "Brewfile.tmpl" "ephemeral=false" "headless=false" "personal=false" "work=true" "hostname=work-laptop"
     assert_chezmoi_success
 
-    [[ "$output" =~ "Environment: work" ]]
+    [[ "$output" =~ "Environment: work" ]] || return 1
     [[ "$output" =~ "Hostname:" ]]
 }
 
@@ -206,8 +210,8 @@ teardown() {
     assert_chezmoi_success
 
     # Should skip cleanup in ephemeral environments
-    [[ ! "$output" =~ "brew cleanup" ]]
-    [[ ! "$output" =~ "brew autoremove" ]]
+    [[ ! "$output" =~ "brew cleanup" ]] || return 1
+    [[ ! "$output" =~ "brew autoremove" ]] || return 1
 
     # Should still install packages
     [[ "$output" =~ "brew bundle" ]]
@@ -218,7 +222,7 @@ teardown() {
     assert_chezmoi_success
 
     # Should include cleanup in persistent environments
-    [[ "$output" =~ "brew cleanup" ]]
+    [[ "$output" =~ "brew cleanup" ]] || return 1
     [[ "$output" =~ "brew autoremove" ]]
 }
 
@@ -228,7 +232,7 @@ teardown() {
 
     # Should skip macOS defaults configuration
     # Check for skipping message and exit code
-    [[ "$output" == *"Skipping"* ]]
+    [[ "$output" == *"Skipping"* ]] || return 1
     [[ "$output" =~ "exit 0" ]]
 }
 
@@ -237,9 +241,9 @@ teardown() {
     assert_chezmoi_success
 
     # Should include macOS defaults configuration
-    [[ "$output" =~ "defaults write" ]]
-    [[ "$output" =~ "Dock" ]]
-    [[ "$output" =~ "Finder" ]]
+    [[ "$output" =~ "defaults write" ]] || return 1
+    [[ "$output" =~ "Dock" ]] || return 1
+    [[ "$output" =~ "Finder" ]] || return 1
     [[ "$output" =~ "killall" ]]
 }
 
@@ -294,7 +298,7 @@ teardown() {
     assert_chezmoi_success
 
     # Should skip fzf installation in ephemeral environments
-    [[ ! "$output" =~ "fzf.*install" ]]
+    [[ ! "$output" =~ "fzf.*install" ]] || return 1
 
     # Should still setup Antigen
     [[ "$output" =~ "antigen" ]] || [[ "$output" =~ "Antigen" ]]
@@ -332,10 +336,10 @@ teardown() {
         local template_path="$DOTFILES_SOURCE_DIR/$template"
 
         # Template should exist
-        [[ -f "$template_path" ]]
+        [[ -f "$template_path" ]] || return 1
 
         # Should have .tmpl extension
-        [[ "$template" =~ \.tmpl$ ]]
+        [[ "$template" =~ \.tmpl$ ]] || return 1
 
         # Should contain Go template syntax
         grep -q "{{" "$template_path"
@@ -346,7 +350,7 @@ teardown() {
         local close_count
         open_count=$(grep -o "{{" "$template_path" | wc -l | tr -d ' ')
         close_count=$(grep -o "}}" "$template_path" | wc -l | tr -d ' ')
-        [[ "$open_count" -eq "$close_count" ]]
+        [[ "$open_count" -eq "$close_count" ]] || return 1
     done
 }
 

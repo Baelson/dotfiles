@@ -47,3 +47,9 @@ if [[ "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
     fi
     unset _TERM_PROFILE _TERM_MARKER
 fi
+
+
+# Added by Antigravity CLI installer
+# ${HOME}, not the literal /Users/<name> path the installer wrote — this file is
+# shared across machines and accounts, so an absolute home path would be wrong.
+export PATH="${HOME}/.local/bin:$PATH"

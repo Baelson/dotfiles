@@ -48,6 +48,3 @@ export MANPATH="/usr/local/man:${MANPATH}"
 # export GUILE_LOAD_COMPILED_PATH="/opt/homebrew/lib/guile/3.0/site-ccache"
 # export GUILE_SYSTEM_EXTENSIONS_PATH="/opt/homebrew/lib/guile/3.0/extensions"
 # export GUILE_TLS_CERTIFICATE_DIRECTORY="/opt/homebrew/etc/gnutls"
-
-# Claude Code Agent Teams
-export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1

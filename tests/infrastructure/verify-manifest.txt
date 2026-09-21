@@ -13,8 +13,6 @@
 file    .zshrc
 file    .zshenv
 file    .gitconfig
-file    .vimrc
-file    .npmrc
 
 # Chezmoi source directory
 dir     .local/share/chezmoi

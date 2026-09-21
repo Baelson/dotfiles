@@ -24,10 +24,15 @@ teardown() {
 # ── FR-4.1: Zsh config files managed by chezmoi ─────────────
 
 @test "FR-4.1: Given chezmoi source, when zsh files checked, then zshrc, zshenv, zprofile exist" {
-    # Given/When
+    # Given/When — accept BOTH namings. All three of these are create_dot_* in
+    # the public derivative (the R4 create-if-absent seam, 5bd0e8d), so a
+    # dot_*-only check finds 0 there and fails on a candidate that manages them
+    # perfectly well. The invariant is that the zsh configs are managed, not how
+    # the filename is spelled for a given audience.
     local found=0
     for f in dot_zshrc dot_zshenv dot_zprofile; do
-        if [[ -f "$DOTFILES_SOURCE_DIR/$f" || -f "$DOTFILES_SOURCE_DIR/${f}.tmpl" ]]; then
+        if [[ -f "$DOTFILES_SOURCE_DIR/$f"            || -f "$DOTFILES_SOURCE_DIR/${f}.tmpl" \
+           || -f "$DOTFILES_SOURCE_DIR/create_$f"     || -f "$DOTFILES_SOURCE_DIR/create_${f}.tmpl" ]]; then
             found=$((found + 1))
         fi
     done
